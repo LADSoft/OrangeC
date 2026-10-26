@@ -777,7 +777,7 @@ static AMODE* inasm_mem(std::vector<int>& srcRegs)
         inasm_err(ERR_INVALID_INDEX_MODE);
         return 0;
     }
-    rv = beLocalAllocate<AMODE>();
+    rv = localAllocate<AMODE>();
     if (node)
     {
         rv->offset = Optimizer::SymbolManager::Get(node);
@@ -818,7 +818,7 @@ static AMODE* inasm_mem(std::vector<int>& srcRegs)
 
 static AMODE* inasm_amode(int nosegreg, std::vector<int>& srcRegs, std::vector<int>& destRegs)
 {
-    AMODE* rv = beLocalAllocate<AMODE>();
+    AMODE* rv = localAllocate<AMODE>();
     int sz = 0, seg = 0;
     bool done = false;
     lastsym = 0;
@@ -1279,7 +1279,7 @@ void inlineAsm(std::list<FunctionBlock*>& parent)
             {
                 inasm_getsym();
                 op = op_int;
-                rv = beLocalAllocate<OCODE>();
+                rv = localAllocate<OCODE>();
                 rv->oper1 = inasm_amode(true, srcRegs, destRegs);
                 goto join;
             }
@@ -1308,7 +1308,7 @@ void inlineAsm(std::list<FunctionBlock*>& parent)
             return;
         }
         {
-            rv = beLocalAllocate<OCODE>();
+            rv = localAllocate<OCODE>();
             if (!(op == op_rep || op == op_repnz || op == op_repz || op == op_repe || op == op_repne || op == op_lock))
             {
                 if (!atend && !MATCHKW(Keyword::semicolon_))
@@ -1421,7 +1421,7 @@ void adjustcodelab(void* select, int offset)
 }
 void* inlineAsmStmt(void* param)
 {
-    OCODE* rv = beLocalAllocate<OCODE>();
+    OCODE* rv = localAllocate<OCODE>();
     memcpy(rv, param, sizeof(*rv));
     if ((e_op)rv->opcode != op_label && (e_op)rv->opcode != op_line)
     {

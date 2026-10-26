@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -38,20 +38,22 @@
 #include "memory.h"
 #include "ilocal.h"
 #include "ireshape.h"
-#include "ioptutil.h"
 #include "optmain.h"
-
+#include <algorithm>
+#include <unordered_set>
 /* Basic loop identity and loop gathering
  * note: some optimizations depend on the fact that the loop numbers
  * are assigned in reverse postorder
  */
 namespace Optimizer
 {
+SimpleVector<FastList<Loop*>> loopContains;
+std::vector<TestableList<int>> blocksInLoop;
+std::vector<std::list<std::list<int>>> loopInductionSets;
 std::vector<Loop*> loopArray;
+
+static std::vector<std::unique_ptr<Loop>> loopNameInBlock;
 int loopCount;
-
-static BriggsSet* loopItems;
-
 static const char* lptype(Loop* lp)
 {
     if (lp->type == LT_ROOT)
@@ -71,16 +73,13 @@ static void dump_loops(void)
         Loop* lp = loopArray[i];
         if (lp && lp->type != LT_BLOCK)
         {
-            LOOPLIST* lt = lp->contains;
             fprintf(icdFile, "; %d/%s/B(%d)/", i + 1, lptype(lp), lp->entry->blocknum + 1);
-            while (lt)
+            for (auto lp1 : loopContains[lp->loopnum])
             {
-                lp = lt->loop;
-                if (lp->type == LT_BLOCK)
-                    fprintf(icdFile, "B(%d) ", lp->entry->blocknum + 1);
+                if (lp1->type == LT_BLOCK)
+                    fprintf(icdFile, "B(%d) ", lp1->entry->blocknum + 1);
                 else
-                    fprintf(icdFile, "L(%d) ", lp->loopnum + 1);
-                lt = lt->next;
+                    fprintf(icdFile, "L(%d) ", lp1->loopnum + 1);
             }
             fprintf(icdFile, "\n");
         }
@@ -102,30 +101,30 @@ static void findInfinite(Block* b)
 /* add a thunk block to get us out of an infinite loop */
 static void makeNonInfinite(Block* b)
 {
-    BLOCKLIST *bi = newBlock(), *bi2, **bt;
+    Block* nb = NewBlock();
+    BLOCKLIST** bt;
     QUAD *quad, *quad2;
 
-    blockArray[bi->block->blocknum] = bi->block;
-    bi->block->unuseThunk = true;
+    blockArray[nb->blocknum] = nb;
+    nb->unuseThunk = true;
 
-    bi->block->succ = oAllocate<BLOCKLIST>();
-    bi->block->succ->block = blockArray[exitBlock];
+    nb->succ = oAllocate<BLOCKLIST>();
+    nb->succ->block = blockArray[exitBlock];
 
-    bi->block->pred = oAllocate<BLOCKLIST>();
-    bi->block->pred->block = b;
+    nb->pred = oAllocate<BLOCKLIST>();
+    nb->pred->block = b;
 
     bt = &b->succ;
     while (*bt)
         bt = &(*bt)->next;
-    *bt = bi;
-
-    bi2 = oAllocate<BLOCKLIST>();
-    bi2->block = bi->block;
+    *bt = oAllocate<BLOCKLIST>();
+    (*bt)->block = nb;
 
     bt = &blockArray[exitBlock]->pred;
     while (*bt)
         bt = &(*bt)->next;
-    *bt = bi2;
+    *bt = oAllocate<BLOCKLIST>();
+    (*bt)->block = nb;
 
     /* note : the following does NOT insert jmps for the
      * newly added block
@@ -133,18 +132,18 @@ static void makeNonInfinite(Block* b)
     *criticalThunkPtr = quad = Allocate<QUAD>();
     criticalThunkPtr = &quad->fwd;
     quad->dc.opcode = i_block;
-    quad->block = bi->block;
-    quad->dc.v.label = bi->block->blocknum;
+    quad->block = nb;
+    quad->dc.v.label = nb->blocknum;
 
     *criticalThunkPtr = quad2 = Allocate<QUAD>();
     criticalThunkPtr = &quad2->fwd;
     quad2->back = quad;
     quad2->dc.opcode = i_blockend;
-    quad2->block = bi->block;
+    quad2->block = nb;
     //	quad2->dc.v.label = bi->block->blocknum;
 
-    bi->block->head = quad;
-    bi->block->tail = quad2;
+    nb->head = quad;
+    nb->tail = quad2;
 }
 void CancelInfinite(int orgBlockCount)
 {
@@ -214,83 +213,81 @@ static Loop* LoopAncestor(Block* b)
 {
     Loop* head = b->loopParent;
     if (!head)
-        return b->loopName;
+        return loopNameInBlock[b->blocknum].get();
     while (head->parent != nullptr)
         head = head->parent;
     return head;
 }
 static void FindBody(BLOCKLIST* gen, Block* head, enum e_lptype type)
 {
-    LOOPLIST *queue = nullptr, **qx;
-    Loop *lp, **lpp;
+    std::stack<Loop*> queue;
+    Loop** lpp;
     int i;
     if (!gen)
         return;
-    briggsClear(loopItems);
+
+    TestableList<int> loopItems;
+
     while (gen)
     {
         Loop* l = LoopAncestor(gen->block);
-        if (l && !briggsTest(loopItems, l->loopnum))
+        if (l && !loopItems.test(l->loopnum))
         {
-            LOOPLIST* bl = oAllocate<LOOPLIST>();
-            bl->loop = l;
-            bl->next = queue;
-            queue = bl;
-            briggsSet(loopItems, l->loopnum);
+            queue.push(l);
+            loopItems.push_back(l->loopnum);
         }
         gen = gen->next;
     }
-    while (queue)
+    while (!queue.empty())
     {
-        if ((queue->loop)->entry)
+        auto item = queue.top();
+        if (item->entry)
         {
-            BLOCKLIST* p = (queue->loop)->entry->pred;
-            queue = queue->next;
+            BLOCKLIST* p = item->entry->pred;
+            queue.pop();
             while (p)
             {
                 if (p->block != head)
                 {
                     Loop* l = LoopAncestor(p->block);
-                    if (l && !briggsTest(loopItems, l->loopnum))
+                    if (l && !loopItems.test(l->loopnum))
                     {
-                        LOOPLIST* bl = oAllocate<LOOPLIST>();
-                        bl->loop = l;
-                        bl->next = queue;
-                        queue = bl;
-                        briggsSet(loopItems, l->loopnum);
+                        queue.push(l);
+                        loopItems.push_back(l->loopnum);
                     }
                 }
                 p = p->next;
             }
         }
         else
-            queue = queue->next;
+        {
+            queue.pop();
+        }
     }
-    if (loopCount >= loopArray.size())
-        loopArray.resize(loopCount + 1000);
-    lp = oAllocate<Loop>();
+    Loop* lp = new Loop{e_lptype::LT_BLOCK};
     lp->loopnum = loopCount;
-    loopArray[loopCount++] = lp;
     lp->type = type;
     lp->entry = head;
     lp->parent = nullptr;
-    head->loopParent = lp;
-    qx = &lp->contains;
-    *qx = oAllocate<LOOPLIST>();
-    (*qx)->loop = head->loopName;
-    qx = &(*qx)->next;
-    for (i = 0; i < loopItems->top; i++)
+    if (loopCount >= loopArray.size())
     {
-        LOOPLIST* l = oAllocate<LOOPLIST>();
-        int n = loopItems->data[i];
-        l->loop = loopArray[n];
-        *qx = l;
-        qx = &(*qx)->next;
+        loopArray.resize(loopCount + 40);
+        loopContains.resize(loopCount + 40);
+        blocksInLoop.resize(loopCount + 40);
+        loopInductionSets.resize(loopCount + 40);
+    }
+    head->loopParent = lp;
+    loopArray[loopCount] = lp;
+    loopContains[loopCount].push_back(loopNameInBlock[head->blocknum].get());
+    for (auto n : loopItems)
+    {
+        loopContains[loopCount].push_back(loopArray[n]);
         if (loopArray[n]->type == LT_BLOCK)
             loopArray[n]->entry->loopParent = lp;
         else
             loopArray[n]->parent = lp;
-    }
+    };
+    loopCount++;
 }
 static Block* findCommonDominator(Block* one, Block* two)
 {
@@ -364,36 +361,29 @@ static void CalculateLoopedBlocks(Loop* l)
 {
     if (l->type != LT_BLOCK)
     {
-        LOOPLIST* l1 = l->contains;
-        while (l1)
+        for (auto l1 : loopContains[l->loopnum])
         {
-            CalculateLoopedBlocks(l1->loop);
-            l1 = l1->next;
+            CalculateLoopedBlocks(l1);
         }
-        l1 = l->contains;
-        l->blocks = briggsAlloc(blockCount);
-        while (l1)
+        for (auto lm : loopContains[l->loopnum])
         {
-            Loop* lm = l1->loop;
             if (lm->type == LT_BLOCK)
-                briggsSet(l->blocks, lm->entry->blocknum);
+            {
+                blocksInLoop[l->loopnum].push_back(lm->entry->blocknum);
+            }
             else
             {
-                int i;
-                for (i = 0; i < lm->blocks->top; i++)
-                    briggsSet(l->blocks, lm->blocks->data[i]);
+                for (auto b : blocksInLoop[lm->loopnum])
+                    blocksInLoop[l->loopnum].push_back(b);
             }
-            l1 = l1->next;
         }
     }
 }
 /* finds all the successors to the loop */
 static void CalculateSuccessors(Loop* lp)
 {
-    LOOPLIST* contains;
-    for (contains = lp->contains; contains; contains = contains->next)
+    for (auto current : loopContains[lp->loopnum])
     {
-        Loop* current = contains->loop;
         if (lp->type != LT_BLOCK || current->loopnum == lp->loopnum)
             CalculateSuccessors(current);
     }
@@ -403,7 +393,7 @@ static void CalculateSuccessors(Loop* lp)
         auto succ = lp->entry->succ;
         for (; succ; succ = succ->next)
         {
-            if (succ->block->loopName->loopnum != lp->loopnum)
+            if (loopNameInBlock[succ->block->blocknum]->loopnum != lp->loopnum)
             {
                 BLOCKLIST* newExit = oAllocate<BLOCKLIST>();
                 newExit->next = lp->successors;
@@ -414,15 +404,14 @@ static void CalculateSuccessors(Loop* lp)
     }
     else
     {
-        for (contains = lp->contains; contains; contains = contains->next)
+        for (auto inner : loopContains[lp->loopnum])
         {
-            Loop* inner = contains->loop;
             /* only have to add blocks that could have exited an inner loop
              * and only if they also exit this loop
              */
             for (BLOCKLIST* prevSuccessors = inner->successors; prevSuccessors; prevSuccessors = prevSuccessors->next)
             {
-                if (!briggsTest(lp->blocks, prevSuccessors->block->blocknum))
+                if (!blocksInLoop[lp->loopnum].test(prevSuccessors->block->blocknum))
                 {
                     BLOCKLIST* newExit = oAllocate<BLOCKLIST>();
                     newExit->next = lp->successors;
@@ -441,21 +430,30 @@ void BuildLoopTree(void)
     QUAD* tail;
     bool skip = false;
     loopArray.clear();
+    loopContains.clear();
+    blocksInLoop.clear();
+    loopInductionSets.clear();
+    loopNameInBlock.clear();
     loopCount = 0;
-    loopItems = briggsAlloc((blockCount) * 4);
+
+    loopNameInBlock.resize(blockCount);
     loopArray.resize(blockCount);
+    loopContains.resize(blockCount);
+    blocksInLoop.resize(blockCount);
+    loopInductionSets.resize(blockCount);
     for (i = 0; i < blockCount; i++)
     {
         if (blockArray[i])
         {
             blockArray[i]->visiteddfst = false;
             blockArray[i]->loopParent = nullptr;
-            blockArray[i]->loopName = oAllocate<Loop>();
-            blockArray[i]->loopName->type = LT_BLOCK;
-            blockArray[i]->loopName->entry = blockArray[i];
-            blockArray[i]->loopName->loopnum = loopCount;
+            Loop* lp = new Loop{e_lptype::LT_BLOCK};
+            lp->entry = blockArray[i];
+            lp->loopnum = loopCount;
             blockArray[i]->loopGenerators = nullptr;
-            loopArray[loopCount++] = blockArray[i]->loopName;
+            loopNameInBlock[i] = std::move(std::unique_ptr<Loop>(lp));
+            loopArray[loopCount] = lp;
+            loopCount++;
         }
     }
     FindLoopOuter(blockArray[0]);
@@ -549,7 +547,7 @@ static void CalculateLoopInvariants(Block* b)
     int i;
     if (b == blockArray[0])
         for (i = 0; i < tempCount; i++)
-            tempInfo[i]->variantLoop = 0;
+            tempInfo[i]->variantLoop = nullptr;
     /* again the PHI nodes are first, which satisfies the algorithm need
      * to evaluate them first
      */
@@ -592,18 +590,17 @@ static void CalculateLoopInvariants(Block* b)
         children = children->next;
     }
 }
-static BriggsSet* candidates;
-static std::stack<unsigned> inductionCandidateStack;
 
-static void PruneInductionCandidate(int tnum, Loop* l)
+static void PruneInductionCandidate(TestableList<int>& inductionCandidateStack, std::unordered_set<int>& candidates, int tnum,
+                                    Loop* l)
 {
     if (tempInfo[tnum]->size >= ISZ_FLOAT)
     {
-        briggsReset(candidates, tnum);
+        candidates.erase(tnum);
     }
     else
     {
-        QUAD* I = tempInfo[tnum]->instructionDefines;
+        QUAD* I = InstructionDefinesSsa[tnum];
         if (I)
         {
             switch (I->dc.opcode)
@@ -613,9 +610,9 @@ static void PruneInductionCandidate(int tnum, Loop* l)
                     struct _phiblock* pb = pd->temps;
                     while (pb)
                     {
-                        if (!briggsTest(candidates, pb->Tn) && !isInvariant(pb->Tn, l))
+                        if (candidates.find(pb->Tn) == candidates.end() && !isInvariant(pb->Tn, l))
                         {
-                            briggsReset(candidates, tnum);
+                            candidates.erase(tnum);
                             break;
                         }
                         pb = pb->next;
@@ -627,8 +624,8 @@ static void PruneInductionCandidate(int tnum, Loop* l)
                     if (I->temps & TEMP_RIGHT)
                     {
                         int tn2 = I->dc.right->offset->sp->i;
-                        if (!briggsTest(candidates, tn2))
-                            briggsReset(candidates, tnum);
+                        if (candidates.find(tn2) == candidates.end())
+                            candidates.erase(tnum);
                     }
                     /* FALLTHROUGH */
                 case i_neg:
@@ -636,8 +633,8 @@ static void PruneInductionCandidate(int tnum, Loop* l)
                     if (I->temps & TEMP_LEFT)
                     {
                         int tn2 = I->dc.left->offset->sp->i;
-                        if (!briggsTest(candidates, tn2))
-                            briggsReset(candidates, tnum);
+                        if (candidates.find(tn2) == candidates.end())
+                            candidates.erase(tnum);
                     }
                     break;
                 default:
@@ -647,7 +644,7 @@ static void PruneInductionCandidate(int tnum, Loop* l)
         }
         else
         {
-            briggsReset(candidates, tnum);
+            candidates.erase(tnum);
         }
     }
 }
@@ -655,23 +652,13 @@ static void PruneInductionCandidate(int tnum, Loop* l)
  * an induction set will be created for each loop.  These sets will
  * be identical
  */
-static void CalculateInductionCandidates(Loop* l)
+static void CalculateInductionCandidates(std::unordered_set<int>& candidates, Loop* l)
 {
-    LOOPLIST *blocks, *p;
     int i;
-    briggsClear(candidates);
-    while (!inductionCandidateStack.empty())
-        inductionCandidateStack.pop();
-
-    /* done here just in case for some reason an induction set drills down
-     * into a lower loop
-     */
-    for (i = 0; i < tempCount; i++)
-        tempInfo[i]->onstack = false;
-
-    for (i = 0; i < l->blocks->top; i++)
+    TestableList<int> inductionCandidateStack;
+    for (auto i : blocksInLoop[l->loopnum])
     {
-        Block* b = blockArray[l->blocks->data[i]];
+        Block* b = blockArray[i];
         if (b)
         {
             QUAD* head = b->head;
@@ -691,9 +678,8 @@ static void CalculateInductionCandidates(Loop* l)
                                         head->dc.right->size < ISZ_FLOAT)
                                     {
                                         int tnum = head->ans->offset->sp->i;
-                                        briggsSet(candidates, tnum);
+                                        candidates.insert(tnum);
                                         inductionCandidateStack.push(tnum);
-                                        tempInfo[tnum]->onstack = true;
                                     }
                                 }
                         }
@@ -707,9 +693,8 @@ static void CalculateInductionCandidates(Loop* l)
                                 if (head->ans->size < ISZ_FLOAT && head->dc.left->size < ISZ_FLOAT)
                                 {
                                     int tnum = head->ans->offset->sp->i;
-                                    briggsSet(candidates, tnum);
+                                    candidates.insert(tnum);
                                     inductionCandidateStack.push(tnum);
-                                    tempInfo[tnum]->onstack = true;
                                 }
                             }
                         }
@@ -719,9 +704,8 @@ static void CalculateInductionCandidates(Loop* l)
                         int tnum = pd->T0;
                         if (tempInfo[tnum]->size < ISZ_FLOAT)
                         {
-                            briggsSet(candidates, tnum);
+                            candidates.insert(tnum);
                             inductionCandidateStack.push(tnum);
-                            tempInfo[tnum]->onstack = true;
                         }
                     }
                     break;
@@ -740,39 +724,35 @@ static void CalculateInductionCandidates(Loop* l)
                             if (head->temps & TEMP_ANS)
                             {
                                 int tnum = head->ans->offset->sp->i;
-                                auto uses1 = tempInfo[tnum]->instructionUses;
-                                if (uses1)
+                                for (auto uses : InstructionUsesSsa[tnum])
                                 {
-                                    for (auto uses : *uses1)
+                                    if ((uses->temps & TEMP_ANS) && uses->ans->mode == i_ind)
                                     {
-                                        if ((uses->temps & TEMP_ANS) && uses->ans->mode == i_ind)
+                                        if (tnum == uses->ans->offset->sp->i)
                                         {
-                                            if (tnum == uses->ans->offset->sp->i)
-                                            {
+                                            tempInfo[tnum]->expressionRoot = true;
+                                        }
+                                    }
+                                    if (uses->temps & TEMP_LEFT)
+                                    {
+                                        if (tnum == uses->dc.left->offset->sp->i)
+                                        {
+                                            if (uses->dc.left->mode == i_ind)
                                                 tempInfo[tnum]->expressionRoot = true;
-                                            }
-                                        }
-                                        if (uses->temps & TEMP_LEFT)
-                                        {
-                                            if (tnum == uses->dc.left->offset->sp->i)
-                                            {
-                                                if (uses->dc.left->mode == i_ind)
+                                            else if (head->dc.opcode != i_not && head->dc.opcode != i_neg)
+                                                if (!matchesop(head->dc.opcode, uses->dc.opcode))
                                                     tempInfo[tnum]->expressionRoot = true;
-                                                else if (head->dc.opcode != i_not && head->dc.opcode != i_neg)
-                                                    if (!matchesop(head->dc.opcode, uses->dc.opcode))
-                                                        tempInfo[tnum]->expressionRoot = true;
-                                            }
                                         }
-                                        if (uses->temps & TEMP_RIGHT)
+                                    }
+                                    if (uses->temps & TEMP_RIGHT)
+                                    {
+                                        if (tnum == uses->dc.right->offset->sp->i)
                                         {
-                                            if (tnum == uses->dc.right->offset->sp->i)
-                                            {
-                                                if (uses->dc.right->mode == i_ind)
+                                            if (uses->dc.right->mode == i_ind)
+                                                tempInfo[tnum]->expressionRoot = true;
+                                            else if (head->dc.opcode != i_not && head->dc.opcode != i_neg)
+                                                if (!matchesop(head->dc.opcode, uses->dc.opcode))
                                                     tempInfo[tnum]->expressionRoot = true;
-                                                else if (head->dc.opcode != i_not && head->dc.opcode != i_neg)
-                                                    if (!matchesop(head->dc.opcode, uses->dc.opcode))
-                                                        tempInfo[tnum]->expressionRoot = true;
-                                            }
                                         }
                                     }
                                 }
@@ -790,24 +770,21 @@ static void CalculateInductionCandidates(Loop* l)
     {
         int tnum = inductionCandidateStack.top();
         inductionCandidateStack.pop();
-        tempInfo[tnum]->onstack = false;
-        PruneInductionCandidate(tnum, l);
-        if (!briggsTest(candidates, tnum))
+        PruneInductionCandidate(inductionCandidateStack, candidates, tnum, l);
+        if (candidates.find(tnum) == candidates.end())
         {
-            auto uses1 = tempInfo[tnum]->instructionUses;
-            if (uses1)
+            for (auto uses : InstructionUsesSsa[tnum])
             {
-                for (auto uses : *uses1)
+                if (blocksInLoop[l->loopnum].test(uses->block->blocknum))
                 {
-                    if (briggsTest(l->blocks, uses->block->blocknum))
+                    if (uses->temps & TEMP_ANS)
                     {
-                        if (uses->temps & TEMP_ANS)
+                        int tnum = uses->ans->offset->sp->i;
+                        if (candidates.find(tnum) != candidates.end())
                         {
-                            int tnum = uses->ans->offset->sp->i;
-                            if (briggsTest(candidates, tnum))
+                            if (!inductionCandidateStack.test(tnum))
                             {
-                                if (!tempInfo[tnum]->onstack)
-                                    inductionCandidateStack.push(tnum);
+                                inductionCandidateStack.push(tnum);
                             }
                         }
                     }
@@ -815,102 +792,82 @@ static void CalculateInductionCandidates(Loop* l)
             }
         }
     }
-}
-static int max_dfs = 0;
-static std::stack<unsigned> strongStack;
-LIST* strongRegiondfs(int tnum)
+};
+static void StrongRegiondfs(TestableList<int>& strongStack, std::list<std::list<int>>& strongTemps, int tnum, int& max_dfs)
 {
     TempInfo* t = tempInfo[tnum];
-    auto uses1 = t->instructionUses;
-    LIST* rv = nullptr;
     t->temp = t->dfstOrder = max_dfs++;
     strongStack.push(tnum);
     t->visiteddfst = true;
-    t->onstack = true;
-    if (uses1)
+    for (auto uses : InstructionUsesSsa[tnum])
     {
-        for (auto uses : *uses1)
+        int ux = -1;
+        switch (uses->dc.opcode)
         {
-            int ux = -1;
-            switch (uses->dc.opcode)
-            {
-                case i_phi: {
-                    PHIDATA* pd = uses->dc.v.phi;
-                    if (tempInfo[pd->T0]->size < ISZ_FLOAT)
-                        ux = pd->T0;
+            case i_phi: {
+                PHIDATA* pd = uses->dc.v.phi;
+                if (tempInfo[pd->T0]->size < ISZ_FLOAT)
+                    ux = pd->T0;
+            }
+            break;
+            case i_add:
+            case i_sub:
+            case i_assn:
+            case i_neg:
+                if (uses->temps & TEMP_ANS)
+                {
+                    ux = uses->ans->offset->sp->i;
+                    if (tempInfo[ux]->size >= ISZ_FLOAT)
+                        ux = -1;
                 }
                 break;
-                case i_add:
-                case i_sub:
-                case i_assn:
-                case i_neg:
-                    if (uses->temps & TEMP_ANS)
-                    {
-                        ux = uses->ans->offset->sp->i;
-                        if (tempInfo[ux]->size >= ISZ_FLOAT)
-                            ux = -1;
-                    }
-                    break;
-                default:
-                    break;
-            }
-            if (ux >= 0)
+            default:
+                break;
+        }
+        if (ux >= 0)
+        {
+            TempInfo* up = tempInfo[ux];
+            if (!up->visiteddfst)
             {
-                TempInfo* up = tempInfo[ux];
-                if (!up->visiteddfst)
-                {
-                    LIST* l3 = strongRegiondfs(ux);
-                    if (up->temp < t->temp)
-                        t->temp = up->temp;
-                    if (l3)
-                    {
-                        l3->next = rv;
-                        rv = l3;
-                    }
-                }
-                else if (up->onstack)
-                {
-                    if (up->dfstOrder < t->temp)
-                        t->temp = up->dfstOrder;
-                }
+                StrongRegiondfs(strongStack, strongTemps, ux, max_dfs);
+                if (up->temp < t->temp)
+                    t->temp = up->temp;
+            }
+            else if (strongStack.test(ux))
+            {
+                if (up->dfstOrder < t->temp)
+                    t->temp = up->dfstOrder;
             }
         }
     }
+
     if (t->temp == t->dfstOrder)
     {
+        std::list<int> region;
         int vp;
-        ILIST* region = nullptr;
-        LIST* temp;
-        ILIST* temp1;
         do
         {
             vp = strongStack.top();
             strongStack.pop();
-            tempInfo[vp]->onstack = false;
-            temp1 = oAllocate<ILIST>();
-            temp1->data = vp;
-            temp1->next = region;
-            region = temp1;
+            region.push_front(vp);
         } while (vp != tnum);
-        temp = oAllocate<LIST>();
-        temp->data = region;
-        temp->next = rv;
-        rv = temp;
+        if (region.size() > 1)
+            strongTemps.push_front(std::move(region));
     }
-    return rv;
 }
 /* this returns a two-layer list
  * the top layer is a linked list of strong regions
  * each secondary layer is the induction set for the region
- * first element of list is the anchors
+ * first element of list is the anchor
+ *
+ * I modified the algorithm to quit generating 1 - element lists...
  */
-static LIST* strongRegions(Loop* lp, ILIST** anchors)
+static void StrongRegions(TestableList<int>& strongStack, std::unordered_set<int>& candidates,
+                          std::list<std::list<int>>& strongTemps, Loop* lp)
 {
     int i;
     QUAD* head;
-    LIST* rv = nullptr;
-    *anchors = nullptr;
-    max_dfs = 0;
+    int max_dfs = 0;
     for (i = 0; i < tempCount; i++)
     {
         tempInfo[i]->dfstOrder = 0;
@@ -923,87 +880,44 @@ static LIST* strongRegions(Loop* lp, ILIST** anchors)
     while (head != lp->entry->tail->fwd && head->dc.opcode == i_phi)
     {
         PHIDATA* pd = head->dc.v.phi;
-        if (briggsTest(candidates, pd->T0) && tempInfo[pd->T0]->size < ISZ_FLOAT)
+        if (candidates.find(pd->T0) != candidates.end() && tempInfo[pd->T0]->size < ISZ_FLOAT)
         {
-            LIST* l1 = strongRegiondfs(pd->T0);
-            if (l1)
-            {
-                l1->next = rv;
-                rv = l1;
-            }
-            ILIST* l2 = oAllocate<ILIST>();
-            l2->data = pd->T0;
-            l2->next = *anchors;
-            *anchors = l2;
+            StrongRegiondfs(strongStack, strongTemps, pd->T0, max_dfs);
         }
         head = head->fwd;
     }
-    return rv;
 }
 void CalculateInduction(void)
 {
     int i;
-
-    candidates = briggsAlloc(tempCount);
+    std::unordered_set<int> candidates;
     CalculateLoopInvariants(blockArray[0]);
-
+    TestableList<int> strongStack;
     for (i = 0; i < loopArray.size(); i++)
     {
         Loop* lp = loopArray[i];
         if (lp && lp->type == LT_SINGLE)
         {
-            LIST* strongTemps;
-            ILIST* anchors = nullptr;
-            CalculateInductionCandidates(lp);
-            strongTemps = strongRegions(lp, &anchors);
-            if (strongTemps && anchors)
+            CalculateInductionCandidates(candidates, lp);
+            std::list<std::list<int>> strongTemps;
+            StrongRegions(strongStack, candidates, strongTemps, lp);
+            if (!strongTemps.empty())
             {
-                LIST* regions = strongTemps;
-                while (regions)
+                for (auto&& q : strongTemps)
                 {
-                    ILIST* r = (ILIST*)regions->data;
-                    if (r->next)
+                    // we optmzed earlier and didn't add one temp items to this list
+                    loopInductionSets[lp->loopnum].push_front(q);
+                    for (auto j : q)
                     {
-                        ILIST* t = anchors;
-                        while (t)
-                        {
-                            while (r)
-                            {
-                                if (t->data == r->data)
-                                    break;
-                                r = r->next;
-                            }
-                            if (!r || t->data == r->data)
-                                break;
-                            t = t->next;
-                        }
-                        if (t || r)
-                        {
-                            INDUCTION_LIST* temp = oAllocate<INDUCTION_LIST>();
-                            ILIST* q;
-                            temp->vars = (ILIST*)regions->data;
-                            temp->next = lp->inductionSets;
-                            lp->inductionSets = temp;
-                            q = (ILIST*)regions->data;
-                            while (q)
-                            {
-                                /* the dominator walk will visit inner loops first,
-                                 * the outer loops have higher indexes
-                                 * we want the outermost loop
-                                 */
-                                tempInfo[(int)q->data]->inductionLoop = imax(i, tempInfo[(int)q->data]->inductionLoop);
-                                q = q->next;
-                            }
-                        }
+                        /* the dominator walk will visit inner loops first,
+                         * the outer loops have higher indexes
+                         * we want the outermost loop
+                         */
+                        tempInfo[j]->inductionLoop = imax(i, tempInfo[j]->inductionLoop);
                     }
-                    regions = regions->next;
                 }
             }
         }
     }
-    while (!strongStack.empty())
-        strongStack.pop();
-    while (!inductionCandidateStack.empty())
-        inductionCandidateStack.pop();
 }
 }  // namespace Optimizer

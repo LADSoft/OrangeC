@@ -432,7 +432,7 @@ static void StreamInstruction(QUAD* q)
 {
     StreamBlockType(STT_INSTRUCTION, false);
     StreamIndex(q->dc.opcode);
-    if (q->dc.opcode == i_passthrough)
+    if (q->dc.opcode == i_inlineasm)
     {
         StreamAssemblyInstruction((OCODE*)q->dc.left);
         StreamIndex(q->assemblyRegCount);
@@ -822,7 +822,7 @@ static void StreamFunc(FunctionData* fd)
             case i_cxcon:
             case i_label:
             case i_line:
-            case i_passthrough:
+            case i_inlineasm:
                 break;
             default:
                 CacheImode(fd, q->dc.left);

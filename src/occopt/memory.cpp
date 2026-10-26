@@ -151,10 +151,6 @@ void* oAlloc(int size) { return memAlloc(&opts, size); }
 void oFree(void) { memFree(&opts, &optPeak); }
 void* aAlloc(int size) { return memAlloc(&alias, size); }
 void aFree(void) { memFree(&alias, &aliasPeak); }
-void* tAlloc(int size) { return memAlloc(&temps, size); }
-void tFree(void) { memFree(&temps, &tempsPeak); }
-void* sAlloc(int size) { return memAlloc(&live, size); }
-void sFree(void) { memFree(&live, &livePeak); }
 void SetGlobalFlag(bool flag, bool& old) { old = globalFlag, globalFlag = flag; }
 void ReleaseGlobalFlag(bool old) { globalFlag = old; }
 bool GetGlobalFlag(void) { return globalFlag; }

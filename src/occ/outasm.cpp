@@ -1627,7 +1627,7 @@ long queue_muldivval(long number)
             p = p->next;
         }
     }
-    p = beGlobalAllocate<MULDIV>();
+    p = globalAllocate<MULDIV>();
     p->next = 0;
     p->value = number;
     p->size = 0;
@@ -1646,7 +1646,7 @@ long queue_large_const(unsigned constant[], int count)
         q = &(*q)->next;
     for (int i = 0; i < count; i++, q = &(*q)->next)
     {
-        p = beGlobalAllocate<MULDIV>();
+        p = globalAllocate<MULDIV>();
         p->value = constant[i];
         if (i == 0)
             p->label = lbl;
@@ -1668,7 +1668,7 @@ long queue_floatval(FPF* number, int size)
             p = p->next;
         }
     }
-    p = beGlobalAllocate<MULDIV>();
+    p = globalAllocate<MULDIV>();
     p->next = 0;
     if (number)
         p->floatvalue = *number;

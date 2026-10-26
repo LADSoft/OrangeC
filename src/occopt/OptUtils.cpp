@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -37,6 +37,8 @@
 #include "iblock.h"
 #include "OptUtils.h"
 #include "Utils.h"
+#include <unordered_set>
+#include <algorithm>
 
 namespace Optimizer
 {
@@ -45,7 +47,7 @@ std::unordered_map<CASTTEMP*, IMODE*, OrangeC::Utils::fnv1a32_binary<sizeof(CAST
     castHash;
 int tempCount;
 
-LIST* immed_list[4091];
+static std::unordered_multimap<long long, IMODE*> immediate_cache;
 static unsigned long long shifts[sizeof(long long) * 8];
 
 void constoptinit(void)
@@ -53,7 +55,7 @@ void constoptinit(void)
     int i;
     for (i = 0; i < sizeof(long long) * 8; i++)
         shifts[i] = ((unsigned long long)1) << i;
-    memset(&immed_list, 0, sizeof(immed_list));
+    immediate_cache.clear();
 }
 
 int sizeFromISZ(int isz)
@@ -264,26 +266,19 @@ Optimizer::IMODE* make_immed(int size, long long i)
  */
 
 {
-    int index = ((unsigned long long)i) % (sizeof(immed_list) / sizeof(immed_list[0]));
-    LIST* a = immed_list[index];
-    Optimizer::IMODE* ap;
-    while (a)
+    auto range = immediate_cache.equal_range(i);
+    for (auto it = range.first; it != range.second; ++it)
     {
-        ap = (Optimizer::IMODE*)a->data;
-        if (ap->offset->i == i && size == ap->size)
-            return ap;
-        a = a->next;
+        if (it->second->size == size)
+            return it->second;
     }
-    ap = Allocate<Optimizer::IMODE>();
+    auto ap = Allocate<Optimizer::IMODE>();
     ap->mode = i_immed;
     ap->offset = Allocate<Optimizer::SimpleExpression>();
     ap->offset->type = Optimizer::se_i;
     ap->offset->i = i;
     ap->size = size;
-    a = Allocate<LIST>();
-    a->data = ap;
-    a->next = immed_list[index];
-    immed_list[index] = a;
+    immediate_cache.insert(std::pair(i, ap));
     return ap;
 }
 

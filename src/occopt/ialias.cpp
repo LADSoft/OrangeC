@@ -40,9 +40,9 @@
 #include "iout.h"
 #include "ilocal.h"
 #include "memory.h"
-#include "ioptutil.h"
 #include "optmain.h"
 #include "FNV_hash.h"
+#include "iloop.h"
 #include <functional>
 #include <algorithm>
 #include <iterator>
@@ -363,7 +363,6 @@ static ALIASADDRESS* LookupAddress(ALIASNAME* name, int offset)
     str.ptr = name;
     str.intval = offset;
     IMODE* im;
-    LIST* li;
     auto it = addresses.find(str);
     if (it != addresses.end())
         return it->second;
@@ -444,7 +443,7 @@ static void Createaddresses(void)
     while (head)
     {
         if (head->dc.opcode != i_assnblock && head->dc.opcode != i_clrblock)
-            if (head->dc.opcode != i_label && head->dc.opcode != i_passthrough && !head->ignoreMe)
+            if (head->dc.opcode != i_label && head->dc.opcode != i_inlineasm && !head->ignoreMe)
             {
                 if (head->ans && !(head->temps & TEMP_ANS) && head->ans->mode != i_immed)
                 {
@@ -625,7 +624,7 @@ static void HandleAssn(QUAD* head)
 }
 static int InferOffset(IMODE* im)
 {
-    QUAD* q = tempInfo[im->offset->sp->i]->instructionDefines;
+    QUAD* q = InstructionDefinesSsa[im->offset->sp->i];
     if (q)
     {
         if (q->dc.opcode == i_add)
@@ -669,7 +668,7 @@ static int InferOffset(IMODE* im)
 }
 static int InferStride(IMODE* im)
 {
-    QUAD* q = tempInfo[im->offset->sp->i]->instructionDefines;
+    QUAD* q = InstructionDefinesSsa[im->offset->sp->i];
     if (q)
     {
         if (q->dc.opcode == i_lsl)
@@ -1028,16 +1027,13 @@ static void GatherAliases(Loop* lp)
     bool xchanged = changed;
     do
     {
-        LOOPLIST* lt = lp->contains;
         changed = false;
-        while (lt)
+        for (auto lp : loopContains[lp->loopnum])
         {
-            lp = lt->loop;
             if (lp->type == LT_BLOCK)
                 AliasesOneBlock(lp->entry);
             else
                 GatherAliases(lp);
-            lt = lt->next;
         }
         if (changed)
             xchanged = true;
@@ -1135,8 +1131,6 @@ void ProcessUIVAddresses(std::function<void(IMODE*)> processor)
 }
 void AliasPass1(void)
 {
-    sFree();
-    briggsFrees();
     AliasInit();
     // when we get here it is expected we are in SSA mode
     Createaddresses();

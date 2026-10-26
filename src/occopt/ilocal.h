@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -29,8 +29,9 @@ void diag(const char* fmt, ...);
 
 namespace Optimizer
 {
-
-extern BriggsSet* killed;
+extern SimpleVector<FastList<QUAD*>> instructionDefines;
+extern SimpleVector<FastList<QUAD*>> instructionUses;
+extern SimpleVector<FastList<Block*>> blockDefines;
 extern int tempBottom, nextTemp;
 
 SimpleExpression* anonymousVar(enum e_scc_type storage_class, SimpleType* tp);

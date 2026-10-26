@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -46,12 +46,6 @@ typedef struct _list_
     struct _list_* next;
     void* data;
 } LIST;
-
-typedef struct _ilist_
-{
-    struct _ilist_* next;
-    int data;
-} ILIST;
 
 typedef struct _linedata
 {

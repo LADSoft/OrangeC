@@ -73,6 +73,7 @@
     <ClInclude Include="config.h" />
     <ClInclude Include="configmsil.h" />
     <ClInclude Include="configx86.h" />
+    <ClInclude Include="containers.h" />
     <ClInclude Include="ctypes.h" />
     <ClInclude Include="ialias.h" />
     <ClInclude Include="iblock.h" />
@@ -334,4 +335,4 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-</Project>
+</Project>

@@ -30,6 +30,7 @@
  */
 #include <cstdio>
 #include <cstdlib>
+#include <unordered_set>
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
 #include "config.h"
@@ -37,7 +38,7 @@
 #include "ildata.h"
 #include "iflow.h"
 #include "OptUtils.h"
-#include "ioptutil.h"
+
 #include "memory.h"
 #include "ilive.h"
 #include "optmodules.h"
@@ -399,7 +400,7 @@ static int PeepAssn(std::unordered_set<int>& occursInAbnormal, Block* b, QUAD* h
         if (head->ans->mode == i_ind && head->ans->offset && !head->ans->offset2 && !head->ans->offset3)
         {
             int temp = head->ans->offset->sp->i;
-            auto ins = tempInfo[temp]->instructionDefines;
+            auto ins = InstructionDefinesSsa[temp];
             if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) &&
                 ins->dc.left->mode == i_direct)
             {
@@ -410,7 +411,7 @@ static int PeepAssn(std::unordered_set<int>& occursInAbnormal, Block* b, QUAD* h
         if (head->dc.left->mode == i_ind && head->dc.left->offset && !head->dc.left->offset2 && !head->dc.left->offset3)
         {
             int temp = head->ans->offset->sp->i;
-            auto ins = tempInfo[temp]->instructionDefines;
+            auto ins = InstructionDefinesSsa[temp];
             if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) &&
                 ins->dc.left->mode == i_direct)
             {
@@ -687,9 +688,9 @@ static void PeepCompare(Block* b, QUAD* head)
     if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
     {
         int temp = head->dc.left->offset->sp->i;
-        if (b->liveOut->find(temp) == b->liveOut->end())
+        if (liveOutTemps[b->blocknum].find(temp) == liveOutTemps[b->blocknum].end())
         {
-            auto ins = tempInfo[temp]->instructionDefines;
+            auto ins = InstructionDefinesSsa[temp];
             if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) &&
                 ins->dc.left->mode == i_direct)
             {
@@ -701,9 +702,9 @@ static void PeepCompare(Block* b, QUAD* head)
     if ((head->temps & TEMP_RIGHT) && head->dc.right->mode == i_direct)
     {
         int temp = head->dc.right->offset->sp->i;
-        if (b->liveOut->find(temp) == b->liveOut->end())
+        if (liveOutTemps[b->blocknum].find(temp) == liveOutTemps[b->blocknum].end())
         {
-            auto ins = tempInfo[temp]->instructionDefines;
+            auto ins = InstructionDefinesSsa[temp];
             if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) &&
                 ins->dc.left->mode == i_direct)
             {

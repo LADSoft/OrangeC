@@ -59,9 +59,6 @@
     <ClCompile Include="ilunstream.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ioptutil.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="iout.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -104,9 +101,6 @@
     <ClCompile Include="optmodules.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="OptUtils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="output.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -126,6 +120,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="igcse.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ioptutil.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OptUtils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -196,9 +196,6 @@
     <ClInclude Include="ioptimizer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ioptutil.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="iout.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -235,9 +232,6 @@
     <ClInclude Include="optmodules.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="OptUtils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="output.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -253,5 +247,14 @@
     <ClInclude Include="igcse.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ioptutil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OptUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="containers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
-</Project>
+</Project>

@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -27,6 +27,8 @@
 #include <malloc.h>
 #include <cstring>
 #include <climits>
+#include <list>
+#include <memory>
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
 #include "OptUtils.h"
@@ -35,13 +37,35 @@
 #include "memory.h"
 #include "ilocal.h"
 #include "ilive.h"
-#include "ioptutil.h"
 #include "FNV_hash.h"
+
 /* reshaping and loop induction strength reduction */
 
 namespace Optimizer
 {
-static int cachedTempCount;
+#define RF_NOT 1
+#define RF_NEG 2
+#define RF_SHIFT 4
+
+struct ReshapeList
+{
+    ReshapeList() : im(nullptr), lastDistribName(nullptr), rpOrder(0), rfFlags(0), distributed(0), genned(0) {}
+    std::map<int, std::shared_ptr<ReshapeList>> distrib; /* distributive lists for multiplication */
+    IMODE* im;
+    IMODE* lastDistribName;
+    unsigned rpOrder;
+    unsigned char rfFlags : 4; /* holds the RF values */
+    unsigned char distributed : 1;
+    unsigned char genned : 1;
+};
+struct ReshapeExpression
+{
+    enum i_ops op;
+    std::map<int, std::shared_ptr<ReshapeList>> reshapeList;
+    short count;
+    IMODE* lastName;
+};
+
 static std::unordered_map<QUAD*, IMODE*, OrangeC::Utils::fnv1a32_binary<DAGCOMPARE>, OrangeC::Utils::bin_eql<DAGCOMPARE>> in_hash;
 static std::unordered_map<IMODE**, IMODE*, OrangeC::Utils::fnv1a32_binary<sizeof(IMODE*)>, OrangeC::Utils::bin_eql<sizeof(IMODE*)>>
     nm_hash;
@@ -65,21 +89,18 @@ void DumpInvariants(void)
         {
             if (loopArray[i]->type != LT_BLOCK)
             {
-                INDUCTION_LIST* is = loopArray[i]->inductionSets;
+                auto set = loopInductionSets[i];
                 int n = 1;
-                if (is)
+                if (!set.empty())
                     fprintf(icdFile, "Loop %d\n", i + 1);
-                while (is)
+                for (auto vars : set)
                 {
-                    LIST* dt = (LIST*)is->vars;
                     fprintf(icdFile, "%d: ", n++);
-                    while (dt)
+                    for (auto var : vars)
                     {
-                        fprintf(icdFile, "T%d ", (int)dt->data);
-                        dt = dt->next;
+                        fprintf(icdFile, "T%d ", var);
                     }
                     fprintf(icdFile, "\n");
-                    is = is->next;
                 }
             }
         }
@@ -88,7 +109,7 @@ void DumpInvariants(void)
 #endif
 bool variantThisLoop(Block* b, int tnum)
 {
-    if (tempInfo[tnum]->instructionDefines)
+    if (InstructionDefinesSsa[tnum])
     {
         Loop* thisLp = b->loopParent;
         Loop* variant = tempInfo[tnum]->variantLoop;
@@ -98,16 +119,12 @@ bool variantThisLoop(Block* b, int tnum)
 }
 static bool usedThisLoop(Block* b, int tnum)
 {
-    auto uses1 = tempInfo[tnum]->instructionUses;
-    if (uses1)
+    Loop* parent = b->loopParent;
+    for (auto uses : InstructionUsesSsa[tnum])
     {
-        Loop* parent = b->loopParent;
-        for (auto uses : *uses1)
-        {
-            Loop* thisLp = uses->block->loopParent;
-            if (parent == thisLp || isAncestor(parent, thisLp))
-                return true;
-        }
+        Loop* thisLp = uses->block->loopParent;
+        if (parent == thisLp || isAncestor(parent, thisLp))
+            return true;
     }
     return false;
 }
@@ -131,41 +148,34 @@ bool matchesop(enum i_ops one, enum i_ops two)
             return false;
     }
 }
-static RESHAPE_LIST* InsertExpression(IMODE* im, RESHAPE_EXPRESSION* expr, QUAD* ins, int flags)
+static ReshapeList* InsertExpression(std::unordered_map<int, std::shared_ptr<ReshapeList>>& reshapes, IMODE* im,
+                                     ReshapeExpression& expr, QUAD* ins, int rfFlags)
 {
-    RESHAPE_LIST* list = tAllocate<RESHAPE_LIST>();
-    RESHAPE_LIST** test = &expr->list;
-    list->flags = flags;
-    list->im = im;
+    ReshapeList* reshapeList = new ReshapeList;
+    reshapeList->rfFlags = rfFlags;
+    reshapeList->im = im;
     if (im->mode == i_immed)
-        list->rporder = SHRT_MAX; /* evaluate constants as early as possible */
+        reshapeList->rpOrder = SHRT_MAX; /* evaluate constants as early as possible */
     else
     {
-        list->rporder = ins->block->loopParent->loopnum;
+        reshapeList->rpOrder = ins->block->loopParent->loopnum;
     }
-    expr->count++;
-    /* sort in descending order */
-    while (*test)
-    {
-        if ((*test)->rporder < list->rporder)
-            break;
-        test = &(*test)->next;
-    }
-    list->next = *test;
-    *test = list;
-    return list;
+    expr.count++;
+    reshapes[reshapeList->rpOrder] = std::move(std::shared_ptr<ReshapeList>(reshapeList));
+    return reshapeList;
 }
-static bool GatherExpression(int tx, RESHAPE_EXPRESSION* expression, int flags)
+static bool GatherExpression(std::unordered_map<int, std::shared_ptr<ReshapeList>>& reshapes, int tx, ReshapeExpression& expression,
+                             int rfFlags)
 {
-    QUAD* ins = tempInfo[tx]->instructionDefines;
-    if (ins && matchesop(ins->dc.opcode, expression->op))
+    QUAD* ins = InstructionDefinesSsa[tx];
+    if (ins && matchesop(ins->dc.opcode, expression.op))
     {
         if (ins->dc.opcode == i_neg || ins->dc.opcode == i_not)
         {
             /* the reason for this exemption is I don't want to deal with
              * maintaining the order of successive neg and not instructions
              */
-            if (expression->list && expression->list->flags & (RF_NEG | RF_NOT))
+            if (!expression.reshapeList.empty() && (expression.reshapeList.begin()->second.get()->rfFlags & (RF_NEG | RF_NOT)))
                 return false;
             if ((ins->temps & TEMP_LEFT) && (ins->dc.left->mode != i_ind))
             {
@@ -173,11 +183,11 @@ static bool GatherExpression(int tx, RESHAPE_EXPRESSION* expression, int flags)
                 {
                     int tnum = ins->dc.left->offset->sp->i;
                     if (ins->dc.opcode == i_neg)
-                        flags ^= RF_NEG;
+                        rfFlags ^= RF_NEG;
                     else
-                        flags ^= RF_NOT;
-                    if (inductionThisLoop(ins->block, tnum) || !GatherExpression(tnum, expression, flags))
-                        InsertExpression(ins->dc.left, expression, ins, flags);
+                        rfFlags ^= RF_NOT;
+                    if (inductionThisLoop(ins->block, tnum) || !GatherExpression(reshapes, tnum, expression, rfFlags))
+                        InsertExpression(reshapes, ins->dc.left, expression, ins, rfFlags);
                     return true;
                 }
             }
@@ -191,13 +201,13 @@ static bool GatherExpression(int tx, RESHAPE_EXPRESSION* expression, int flags)
 
                     int tnuml = ins->dc.left->offset->sp->i;
                     int tnumr = ins->dc.right->offset->sp->i;
-                    int flags1 = flags;
+                    int flags1 = rfFlags;
                     if (ins->dc.opcode == i_sub)
-                        flags ^= RF_NEG;
-                    if (inductionThisLoop(ins->block, tnuml) || !GatherExpression(tnuml, expression, flags1))
-                        InsertExpression(ins->dc.left, expression, ins, flags1);
-                    if (inductionThisLoop(ins->block, tnumr) || !GatherExpression(tnumr, expression, flags))
-                        InsertExpression(ins->dc.right, expression, ins, flags);
+                        rfFlags ^= RF_NEG;
+                    if (inductionThisLoop(ins->block, tnuml) || !GatherExpression(reshapes, tnuml, expression, flags1))
+                        InsertExpression(reshapes, ins->dc.left, expression, ins, flags1);
+                    if (inductionThisLoop(ins->block, tnumr) || !GatherExpression(reshapes, tnumr, expression, rfFlags))
+                        InsertExpression(reshapes, ins->dc.right, expression, ins, rfFlags);
                     return true;
                 }
             }
@@ -207,15 +217,15 @@ static bool GatherExpression(int tx, RESHAPE_EXPRESSION* expression, int flags)
             if (ins->dc.left->size < ISZ_FLOAT && ins->dc.right->size < ISZ_FLOAT)
             {
                 int tnum = ins->dc.left->offset->sp->i;
-                int flags1 = flags;
-                RESHAPE_LIST* re;
+                int flags1 = rfFlags;
+                ReshapeList* re;
                 if (ins->dc.opcode == i_sub)
-                    flags ^= RF_NEG;
+                    rfFlags ^= RF_NEG;
 
-                flags |= (ins->dc.opcode == i_lsl ? RF_SHIFT : 0);
-                InsertExpression(ins->dc.right, expression, ins, flags);
-                if (inductionThisLoop(ins->block, tnum) || !GatherExpression(tnum, expression, flags1))
-                    InsertExpression(ins->dc.left, expression, ins, flags1);
+                rfFlags |= (ins->dc.opcode == i_lsl ? RF_SHIFT : 0);
+                InsertExpression(reshapes, ins->dc.right, expression, ins, rfFlags);
+                if (inductionThisLoop(ins->block, tnum) || !GatherExpression(reshapes, tnum, expression, flags1))
+                    InsertExpression(reshapes, ins->dc.left, expression, ins, flags1);
                 return true;
             }
         }
@@ -224,38 +234,39 @@ static bool GatherExpression(int tx, RESHAPE_EXPRESSION* expression, int flags)
             if (ins->dc.left->size < ISZ_FLOAT && ins->dc.right->size < ISZ_FLOAT)
             {
                 int tnum = ins->dc.right->offset->sp->i;
-                int flags1 = flags;
-                RESHAPE_LIST* re;
+                int flags1 = rfFlags;
+                ReshapeList* re;
                 if (ins->dc.opcode == i_sub)
-                    flags ^= RF_NEG;
-                flags |= (ins->dc.opcode == i_lsl ? RF_SHIFT : 0);
-                if (inductionThisLoop(ins->block, tnum) || !GatherExpression(tnum, expression, flags))
-                    InsertExpression(ins->dc.right, expression, ins, flags);
-                InsertExpression(ins->dc.left, expression, ins, flags1);
+                    rfFlags ^= RF_NEG;
+                rfFlags |= (ins->dc.opcode == i_lsl ? RF_SHIFT : 0);
+                if (inductionThisLoop(ins->block, tnum) || !GatherExpression(reshapes, tnum, expression, rfFlags))
+                    InsertExpression(reshapes, ins->dc.right, expression, ins, rfFlags);
+                InsertExpression(reshapes, ins->dc.left, expression, ins, flags1);
                 return true;
             }
         }
     }
     return false;
 }
-static void CreateExpressionLists(void)
+static void CreateExpressionLists(std::vector<ReshapeExpression*>& expressions,
+                                  std::unordered_map<int, std::shared_ptr<ReshapeList>>& reshapes, int firstTempCount)
 {
     int i;
-    for (i = 0; i < cachedTempCount; i++)
+    for (i = 0; i < firstTempCount; i++)
     {
         if (tempInfo[i]->expressionRoot)
         {
             if (tempInfo[i]->enode->sizeFromType < ISZ_FLOAT)
             {
-                Loop* lp = tempInfo[i]->instructionDefines->block->loopParent;
+                Loop* lp = InstructionDefinesSsa[i]->block->loopParent;
                 /* if the prior of the entry is a critical block,
                  * then don't optimize the loop
                  */
                 if (lp->entry->pred && !lp->entry->pred->block->critical)
                 {
-                    enum i_ops op = tempInfo[i]->instructionDefines->dc.opcode;
-                    tempInfo[i]->expression.op = op;
-                    (void)GatherExpression(i, &tempInfo[i]->expression, 0);
+                    enum i_ops op = InstructionDefinesSsa[i]->dc.opcode;
+                    expressions[i]->op = op;
+                    (void)GatherExpression(reshapes, i, *expressions[i], 0);
                 }
                 else
                 {
@@ -269,97 +280,75 @@ static void CreateExpressionLists(void)
         }
     }
 }
-static RESHAPE_LIST* cloneReshape(RESHAPE_LIST* in)
+static void DistributeMultiplies(std::vector<ReshapeExpression*>& expressions, ReshapeExpression& re, ReshapeList& rl, int tnum)
 {
-    RESHAPE_LIST *rv = nullptr, **p = &rv;
-    while (in)
-    {
-        *p = tAllocate<RESHAPE_LIST>();
-        **p = *in;
-        (*p)->next = nullptr;
-        in = in->next;
-        p = &(*p)->next;
-    }
-    return rv;
-}
-static void DistributeMultiplies(RESHAPE_EXPRESSION* re, RESHAPE_LIST* rl, int tnum)
-{
-    RESHAPE_LIST *temp = tempInfo[tnum]->expression.list, *replace = nullptr;
+    ReshapeList* replace = nullptr;
     int n = INT_MAX;
-    while (temp)
+    for (auto&& temp : expressions[tnum]->reshapeList)
     {
-        if (!temp->distributed && temp != rl)
+        if (!temp.second->distributed && temp.second->rpOrder != rl.rpOrder)
         {
             int tnx;
-            if (temp->im->offset->type != se_tempref)
+            if (temp.second->im->offset->type != se_tempref)
             {
-                replace = temp;
+                replace = temp.second.get();
                 break;
             }
-            tnx = temp->im->offset->sp->i;
-            if (tempInfo[tnx]->expression.count < n)
+            tnx = temp.second->im->offset->sp->i;
+            if (expressions[tnx]->count < n)
             {
-                n = tempInfo[tnx]->expression.count;
-                replace = temp;
+                n = expressions[tnum]->count;
+                replace = temp.second.get();
+                // should there be  abreak?
             }
         }
-        temp = temp->next;
     }
     if (replace)
     {
-        RESHAPE_LIST** temp1;
-        replace->distrib = cloneReshape(re->list);
+        replace->distrib = re.reshapeList;
         replace->distributed = true;
-        temp1 = &tempInfo[tnum]->expression.list;
-        while (*temp1)
-        {
-            if (*temp1 == rl)
-            {
-                *temp1 = (*temp1)->next;
-                break;
-            }
-            temp1 = &(*temp1)->next;
-        }
+
+        expressions[tnum]->reshapeList.erase(rl.rpOrder);
     }
     else
-        rl->distributed = true;
+    {
+        rl.distributed = true;
+    }
 }
-static void ApplyDistribution(void)
+static void ApplyDistribution(std::vector<ReshapeExpression*>& expressions, int firstTempCount)
 {
     bool done = false;
     while (!done)
     {
         int i;
-        RESHAPE_EXPRESSION* next = nullptr;
-        RESHAPE_LIST* rl = nullptr;
+        ReshapeExpression* next = nullptr;
+        ReshapeList* rl = nullptr;
         int n = 0;
         int match = 0;
-        for (i = 0; i < cachedTempCount; i++)
+        for (i = 0; i < firstTempCount; i++)
         {
             if (tempInfo[i]->expressionRoot)
             {
-                switch (tempInfo[i]->expression.op)
+                switch (expressions[i]->op)
                 {
                     case i_mul:
                     case i_lsl: {
-                        RESHAPE_LIST* l = tempInfo[i]->expression.list;
-                        while (l)
+                        for (auto&& l : expressions[i]->reshapeList)
                         {
-                            if (!l->distributed)
+                            if (!l.second->distributed)
                             {
-                                if (l->im->offset->type == se_tempref)
+                                if (l.second->im->offset->type == se_tempref)
                                 {
-                                    RESHAPE_EXPRESSION* re = &tempInfo[l->im->offset->sp->i]->expression;
+                                    ReshapeExpression* re = expressions[l.second->im->offset->sp->i];
                                     if (re->count > n)
                                     {
                                         n = re->count;
                                         next = re;
                                         match = i;
-                                        rl = l;
+                                        rl = l.second.get();
                                     }
                                 }
                             }
-                            l = l->next;
                         }
                     }
                     break;
@@ -371,10 +360,12 @@ static void ApplyDistribution(void)
         if (next)
         {
             done = false;
-            DistributeMultiplies(next, rl, match);
+            DistributeMultiplies(expressions, *next, *rl, match);
         }
         else
+        {
             done = true;
+        }
     }
 }
 static void replaceIM(IMODE** iml, IMODE* im)
@@ -419,7 +410,7 @@ static void CopyExpressionTree(enum i_ops op, Block* b, QUAD* insertBefore, IMOD
     if ((*iml) && (*iml)->offset->type == se_tempref)
     {
         int tnum = (*iml)->offset->sp->i;
-        QUAD* def = tempInfo[tnum]->instructionDefines;
+        QUAD* def = InstructionDefinesSsa[tnum];
 
         IMODE* im = nullptr;
         auto it = nm_hash.find(&(*iml)->offset->sp->imvalue);
@@ -447,7 +438,7 @@ static void CopyExpressionTree(enum i_ops op, Block* b, QUAD* insertBefore, IMOD
     if ((*imr) && (*imr)->offset->type == se_tempref)
     {
         int tnum = (*imr)->offset->sp->i;
-        QUAD* def = tempInfo[tnum]->instructionDefines;
+        QUAD* def = InstructionDefinesSsa[tnum];
         IMODE* im = nullptr;
         auto it = nm_hash.find(&(*imr)->offset->sp->imvalue);
         if (it != nm_hash.end())
@@ -565,27 +556,23 @@ void unmarkPreSSA(QUAD* ins)
 {
     if ((ins->temps & TEMP_ANS) && ins->ans->mode == i_direct)
     {
-        auto uses1 = tempInfo[ins->ans->offset->sp->i]->instructionUses;
+        InstructionUsesSsa[ins->ans->offset->sp->i];
         tempInfo[ins->ans->offset->sp->i]->preSSATemp = -1;
-        if (uses1)
+        for (auto uses : InstructionUsesSsa[ins->ans->offset->sp->i])
         {
-            for (auto uses : *uses1)
-            {
-                unmarkPreSSA(uses);
-            }
+            unmarkPreSSA(uses);
         }
     }
 }
-static void RewriteAdd(Block* b, int tnum)
+static void RewriteAdd(std::vector<ReshapeExpression*>& expressions, Block* b, int tnum)
 {
-    RESHAPE_LIST* gather = tempInfo[tnum]->expression.list;
-    IMODE *left = tempInfo[tnum]->expression.lastName, *right = nullptr;
-    int size = tempInfo[tnum]->instructionDefines->ans->size;
+    IMODE *left = expressions[tnum]->lastName, *right = nullptr;
+    int size = InstructionDefinesSsa[tnum]->ans->size;
     QUAD* ia;
     int flagsl = 0, flagsr;
     if (b == nullptr)
     {
-        ia = tempInfo[tnum]->instructionDefines;
+        ia = InstructionDefinesSsa[tnum];
         if (!ia)
             return;
     }
@@ -596,56 +583,58 @@ static void RewriteAdd(Block* b, int tnum)
         ia = blockArray[b->loopParent->entry->idom]->tail;
         ia = beforeJmp(ia, false);
     }
-    while (gather && (!b || gather->im->mode == i_immed ||
-                      (!variantThisLoop(b, gather->im->offset->sp->i) && usedThisLoop(b, gather->im->offset->sp->i))))
+    for (auto& gather : expressions[tnum]->reshapeList)
     {
-        if (!gather->genned)
+        if (!(!b || gather.second->im->mode == i_immed ||
+              (!variantThisLoop(b, gather.second->im->offset->sp->i) && usedThisLoop(b, gather.second->im->offset->sp->i))))
         {
-            gather->genned = true;
-            if (!left && (tempInfo[tnum]->expression.op == i_add || tempInfo[tnum]->expression.op == i_sub))
+            if (!gather.second->genned)
             {
-                if (gather->flags & RF_NEG)
+                gather.second->genned = true;
+                if (!left && (expressions[tnum]->op == i_add || expressions[tnum]->op == i_sub))
                 {
-                    /* optimization to avoid generating an extraneous i_neg when possible */
+                    if (gather.second->rfFlags & RF_NEG)
+                    {
+                        /* optimization to avoid generating an extraneous i_neg when possible */
 #if 0
-                        RESHAPE_LIST **l = &gather->next;
-                        while (*l)
-                        {
-                            if (!((*l)->flags & RF_NEG))
+                            ReshapeList **l = &gather.second.next;
+                            while (*l)
                             {
-                                RESHAPE_LIST *t = *l;
-                                *l = gather;
-                                (*l)->next = t->next;
-                                t->next = gather;
-                                gather = t;
+                                if (!((*l)->rfFlags & RF_NEG))
+                                {
+                                    ReshapeList *t = *l;
+                                    *l = gather;
+                                    (*l)->next = t->next;
+                                    t->next = gather;
+                                    gather = t;
+                                }
+                                l = &(*l)->next;
                             }
-                            l = &(*l)->next;
-                        }
 #endif
+                    }
+                }
+                if (!left)
+                {
+                    left = gather.second->im;
+                    flagsl = gather.second->rfFlags;
+                }
+                else
+                {
+                    right = gather.second->im;
+                    flagsr = gather.second->rfFlags;
+                }
+                if (left && right)
+                {
+                    left = InsertAddInstruction(b, size, ia, flagsl, left, flagsr, right);
+                    flagsl = 0;
                 }
             }
-            if (!left)
-            {
-                left = gather->im;
-                flagsl = gather->flags;
-            }
-            else
-            {
-                right = gather->im;
-                flagsr = gather->flags;
-            }
-            if (left && right)
-            {
-                left = InsertAddInstruction(b, size, ia, flagsl, left, flagsr, right);
-                flagsl = 0;
-            }
         }
-        gather = gather->next;
     }
-    tempInfo[tnum]->expression.lastName = left;
+    expressions[tnum]->lastName = left;
     if (left)
         nm_hash[&tempInfo[tnum]->enode->sp->imvalue] = left;
-    ia = tempInfo[tnum]->instructionDefines;
+    ia = InstructionDefinesSsa[tnum];
     if (ia && left)  // && !inductionThisLoop(ia->block, tnum))
     {
         unmarkPreSSA(ia);
@@ -669,49 +658,50 @@ static void RewriteAdd(Block* b, int tnum)
         ia->temps &= ~TEMP_RIGHT;
     }
 }
-static IMODE* RewriteDistributed(Block* b, int size, IMODE* im, QUAD* ia, RESHAPE_LIST* distrib, int flags)
+static IMODE* RewriteDistributed(Block* b, int size, IMODE* im, QUAD* ia, std::map<int, std::shared_ptr<ReshapeList>>& distrib,
+                                 int rfFlags)
 {
-    IMODE* total = distrib->lastDistribName;
-    RESHAPE_LIST* gather = distrib;
-    int flagsr;
-    while (gather && (!b || gather->im->mode == i_immed ||
-                      (!variantThisLoop(b, gather->im->offset->sp->i) && usedThisLoop(b, gather->im->offset->sp->i))))
+    IMODE* total = distrib.begin()->second->lastDistribName;
+    std::map<int, std::shared_ptr<ReshapeList>>::iterator it;
+    for (it = distrib.begin(); it != distrib.end(); ++it)
     {
-        if (!gather->genned)
+        auto gather = (*it).second.get();
+        if (!(!b || gather->im->mode == i_immed ||
+              (!variantThisLoop(b, gather->im->offset->sp->i) && usedThisLoop(b, gather->im->offset->sp->i))))
         {
-            IMODE* left = InsertMulInstruction(b, size, ia, flags, im, gather->flags, gather->im);
-            gather->genned = true;
-            if (!total)
+            if (!gather->genned)
             {
-                total = left;
-            }
-            else
-            {
-                total = InsertAddInstruction(b, size, ia, 0, total, 0, left);
+                IMODE* left = InsertMulInstruction(b, size, ia, rfFlags, im, gather->rfFlags, gather->im);
+                gather->genned = true;
+                if (!total)
+                {
+                    total = left;
+                }
+                else
+                {
+                    total = InsertAddInstruction(b, size, ia, 0, total, 0, left);
+                }
             }
         }
-        gather = gather->next;
     }
-    if (gather)
+    if (it != distrib.end())
     {
-        distrib->lastDistribName = total;
+        (*it).second->lastDistribName = total;
         return nullptr;
     }
     return total;
 }
-static void RewriteMul(Block* b, int tnum)
+static void RewriteMul(std::vector<ReshapeExpression*>& expressions, Block* b, int tnum)
 {
-    RESHAPE_LIST* gather = tempInfo[tnum]->expression.list;
-    if (gather)
+    if (expressions[tnum]->reshapeList.size())
     {
-        IMODE *left = tempInfo[tnum]->expression.lastName, *right = nullptr;
+        IMODE *left = expressions[tnum]->lastName, *right = nullptr;
         int flagsl = 0, flagsr;
-        int size = tempInfo[tnum]->instructionDefines->ans->size;
+        int size = InstructionDefinesSsa[tnum]->ans->size;
         QUAD* ia;
-        RESHAPE_LIST* current = gather;
         if (b == nullptr)
         {
-            ia = tempInfo[tnum]->instructionDefines;
+            ia = InstructionDefinesSsa[tnum];
             if (!ia)
                 return;
         }
@@ -723,54 +713,58 @@ static void RewriteMul(Block* b, int tnum)
             ia = beforeJmp(ia, false);
         }
         // should be a branch of some sort at ia....
-        while (current && (!b || current->im->mode == i_immed ||
-                           (!variantThisLoop(b, current->im->offset->sp->i) && usedThisLoop(b, current->im->offset->sp->i))))
+        for (auto&& current : expressions[tnum]->reshapeList)
         {
-            if (!current->genned && !current->distrib)
+            if (!(!b || current.second->im->mode == i_immed ||
+                  (!variantThisLoop(b, current.second->im->offset->sp->i) && usedThisLoop(b, current.second->im->offset->sp->i))))
             {
-                current->genned = true;
-                if (!left)
+                if (!current.second->genned && current.second->distrib.empty())
                 {
-                    left = current->im;
-                    flagsl = current->flags;
-                }
-                else
-                {
-                    right = current->im;
-                    flagsr = current->flags;
-                }
-                if (left && right)
-                {
-                    left = InsertMulInstruction(b, size, ia, flagsl, left, flagsr, right);
-                    flagsl = 0;
-                }
-            }
-            current = current->next;
-        }
-        tempInfo[tnum]->expression.lastName = left;
-        while (gather && (!b || gather->im->mode == i_immed ||
-                          (!variantThisLoop(b, gather->im->offset->sp->i) && usedThisLoop(b, gather->im->offset->sp->i))))
-        {
-            if (gather->distrib && !gather->genned)
-            {
-                IMODE* im = RewriteDistributed(b, size, gather->im, ia, gather->distrib, gather->flags);
-                if (im)
-                {
-                    if (tempInfo[tnum]->expression.lastName)
+                    current.second->genned = true;
+                    if (!left)
                     {
-                        tempInfo[tnum]->expression.lastName =
-                            InsertMulInstruction(b, size, ia, 0, im, gather->flags, tempInfo[tnum]->expression.lastName);
-                        gather->genned = true;
+                        left = current.second->im;
+                        flagsl = current.second->rfFlags;
                     }
                     else
-                        tempInfo[tnum]->expression.lastName = im;
+                    {
+                        right = current.second->im;
+                        flagsr = current.second->rfFlags;
+                    }
+                    if (left && right)
+                    {
+                        left = InsertMulInstruction(b, size, ia, flagsl, left, flagsr, right);
+                        flagsl = 0;
+                    }
                 }
             }
-            gather = gather->next;
+        }
+        expressions[tnum]->lastName = left;
+        for (auto&& gather : expressions[tnum]->reshapeList)
+        {
+            if (!(!b || gather.second->im->mode == i_immed ||
+                  (!variantThisLoop(b, gather.second->im->offset->sp->i) && usedThisLoop(b, gather.second->im->offset->sp->i))))
+            {
+                if (!gather.second->distrib.empty() && !gather.second->genned)
+                {
+                    IMODE* im = RewriteDistributed(b, size, gather.second->im, ia, gather.second->distrib, gather.second->rfFlags);
+                    if (im)
+                    {
+                        if (expressions[tnum]->lastName)
+                        {
+                            expressions[tnum]->lastName =
+                                InsertMulInstruction(b, size, ia, 0, im, gather.second->rfFlags, expressions[tnum]->lastName);
+                            gather.second->genned = true;
+                        }
+                        else
+                            expressions[tnum]->lastName = im;
+                    }
+                }
+            }
         }
         if (left)
             nm_hash[&tempInfo[tnum]->enode->sp->imvalue] = left;
-        ia = tempInfo[tnum]->instructionDefines;
+        ia = InstructionDefinesSsa[tnum];
         if (ia && left)  // && !inductionThisLoop(ia->block, tnum))
         {
             unmarkPreSSA(ia);
@@ -778,7 +772,7 @@ static void RewriteMul(Block* b, int tnum)
             {
                 RemoveFromUses(ia, ia->dc.left->offset->sp->i);
             }
-            ia->dc.left = tempInfo[tnum]->expression.lastName;
+            ia->dc.left = expressions[tnum]->lastName;
             if (ia->dc.left && ia->dc.left->offset->type == se_tempref)
             {
                 InsertUses(ia, ia->dc.left->offset->sp->i);
@@ -791,7 +785,7 @@ static void RewriteMul(Block* b, int tnum)
         }
     }
 }
-static void RewriteInvariantExpressions(Block* b)
+static void RewriteInvariantExpressions(std::vector<ReshapeExpression*>& expressions, Block* b, int firstTempCount)
 {
     BLOCKLIST* bl = b->dominates;
     int i;
@@ -799,11 +793,11 @@ static void RewriteInvariantExpressions(Block* b)
     decltype(nm_hash) old_nm_hash(nm_hash);
     in_hash.clear();
     nm_hash.clear();
-    for (i = 0; i < cachedTempCount; i++)
+    for (i = 0; i < firstTempCount; i++)
     {
-        if (tempInfo[i]->expressionRoot && tempInfo[i]->size < ISZ_FLOAT && tempInfo[i]->instructionDefines->block == b)
+        if (tempInfo[i]->expressionRoot && tempInfo[i]->size < ISZ_FLOAT && InstructionDefinesSsa[i]->block == b)
         {
-            switch (tempInfo[i]->expression.op)
+            switch (expressions[i]->op)
             {
                 case i_assn:
                 case i_phi:
@@ -813,11 +807,11 @@ static void RewriteInvariantExpressions(Block* b)
                 case i_or:
                 case i_eor:
                 case i_and:
-                    RewriteAdd(b, i);
+                    RewriteAdd(expressions, b, i);
                     break;
                 case i_mul:
                 case i_lsl:
-                    RewriteMul(b, i);
+                    RewriteMul(expressions, b, i);
                     break;
                 default:
                     diag("RewriteExpressions: invalid expression type");
@@ -827,20 +821,20 @@ static void RewriteInvariantExpressions(Block* b)
     }
     while (bl)
     {
-        RewriteInvariantExpressions(bl->block);
+        RewriteInvariantExpressions(expressions, bl->block, firstTempCount);
         bl = bl->next;
     }
     in_hash = std::move(old_in_hash);
     nm_hash = std::move(old_nm_hash);
 }
-void RewriteInnerExpressions(void)
+void RewriteInnerExpressions(std::vector<ReshapeExpression*>& expressions, int firstTempCount)
 {
     int i;
-    for (i = 0; i < cachedTempCount; i++)
+    for (i = 0; i < firstTempCount; i++)
     {
         if (tempInfo[i]->expressionRoot && tempInfo[i]->size < ISZ_FLOAT)
         {
-            switch (tempInfo[i]->expression.op)
+            switch (expressions[i]->op)
             {
                 case i_assn:
                 case i_phi:
@@ -850,11 +844,11 @@ void RewriteInnerExpressions(void)
                 case i_or:
                 case i_eor:
                 case i_and:
-                    RewriteAdd(nullptr, i);
+                    RewriteAdd(expressions, nullptr, i);
                     break;
                 case i_mul:
                 case i_lsl:
-                    RewriteMul(nullptr, i);
+                    RewriteMul(expressions, nullptr, i);
                     break;
                 default:
                     diag("RewriteExpressions: invalid expression type");
@@ -865,18 +859,19 @@ void RewriteInnerExpressions(void)
 }
 void Reshape(void)
 {
-    cachedTempCount = tempCount;
+    std::vector<ReshapeExpression*> expressions;
+    std::unordered_map<int, std::shared_ptr<ReshapeList>> reshapes;
+
+    int cachedTempCount = tempCount;
     CalculateInduction();
-    CreateExpressionLists();
-    ApplyDistribution(); /* assumes the lists are already sorted */
+    CreateExpressionLists(expressions, reshapes, cachedTempCount);
+    ApplyDistribution(expressions, cachedTempCount); /* assumes the lists are already sorted */
     nm_hash.clear();
     in_hash.clear();
-    RewriteInvariantExpressions(blockArray[0]);
-    RewriteInnerExpressions();
+    RewriteInvariantExpressions(expressions, blockArray[0], cachedTempCount);
+    RewriteInnerExpressions(expressions, cachedTempCount);
 #ifdef XXXXX
     DumpInvariants();
 #endif
-    tFree();
-    briggsFreet();
 }
 }  // namespace Optimizer

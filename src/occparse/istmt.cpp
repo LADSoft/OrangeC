@@ -807,7 +807,7 @@ void gen_asm(Statement* stmt)
 #ifndef ORANGE_NO_INASM
     Optimizer::QUAD* newQuad;
     newQuad = Allocate<Optimizer::QUAD>();
-    newQuad->dc.opcode = Optimizer::i_passthrough;
+    newQuad->dc.opcode = Optimizer::i_inlineasm;
     newQuad->dc.left = (Optimizer::IMODE*)stmt->select; /* actually is defined by the INASM module*/
     newQuad->assemblyRegs = stmt->assemblyRegs;
     newQuad->assemblyRegCount = strlen((char*)stmt->assemblyRegs);
@@ -1242,7 +1242,6 @@ void genfunc(SYMBOL* funcsp, bool doOptimize)
     }
     genreturn(0, funcsp, F_NEEDEPILOG, allocaAP);
     gen_func(funcexp, 0);
-    tFree();
 
     InsertParameterThunks(funcsp, Optimizer::blockArray[1]);
     StatementGenerator::FreeLocalContext(emptyBlockdata, funcsp, Optimizer::nextLabel++);

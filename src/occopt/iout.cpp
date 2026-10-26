@@ -43,7 +43,6 @@
 #include "iflow.h"
 #include "optmain.h"
 #include "iout.h"
-#include "ioptutil.h"
 #include "output.h"
 #include "ilocal.h"
 #include "optmodules.h"
@@ -107,7 +106,7 @@ static void iop_line(Optimizer::QUAD* q)
 
 /*-------------------------------------------------------------------------*/
 
-static void iop_passthrough(Optimizer::QUAD* q) { oprintf(icdFile, "PASSTHROUGH\n"); }
+static void iop_inlineasm(Optimizer::QUAD* q) { oprintf(icdFile, "PASSTHROUGH\n"); }
 static void iop_datapassthrough(Optimizer::QUAD* q) { oprintf(icdFile, "ASM DATA\n"); }
 static void iop_skipcompare(Optimizer::QUAD* q) { oprintf(icdFile, "\tskipcompare %d\n", q->dc.v.label); }
 /*-------------------------------------------------------------------------*/
@@ -765,7 +764,7 @@ static void (*oplst[])(Optimizer::QUAD* q) = {
     iop_nop,
     iop_phi,
     iop_line,
-    iop_passthrough,
+    iop_inlineasm,
     iop_datapassthrough,
     iop_skipcompare,
     iop_label,
@@ -906,13 +905,13 @@ void putconst(Optimizer::SimpleExpression* offset, int color)
                 else
                     oprintf(icdFile, "T%d", (int)sym->i);
                 if (registersAssigned && color != -1)
-                    oprintf(icdFile, "(%s)", lookupRegName(color));
+                    oprintf(icdFile, "(%s)", lookupRegName(color).c_str());
             }
             else
             {
                 oprintf(icdFile, "TUnknown");
                 if (registersAssigned && color != -1)
-                    oprintf(icdFile, "(%s)", lookupRegName(color));
+                    oprintf(icdFile, "(%s)", lookupRegName(color).c_str());
             }
             break;
         case Optimizer::se_auto:
@@ -1427,7 +1426,7 @@ static void PutData(BaseData* data)
             break;
     }
 }
-const char* lookupRegName(int regnum)
+const std::string& lookupRegName(int regnum)
 {
     if (regnum < Optimizer::chosenAssembler->arch->registerCount)
         return Optimizer::chosenAssembler->arch->regNames[regnum].name;

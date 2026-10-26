@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -24,11 +24,13 @@
  */
 
 #pragma once
-
+#include <unordered_set>
+#include <unordered_map>
 namespace Optimizer
 {
-extern int* dfst;
-extern BriggsSet* globalVars;
+extern std::set<int> globalVars;
+extern std::unordered_map<int, std::set<int>> liveInTemps;
+extern std::unordered_map<int, std::set<int>> liveOutTemps;
 
 QUAD* beforeJmp(QUAD* I, bool before);
 void removeDead(Block* b);

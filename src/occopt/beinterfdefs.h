@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -24,7 +24,7 @@
  */
 
 #pragma once
-
+#include <set>
 #include "browsedefs.h"
 #include "ppCommon.h"
 
@@ -117,7 +117,7 @@ typedef struct
     bool prm_makelib;            /* make library */
     int prm_stackprotect;        /* stack protection mode */
     int prm_netcore_version;     /* .net core version to compile against.   0 = none, NetCore::DummyNeedsLatest = latest*/
-    bool prm_exportAll;              /* export all symbols */
+    bool prm_exportAll;          /* export all symbols */
     bool prm_viaassembly;        /* compile via assembly */
 } COMPILER_PARAMS;
 
@@ -167,37 +167,37 @@ typedef struct
     int mantissa_bits;
 } ARCH_FLOAT;
 
-typedef struct _regdesc
+struct ARCH_REGDESC
 {
-    const char* name;
-    unsigned pushMask;
-    int reg1live;
-    int reg2live;
-    int aliasCount;
-    unsigned short aliases[32];
-    BITINT* aliasBits;
-} ARCH_REGDESC;
+    std::string name;
+    int pushMask;
+    std::vector<int> regs;
+    std::vector<int> aliasRegs;
+};
 
-typedef struct _regclass
+struct ARCH_REGCLASS
 {
-    struct _regclass* next;
+    ARCH_REGCLASS(ARCH_REGCLASS* Next, std::initializer_list<int> Regs, int adjust = 0) : next(Next), regs(Regs)
+    {
+        regCount = Regs.size() + adjust;
+    }
+    ARCH_REGCLASS* next;
+    std::vector<int> regs;
+    std::set<int> aliasRegs;
     int regCount;
-    unsigned short* regs;
     int vertex;
     int index;
-    short* saturationBound;
-    BITINT* regBits;
-    BITINT* aliasBits;
-} ARCH_REGCLASS;
+    std::vector<int> saturationBound;
+};
 
-typedef struct _regvertex
+struct ARCH_REGVERTEX
 {
-    struct _regclass* cls;
-    struct _regvertex *left, *right;
+    ARCH_REGCLASS* cls;
+    struct ARCH_REGVERTEX *left, *right;
+    struct ARCH_REGVERTEX* parent;
+    std::set<int> aliasRegs;
     int index;
-    struct _regvertex* parent;
-    BITINT* aliasBits;
-} ARCH_REGVERTEX;
+};
 
 enum e_pm
 {
@@ -340,7 +340,7 @@ typedef struct _arch_gen
     void (*post_function_gen)(struct SimpleSymbol* funcsp, QUAD* list); /* called after function body is generated */
     void (*finalGen)(void);                                             /* end of code generation, lits have been dumped */
     void (*internalConflict)(QUAD* q);                                  /* enter a conflict for this instruction if necessary */
-    int (*preRegAlloc)(QUAD* ins, BriggsSet* globals, BriggsSet* eobGlobals,
+    int (*preRegAlloc)(QUAD* ins, std::set<int>& globals, std::set<int>& eobGlobals,
                        int pass);                                     /* allow access to the quad list before register allocation */
     void (*preColor)(QUAD* q);                                        /* precolor an instruction */
     void (*gen_strlab)(struct SimpleSymbol* sp);                      /* generate a named label */
@@ -602,10 +602,8 @@ typedef struct
 #define beGetLabel Optimizer::nextLabel++
 #define beSetProcSymbol(x) set_symbol(x, true)
 #define beSetDataSymbol(x) set_symbol(x, false)
-#define beLocalAlloc(x) Alloc(x)
 #define beCompilerVersion version
 #define beGetKeywordData identdata
-#define beGlobalAlloc(x) globalAlloc(x)
 
 extern COMPILER_PARAMS cparams;
 extern int nextLabel;

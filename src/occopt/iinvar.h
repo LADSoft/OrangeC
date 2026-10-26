@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -27,12 +27,6 @@
 
 namespace Optimizer
 {
-static struct reflist
-{
-    struct reflist* next;
-    QUAD* old;
-    QUAD* newVal;
-}* refs;
 
 IMODE* loadVarInd(IMODE* loadVar, int size);
 void ScanForInvariants(Block* b);

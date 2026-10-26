@@ -29,6 +29,8 @@
  * icode optimization structures
  */
 #include <set>
+#include <list>
+#include "containers.h"
 #define DUMP_GCSE_INFO
 
 /* the int types can be negative, which means 'signed' vs 'unsigned' */
@@ -71,13 +73,58 @@
 namespace Optimizer
 {
 
+template <class T>
+class TestableList
+{
+  public:
+    void clear()
+    {
+        set.clear();
+        list.clear();
+    }
+    auto begin() { return list.begin(); }
+    auto end() { return list.end(); }
+    void push_back(T val)
+    {
+        set.insert(val);
+        list.push_back(val);
+    }
+    void pop_back()
+    {
+        if (list.size())
+        {
+            set.erase(list.back());
+            list.pop_back();
+        }
+    }
+    void push(T val) { push_back(val); }
+    void pop() { return pop_back(); }
+    void push_front(T val)
+    {
+        set.insert(val);
+        list.push_front(val);
+    }
+    void pop_front()
+    {
+        if (list.size())
+        {
+            set.erase(list.front());
+            list.pop_front();
+        }
+    }
+    auto top() { return list.back(); }
+    auto test(T val) { return set.find(val) != set.end(); }
+    bool empty() { return list.empty(); }
+
+  private:
+    std::set<T> set;
+    std::list<T> list;
+};
 /*
  * basic blocks are kept in this type of structure
  * and marked with an i_block inn the icode
  */
 #define BLOCKLIST_VISITED 1
-
-struct BriggsSet;
 
 enum vop
 {
@@ -91,7 +138,6 @@ typedef struct _value_of
     enum vop type;
     IMODE* imode;
 } VALUEOF;
-typedef std::set<QUAD*> InstructionList;
 typedef struct _im_list
 {
     struct _im_list* next;
@@ -116,15 +162,9 @@ typedef struct _pressure
 } PRESSURE;
 typedef struct usesStrength
 {
-    struct usesStrength* next;
     IMODE* multiplier;
     int strengthName;
 } USES_STRENGTH;
-typedef struct inductionList
-{
-    struct inductionList* next;
-    ILIST* vars;
-} INDUCTION_LIST;
 
 enum e_lptype
 {
@@ -133,24 +173,13 @@ enum e_lptype
     LT_ROOT,
     LT_BLOCK
 };
-struct LOOPLIST
-{
-    struct LOOPLIST* next;
-    struct Loop* loop;
-};
-
 struct Loop
 {
-    struct Loop* next;
     enum e_lptype type;
     int loopnum;
     struct Block* entry; /* will be the block for blocks */
     struct Loop* parent;
-    LOOPLIST* contains;
-    BITINT* invariantPhiList;
     struct _blocklist* successors;
-    BriggsSet* blocks;
-    INDUCTION_LIST* inductionSets;
 };
 
 typedef struct copieshash
@@ -158,30 +187,6 @@ typedef struct copieshash
     struct copiesshash* next;
     QUAD* ins;
 } COPIESHASH;
-
-#define RF_NOT 1
-#define RF_NEG 2
-#define RF_SHIFT 4
-
-typedef struct reshape_list
-{
-    struct reshape_list* next;
-    struct reshape_list* distrib; /* distributive lists for multiplication */
-    IMODE* im;
-    IMODE* lastDistribName;
-    short flags : 4; /* holds the RF values */
-    short flags2 : 4;
-    short distributed : 1;
-    short genned : 1;
-    short rporder;
-} RESHAPE_LIST;
-typedef struct
-{
-    enum i_ops op;
-    RESHAPE_LIST* list;
-    short count;
-    IMODE* lastName;
-} RESHAPE_EXPRESSION;
 
 typedef struct _normlist
 {
@@ -191,47 +196,26 @@ typedef struct _normlist
 } NORMLIST;
 struct TempInfo
 {
-    ILIST* renameStack;
-    LIST* bdefines;
-    LIST* idefines;
-    LIST* iuses;
-    struct quad* instructionDefines;
     struct quad* storesUses;
-    struct Block* blockDefines;
-    InstructionList* instructionUses;
-    // originally instructionUses was a linked list; the first element of the list (last thing inserted)
+    // originally InstructionUsesSsa[] was a linked list; the first element of the list (last thing inserted)
     // was checked in rewritex86.cpp.   When I changed it to a set and used the QUAD address as the set element type
     // this became wrong but the results were sometimes erratic, which could cause builds to fail.
     // so we introduced this field to bring things back to the original stable condition.
     QUAD* instructionUsesLast;
-    IMODE* spillVar;
-    IMODE* spillAlias;
     Optimizer::SimpleExpression* enode;
-    QUAD* spillTag;
     IMODE* newname;
     IMODE* newnameind;
-    ILIST* elimPredecessors;
-    ILIST* elimSuccessors;
     //	int limitUseCount;
     LIMIT_USES* limitUses;
-    LIST* quietRegions;
     Loop* variantLoop;
     VALUEOF value;
-    RESHAPE_EXPRESSION expression;
     IMODE* inductionReplacement;
-    LIST* loadsIn;
-    LIST* loadsOut;
-    LIST* storesIn;
-    LIST* storesOut;
-    BITINT* workingMoves;
-    USES_STRENGTH* sl;
     BITINT* uses;
     BITINT* terms;
     BITINT* indTerms;
     IMODE* copy;
     NORMLIST* currentNormal;
     int strengthRename;
-    struct _regclass* regClass;
     bool ptUIV;
     enum
     {
@@ -241,29 +225,17 @@ struct TempInfo
     } ptrMode;
     int preSSATemp;
     int postSSATemp;
-    int spillCost;
-    int* rawSqueeze;
-    int squeeze;
-    int degree;
-    int regCount;
-    int color;
     int partition;
     int dfstOrder;
     int temp;
     int inductionLoop; /* 0 = none, else outermost enclosing loop */
     int oldInductionVar;
-    unsigned spilled : 1;
-    unsigned triedSpill : 1;
-    unsigned spillTemp : 1;
-    unsigned onstack : 1;
     unsigned usedAsAddress : 1;
     unsigned usedAsFloat : 1;
     unsigned visiteddfst : 1;
     unsigned expressionRoot : 1;
-    unsigned doGlobal : 1; /* is being used, can do global opt */
     unsigned cachedForLoad : 1;
     unsigned cachedForStore : 1;
-    unsigned precolored : 1;
     unsigned liveAcrossFunctionCall : 1;
     unsigned liveAcrossBlock : 1;
     unsigned inductionInitVar : 1;
@@ -271,9 +243,7 @@ struct TempInfo
     unsigned iuTemp : 1;
     unsigned termClear : 1;
     unsigned degreed : 1;
-    unsigned directSpill : 1;
     unsigned ircinitial : 1;
-    unsigned spilling : 1;
     char size;
 };
 
@@ -288,14 +258,13 @@ struct Block
 {
     int blocknum;
     /*        short dfstnum; */
-    int critical : 1;
-    int dead : 1;
-    int unuseThunk : 1;
-    int stopdfst : 1;
-    int visiteddfst : 1;
-    int onstack : 1;
-    int globalChanged : 1;
-    int alwayslive : 1;
+    unsigned critical : 1;
+    unsigned dead : 1;
+    unsigned unuseThunk : 1;
+    unsigned stopdfst : 1;
+    unsigned visiteddfst : 1;
+    unsigned globalChanged : 1;
+    unsigned alwayslive : 1;
     short callcount;
     short preWalk;
     short postWalk;
@@ -312,16 +281,8 @@ struct Block
     struct _blocklist* loopGenerators;
     Loop* loopParent;
     Loop* inclusiveLoopParent;
-    Loop* loopName;
 
-    /*		struct _blocklist *defines; */
-    std::set<unsigned>* liveGen;
-    std::set<unsigned>* liveKills;
-    std::set<unsigned>* liveIn;
-    std::set<unsigned>* liveOut;
     QUAD *head, *tail;
-    struct _blocklist* edgereached;
-    LIST* occurs;
 };
 
 typedef struct _blocklist
@@ -339,37 +300,4 @@ enum e_fgtype
     F_BACKEDGE,
     F_CROSSEDGE
 };
-/*------------------------------------------------------------------------- */
-/*
- * common code elimination uses this to track
- * all the gotos branching to a given label
- */
-typedef struct _comgo
-{
-    char size;
-    QUAD *head, *tail;
-} COMGOREC;
-/*
- * DAG structures
- */
-
-typedef struct _list2
-{
-    struct _list2* next;
-    int id;
-    struct _l2data
-    {
-        IMODE* ans;
-        QUAD* val;
-    } data;
-} LIST2;
-
-/*-------------------------------------------------------------------------*/
-
-typedef struct _list3
-{
-    struct _list3* next;
-    IMODE* ans;
-    LIST* decllist;
-} LIST3;
 }  // namespace Optimizer

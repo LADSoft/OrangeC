@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -24,9 +24,12 @@
  */
 
 #pragma once
-
+#include <unordered_set>
 namespace Optimizer
 {
+extern SimpleVector<FastList<Loop*>> loopContains;
+extern std::vector<TestableList<int>> blocksInLoop;
+extern std::vector<std::list<std::list<int>>> loopInductionSets;
 extern std::vector<Loop*> loopArray;
 extern int loopCount;
 
@@ -34,6 +37,5 @@ void CancelInfinite(int orgBlockCount);
 void RemoveInfiniteThunks(void);
 void BuildLoopTree(void);
 bool isAncestor(Loop* l1, Loop* l2);
-LIST* strongRegiondfs(int tnum);
 void CalculateInduction(void);
 }  // namespace Optimizer

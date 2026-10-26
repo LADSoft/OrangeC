@@ -89,7 +89,7 @@ void CleanupInlineAnonymousVars()
     bool uses_substack_or_passthrough = false;
     for (auto head = Optimizer::intermed_head; head; head = head->fwd)
     {
-        uses_substack_or_passthrough = (head->dc.opcode == Optimizer::i_substack) || (head->dc.opcode == Optimizer::i_passthrough);
+        uses_substack_or_passthrough = (head->dc.opcode == Optimizer::i_substack) || (head->dc.opcode == Optimizer::i_inlineasm);
     }
     bool minimalOpts =
         currentFunction->xc || !currentFunction->canThrow || Optimizer::cparams.prm_stackprotect || uses_substack_or_passthrough;

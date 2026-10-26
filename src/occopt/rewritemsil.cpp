@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -71,7 +71,7 @@ int msil_examine_icode(QUAD* head)
     {
         if (head->dc.opcode != i_block && head->dc.opcode != i_blockend && head->dc.opcode != i_dbgblock &&
             head->dc.opcode != i_dbgblockend && head->dc.opcode != i_var && head->dc.opcode != i_label &&
-            head->dc.opcode != i_line && head->dc.opcode != i_passthrough && head->dc.opcode != i_func &&
+            head->dc.opcode != i_line && head->dc.opcode != i_inlineasm && head->dc.opcode != i_func &&
             head->dc.opcode != i_gosub && head->dc.opcode != i_parmadj && head->dc.opcode != i_ret &&
             head->dc.opcode != i_varstart && head->dc.opcode != i_parmblock && head->dc.opcode != i_coswitch &&
             head->dc.opcode != i_swbranch && head->dc.opcode != i_expressiontag && head->dc.opcode != i__initobj &&

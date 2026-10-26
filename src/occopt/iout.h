@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -32,6 +32,6 @@ void putconst(SimpleExpression* offset, int color);
 void putlen(int l);
 void putamode(QUAD* q, IMODE* ap);
 void put_code(QUAD* q);
-const char* lookupRegName(int regnum);
+const std::string& lookupRegName(int regnum);
 void OutputIcdFile(void);
 }  // namespace Optimizer

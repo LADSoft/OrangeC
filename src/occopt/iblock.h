@@ -33,6 +33,9 @@ void IncrementQuadCount();  // defined in the frontend and in optmain.cpp
 };
 namespace Optimizer
 {
+extern std::vector<QUAD*> InstructionDefinesSsa;
+extern SimpleVector<FastList<QUAD*>> InstructionUsesSsa;
+extern std::vector<Block*> BlockDefinesSsa;
 extern std::vector<TempInfo*> tempInfo;
 extern std::vector<Block*> blockArray;
 
@@ -53,7 +56,7 @@ int ToQuadConst(IMODE** im);
 bool usesAddress(IMODE* im);
 void flush_dag(bool leaveAddresses = false);
 void dag_rundown(void);
-BLOCKLIST* newBlock(void);
+Block* NewBlock(void);
 void addblock(int val);
 void gen_label(int labno);
 QUAD* gen_icode_with_conflict(enum i_ops op, IMODE* res, IMODE* left, IMODE* right, bool conflicting, bool atomic = false);

@@ -1,7 +1,7 @@
 /* Software License Agreement
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -38,14 +38,16 @@
 #include "OptUtils.h"
 #include "ildata.h"
 #include "optmain.h"
-#include "ioptutil.h"
 #include "memory.h"
+#include "irc.h"
 
 void diag(const char* fmt, ...) {}
 
 namespace Optimizer
 {
-BriggsSet* killed;
+SimpleVector<FastList<QUAD*>> instructionDefines;
+SimpleVector<FastList<QUAD*>> instructionUses;
+SimpleVector<FastList<Block*>> blockDefines;
 int tempBottom, nextTemp;
 
 IMODE* InitTempOpt(int size1, int size2);
@@ -285,7 +287,6 @@ static void RenameOneSym(SimpleSymbol* sym, int structret)
 }
 static void RenameToTemps(std::vector<SimpleSymbol*>& functionVariables)
 {
-    LIST* lst;
     bool doRename = true;
     CalculateFastcall(currentFunction, functionVariables);
     doRename &= !dontOptimizeFunction;
@@ -315,7 +316,7 @@ static void CreateAssemblyTemps()
     QUAD* head = intermed_head;
     while (head)
     {
-        if (head->dc.opcode == i_passthrough)
+        if (head->dc.opcode == i_inlineasm)
         {
             head->assemblyTempRegStart = tempCount;
             for (int i = 0; i < head->assemblyRegCount; i++)
@@ -335,7 +336,7 @@ static void CreateAssemblyTemps()
     }
 }
 
-static int AllocTempOpt(int size1)
+static int AllocatempOpt(int size1)
 {
     int t;
     int i;
@@ -361,6 +362,8 @@ static int AllocTempOpt(int size1)
     if (t >= tempInfo.size())
     {
         tempInfo.resize(t + 1001);
+        colors.resize(t + 1001);
+        precolored.resize(t + 1001);
     }
     if (!tempInfo[t])
     {
@@ -373,13 +376,13 @@ static int AllocTempOpt(int size1)
     tempInfo[t]->enode = rv->offset;
     nextTemp = t;
     tempInfo[t]->partition = t;
-    tempInfo[t]->color = -1;
+    colors[t] = -1;
     tempInfo[t]->inUse = true;
     return t;
 }
 IMODE* InitTempOpt(int size1, int size2)
 {
-    int t = AllocTempOpt(size1);
+    int t = AllocatempOpt(size1);
     tempInfo[t]->preSSATemp = -1;
     tempInfo[t]->postSSATemp = -1;
     tempInfo[t]->oldInductionVar = -1;
@@ -403,19 +406,22 @@ static void InitTempInfo(void)
     int i;
     nextTemp = tempBottom = tempCount;
     tempInfo.clear();
-    tempInfo.resize(tempCount);
+    tempInfo.resize(tempCount + 10000);
+    colors.clear();
+    colors.resize(tempCount + 10000);
+    precolored.clear();
+    precolored.resize(tempCount + 10000);
 
     for (i = 0; i < tempCount; i++)
     {
         tempInfo[i] = oAllocate<TempInfo>();
         tempInfo[i]->partition = i;
-        tempInfo[i]->color = -1;
         tempInfo[i]->inUse = true;
     }
     while (head)
     {
         head->temps = 0;
-        if (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode != i_label)
+        if (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_inlineasm && head->dc.opcode != i_label)
         {
             if (head->ans && (head->ans->mode == i_ind || head->ans->mode == i_direct))
             {
@@ -489,38 +495,26 @@ static void InitTempInfo(void)
 }
 void insertDefines(QUAD* head, Block* b, int tnum)
 {
-    LIST* l = oAllocate<LIST>();
-    l->data = (void*)head;
-    l->next = tempInfo[tnum]->idefines;
-    tempInfo[tnum]->idefines = l;
-
-    l = oAllocate<LIST>();
-    l->data = (void*)b;
-    l->next = tempInfo[tnum]->bdefines;
-    tempInfo[tnum]->bdefines = l;
+    instructionDefines[tnum].push_back(head);
+    blockDefines[tnum].push_back(b);
 }
 void insertUses(QUAD* head, int dest)
 {
-    LIST** l = &tempInfo[dest]->iuses;
-    while (*l)
+    for (auto q : instructionUses[dest])
     {
-        if ((*l)->data == (void*)head)
+        if (q == head)
             return;
-        l = &(*l)->next;
     }
-    *l = oAllocate<LIST>();
-    (*l)->data = (void*)head;
+    instructionUses[dest].push_back(head);
 }
 void definesInfo(void)
 {
+    instructionDefines.clear();
+    instructionDefines.resize(tempCount + 4000);
+    blockDefines.clear();
+    blockDefines.resize(tempCount + 4000);
     QUAD* head = intermed_head;
     Block* block = nullptr;
-    int i;
-    for (i = 0; i < tempCount; i++)
-    {
-        tempInfo[i]->bdefines = nullptr;
-        tempInfo[i]->idefines = nullptr;
-    }
     while (head)
     {
         if (head->dc.opcode == i_block)
@@ -535,12 +529,9 @@ void definesInfo(void)
 }
 void usesInfo(void)
 {
+    instructionUses.clear();
+    instructionUses.resize(tempCount);
     QUAD* head = intermed_head;
-    int i;
-    for (i = 0; i < tempCount; i++)
-    {
-        tempInfo[i]->iuses = nullptr;
-    }
     while (head)
     {
         if ((head->temps & TEMP_ANS) && head->ans->mode == i_ind)

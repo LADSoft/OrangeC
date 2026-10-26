@@ -423,7 +423,7 @@ struct ArgList
     enum i_ops
     {
         /* note, the branches MUST be higher in the ordering than the sets */
-        i_nop, i_phi, i_line, i_passthrough, i_datapassthrough, i_skipcompare,
+        i_nop, i_phi, i_line, i_inlineasm, i_datapassthrough, i_skipcompare,
         i_label, i_asmgoto, i_goto, i_computedgoto,
         i_gosub, i_fargosub, i_trap, i_int, i_ret,
         i_fret, i_rett, i_add, i_sub, i_udiv, i_umod, i_sdiv, i_smod, i_muluh, i_mulsh, i_mul,

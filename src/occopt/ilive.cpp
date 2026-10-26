@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -32,25 +32,25 @@
 #include <cstdio>
 #include <malloc.h>
 #include <cstring>
+#include <unordered_set>
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
 #include "config.h"
 #include "iblock.h"
 #include "OptUtils.h"
 #include "ildata.h"
-#include "ioptutil.h"
 #include "iflow.h"
 #include "memory.h"
 #include "ilive.h"
+#include "optmain.h"
 
 namespace Optimizer
 {
-int* dfst;
-BriggsSet* globalVars;
-
-static BriggsSet* visited;
-static BriggsSet* worklist;
-static BriggsSet* livelist;
+std::set<int> globalVars;
+std::unordered_map<int, std::set<int>> liveInTemps;
+std::unordered_map<int, std::set<int>> liveOutTemps;
+static std::unordered_map<int, std::set<int>> liveGenTemps;
+static std::unordered_map<int, std::set<int>> liveKillsTemps;
 static bool hasPhi;
 QUAD* beforeJmp(QUAD* I, bool before)
 {
@@ -94,7 +94,7 @@ QUAD* beforeJmp(QUAD* I, bool before)
 }
 static void liveSetup(void)
 {
-    BriggsSet* exposed = briggsAllocs(tempCount);
+    std::set<int> exposed;
     int i;
     for (i = 0; i < blockCount; i++)
     {
@@ -103,7 +103,7 @@ static void liveSetup(void)
         {
             QUAD* tail = blk->tail;
             int j;
-            briggsClear(exposed);
+            exposed.clear();
             do
             {
                 if (tail->dc.opcode == i_phi)
@@ -111,26 +111,26 @@ static void liveSetup(void)
                     PHIDATA* pd = tail->dc.v.phi;
                     struct _phiblock* pb = pd->temps;
                     hasPhi = true;
-                    briggsReset(exposed, pd->T0);
-                    blk->liveGen->erase(pd->T0);
-                    blk->liveKills->insert(pd->T0);
+                    exposed.erase(pd->T0);
+                    liveGenTemps[blk->blocknum].erase(pd->T0);
+                    liveKillsTemps[blk->blocknum].insert(pd->T0);
                     while (pb)
                     {
-                        briggsSet(exposed, pb->Tn);
-                        blk->liveGen->insert(pb->Tn);
+                        exposed.insert(pb->Tn);
+                        liveGenTemps[blk->blocknum].insert(pb->Tn);
                         pb = pb->next;
                     }
                 }
-                else if (tail->dc.opcode == i_passthrough)
+                else if (tail->dc.opcode == i_inlineasm)
                 {
                     int tnum = tail->assemblyTempRegStart;
-                    briggsReset(exposed, tnum);
-                    blk->liveGen->erase(tnum);
-                    blk->liveKills->insert(tnum);
+                    exposed.erase(tnum);
+                    liveGenTemps[blk->blocknum].erase(tnum);
+                    liveKillsTemps[blk->blocknum].insert(tnum);
                     for (int i = 1; i < tail->assemblyRegCount; i++)
                     {
-                        briggsSet(exposed, tnum + i);
-                        blk->liveGen->insert(tnum + i);
+                        exposed.insert(tnum + i);
+                        liveGenTemps[blk->blocknum].insert(tnum + i);
                     }
                 }
                 else
@@ -140,21 +140,21 @@ static void liveSetup(void)
                         if (tail->ans->mode == i_direct)
                         {
                             int tnum = tail->ans->offset->sp->i;
-                            briggsReset(exposed, tnum);
-                            blk->liveGen->erase(tnum);
-                            blk->liveKills->insert(tnum);
+                            exposed.erase(tnum);
+                            liveGenTemps[blk->blocknum].erase(tnum);
+                            liveKillsTemps[blk->blocknum].insert(tnum);
                         }
                         else if (tail->ans->mode == i_ind)
                         {
                             if (tail->ans->offset)
                             {
-                                briggsSet(exposed, tail->ans->offset->sp->i);
-                                blk->liveGen->insert(tail->ans->offset->sp->i);
+                                exposed.insert(tail->ans->offset->sp->i);
+                                liveGenTemps[blk->blocknum].insert(tail->ans->offset->sp->i);
                             }
                             if (tail->ans->offset2)
                             {
-                                briggsSet(exposed, tail->ans->offset2->sp->i);
-                                blk->liveGen->insert(tail->ans->offset2->sp->i);
+                                exposed.insert(tail->ans->offset2->sp->i);
+                                liveGenTemps[blk->blocknum].insert(tail->ans->offset2->sp->i);
                             }
                         }
                     }
@@ -165,13 +165,13 @@ static void liveSetup(void)
                             {
                                 if (tail->dc.left->offset)
                                 {
-                                    briggsSet(exposed, tail->dc.left->offset->sp->i);
-                                    blk->liveGen->insert(tail->dc.left->offset->sp->i);
+                                    exposed.insert(tail->dc.left->offset->sp->i);
+                                    liveGenTemps[blk->blocknum].insert(tail->dc.left->offset->sp->i);
                                 }
                                 if (tail->dc.left->offset2)
                                 {
-                                    briggsSet(exposed, tail->dc.left->offset2->sp->i);
-                                    blk->liveGen->insert(tail->dc.left->offset2->sp->i);
+                                    exposed.insert(tail->dc.left->offset2->sp->i);
+                                    liveGenTemps[blk->blocknum].insert(tail->dc.left->offset2->sp->i);
                                 }
                             }
                         }
@@ -180,27 +180,26 @@ static void liveSetup(void)
                         {
                             if (tail->dc.right->offset)
                             {
-                                briggsSet(exposed, tail->dc.right->offset->sp->i);
-                                blk->liveGen->insert(tail->dc.right->offset->sp->i);
+                                exposed.insert(tail->dc.right->offset->sp->i);
+                                liveGenTemps[blk->blocknum].insert(tail->dc.right->offset->sp->i);
                             }
                             if (tail->dc.right->offset2)
                             {
-                                briggsSet(exposed, tail->dc.right->offset2->sp->i);
-                                blk->liveGen->insert(tail->dc.right->offset2->sp->i);
+                                exposed.insert(tail->dc.right->offset2->sp->i);
+                                liveGenTemps[blk->blocknum].insert(tail->dc.right->offset2->sp->i);
                             }
                         }
                 }
                 if (tail != blk->head) /* in case tail == head */
                     tail = tail->back; /* skipping the actual block statement */
             } while (tail != blk->head);
-            briggsUnion(globalVars, exposed);
+            std::set<int> temp;
+            std::set_union(globalVars.begin(), globalVars.end(), exposed.begin(), exposed.end(), std::inserter(temp, temp.begin()));
+            globalVars = std::move(temp);
         }
     }
-    for (i = 0; i < globalVars->top; i++)
-    {
-        int t = globalVars->data[i], j;
+    for (auto t : globalVars)
         tempInfo[t]->liveAcrossBlock = true;
-    }
 }
 static void liveOut()
 {
@@ -253,35 +252,37 @@ static void liveOut()
         reverseOrder.pop_front();
         Block* b = blockArray[n];
         b->visiteddfst = false;  // visited this pass (flag has taken on negative logic
-        b->liveOut->clear();
-        std::set<unsigned> temp, temp1;
+        liveOutTemps[b->blocknum].clear();
+        std::set<int> temp, temp1;
         // for each successor
         BLOCKLIST* bl = b->succ;
         while (bl)
         {
             // add the successor's livein nodes to our liveout nodes
-            std::set_union(b->liveOut->begin(), b->liveOut->end(), bl->block->liveIn->begin(), bl->block->liveIn->end(),
+            std::set_union(liveOutTemps[b->blocknum].begin(), liveOutTemps[b->blocknum].end(),
+                           liveInTemps[bl->block->blocknum].begin(), liveInTemps[bl->block->blocknum].end(),
                            std::inserter(temp, temp.begin()));
-            *b->liveOut = std::move(temp);
+            liveOutTemps[b->blocknum] = std::move(temp);
             bl = bl->next;
         }
 
         // this next bit recalculates the liveIn for this block
         // the next bit calculates gen | (liveout & ~kills)
-        for (auto i : *b->liveOut)
+        for (auto i : liveOutTemps[b->blocknum])
         {
             // livout & ~kills
-            if (b->liveKills->find(i) == b->liveKills->end())
+            if (liveKillsTemps[b->blocknum].find(i) == liveKillsTemps[b->blocknum].end())
                 temp1.insert(i);
         }
         // add in gen
-        std::set_union(temp1.begin(), temp1.end(), b->liveGen->begin(), b->liveGen->end(), std::inserter(temp, temp.begin()));
+        std::set_union(temp1.begin(), temp1.end(), liveGenTemps[b->blocknum].begin(), liveGenTemps[b->blocknum].end(),
+                       std::inserter(temp, temp.begin()));
 
         // if liveIn has changed
-        if (*b->liveIn != temp)
+        if (liveInTemps[b->blocknum] != temp)
         {
             // assign the new liveIn
-            *b->liveIn = std::move(temp);
+            liveInTemps[b->blocknum] = std::move(temp);
 
             // for each predecessor
             bl = b->pred;
@@ -317,19 +318,16 @@ static void liveOut()
                         t->fwd->back = t->back;
                 }
 
-                if (blockArray[i]->liveOut)
-                {
-                    QUAD* q = Allocate<QUAD>();
-                    t = blockArray[i]->tail;
-                    q->dc.opcode = i_blockend;
-                    q->dc.v.data = blockArray[i]->liveOut;
-                    q->block = blockArray[i];
-                    q->fwd = t->fwd;
-                    q->back = t;
-                    if (t->fwd)
-                        t->fwd->back = q;
-                    t->fwd = q;
-                }
+                QUAD* q = Allocate<QUAD>();
+                t = blockArray[i]->tail;
+                q->dc.opcode = i_blockend;
+                q->dc.v.data = &liveOutTemps[i];
+                q->block = blockArray[i];
+                q->fwd = t->fwd;
+                q->back = t;
+                if (t->fwd)
+                    t->fwd->back = q;
+                t->fwd = q;
             }
         }
     }
@@ -361,7 +359,7 @@ static void killPhiPaths1(void)
                         {
                             if (pb->Tn != pb2->Tn)
                             {
-                                bl->block->liveKills->insert(pb2->Tn);
+                                liveKillsTemps[bl->block->blocknum].insert(pb2->Tn);
                             }
                             pb2 = pb2->next;
                         }
@@ -400,7 +398,7 @@ static void killPhiPaths2(void)
                         struct _phiblock* pb2 = pd->temps;
                         while (pb2)
                         {
-                            bl->block->liveOut->erase(pb2->Tn);
+                            liveOutTemps[bl->block->blocknum].erase(pb2->Tn);
                             pb2 = pb2->next;
                         }
                         pb = pb->next;
@@ -413,12 +411,12 @@ static void killPhiPaths2(void)
         }
     }
 }
-static void markLiveInstruction(BriggsSet* live, QUAD* ins)
+static void markLiveInstruction(std::unordered_set<int>& live, QUAD* ins)
 {
     switch (ins->dc.opcode)
     {
         case i_parmadj:
-        case i_passthrough:
+        case i_inlineasm:
         case i_line:
         case i_varstart:
         case i_dbgblock:
@@ -476,13 +474,13 @@ static void markLiveInstruction(BriggsSet* live, QUAD* ins)
             ins->live = true;
             break;
         case i_phi:
-            if (briggsTest(live, ins->dc.v.phi->T0))
+            if (live.find(ins->dc.v.phi->T0) != live.end())
             {
                 struct _phiblock* pb = ins->dc.v.phi->temps;
                 ins->live = true;
                 while (pb)
                 {
-                    briggsSet(live, pb->Tn);
+                    live.insert(pb->Tn);
                     pb = pb->next;
                 }
             }
@@ -491,7 +489,7 @@ static void markLiveInstruction(BriggsSet* live, QUAD* ins)
             if (!(ins->temps & TEMP_ANS) || ins->ans->mode == i_ind ||
                 ((chosenAssembler->arch->denyopts & DO_NODEADPUSHTOTEMP) && ins->ans->offset->sp->pushedtotemp))
                 ins->live = true;
-            else if ((ins->temps & TEMP_ANS) && briggsTest(live, ins->ans->offset->sp->i))
+            else if ((ins->temps & TEMP_ANS) && live.find(ins->ans->offset->sp->i) != live.end())
                 ins->live = true;
 
             break;
@@ -502,14 +500,14 @@ static void markLiveInstruction(BriggsSet* live, QUAD* ins)
         {
             if (ins->ans->mode == i_direct)
             {
-                briggsReset(live, ins->ans->offset->sp->i);
+                live.erase(ins->ans->offset->sp->i);
             }
             else if (ins->ans->mode == i_ind)
             {
                 if (ins->ans->offset)
-                    briggsSet(live, ins->ans->offset->sp->i);
+                    live.insert(ins->ans->offset->sp->i);
                 if (ins->ans->offset2)
-                    briggsSet(live, ins->ans->offset2->sp->i);
+                    live.insert(ins->ans->offset2->sp->i);
             }
         }
         if (ins->temps & TEMP_LEFT)
@@ -517,9 +515,9 @@ static void markLiveInstruction(BriggsSet* live, QUAD* ins)
             if (ins->dc.left->mode == i_direct || ins->dc.left->mode == i_ind)
             {
                 if (ins->dc.left->offset)
-                    briggsSet(live, ins->dc.left->offset->sp->i);
+                    live.insert(ins->dc.left->offset->sp->i);
                 if (ins->dc.left->offset2)
-                    briggsSet(live, ins->dc.left->offset2->sp->i);
+                    live.insert(ins->dc.left->offset2->sp->i);
             }
         }
         if (ins->temps & TEMP_RIGHT)
@@ -527,17 +525,16 @@ static void markLiveInstruction(BriggsSet* live, QUAD* ins)
             if (ins->dc.right->mode == i_direct || ins->dc.right->mode == i_ind)
             {
                 if (ins->dc.right->offset)
-                    briggsSet(live, ins->dc.right->offset->sp->i);
+                    live.insert(ins->dc.right->offset->sp->i);
                 if (ins->dc.right->offset2)
-                    briggsSet(live, ins->dc.right->offset2->sp->i);
+                    live.insert(ins->dc.right->offset2->sp->i);
             }
         }
     }
 }
 void removeDead(Block* b)
 {
-    static BriggsSet* live;
-    BITINT* p;
+    std::unordered_set<int> live;
     int j, k;
     QUAD* tail;
     BLOCKLIST* bl;
@@ -546,7 +543,7 @@ void removeDead(Block* b)
     {
         int i;
         liveVariables();
-        live = briggsAlloc(tempCount);
+        live.clear();
         for (i = 0; i < blockCount; i++)
             if (blockArray[i])
             {
@@ -560,11 +557,11 @@ void removeDead(Block* b)
             }
     }
     b->visiteddfst = true;
-    briggsClear(live);
-    for (auto l : *b->liveOut)
-    {
-        briggsSet(live, l);
-    }
+    live.clear();
+    std::unordered_set<int> temp;
+    std::set_union(live.begin(), live.end(), liveOutTemps[b->blocknum].begin(), liveOutTemps[b->blocknum].end(),
+                   std::inserter(temp, temp.begin()));
+    live = std::move(temp);
     tail = b->tail;
     while (tail != b->head->back)
     {
@@ -624,38 +621,16 @@ void removeDead(Block* b)
 void liveVariables(void)
 {
     int i;
-    sFree();
-    briggsFrees();
     hasPhi = false;
-    globalVars = briggsAllocs(tempCount);
-    worklist = briggsAllocs(blockCount);
-    livelist = briggsAllocs(blockCount);
-    visited = briggsAllocs(blockCount);
+    globalVars.clear();
     int ccount = 0;
     for (i = 0; i < tempCount; i++)
         if (tempInfo[i]->inUse)
             ccount++;
-    for (i = 0; i < blockCount; i++)
-    {
-        if (blockArray[i])
-        {
-            if (!blockArray[i]->liveGen)
-            {
-                blockArray[i]->liveGen = new std::set<unsigned>();
-                blockArray[i]->liveKills = new std::set<unsigned>();
-                blockArray[i]->liveIn = new std::set<unsigned>();
-                blockArray[i]->liveOut = new std::set<unsigned>();
-            }
-            else
-            {
-                // at the end of the function processing these will be dangling...
-                blockArray[i]->liveGen->clear();
-                blockArray[i]->liveKills->clear();
-                blockArray[i]->liveIn->clear();
-                blockArray[i]->liveOut->clear();
-            }
-        }
-    }
+    liveGenTemps.clear();
+    liveKillsTemps.clear();
+    liveInTemps.clear();
+    liveOutTemps.clear();
     for (i = 0; i < tempCount; i++)
     {
         tempInfo[i]->liveAcrossBlock = false;
@@ -666,5 +641,7 @@ void liveVariables(void)
     liveOut();
     if (hasPhi)
         killPhiPaths2();
+    // liveGenTemps.clear();
+    // liveKillsTemps.clear();
 }
 }  // namespace Optimizer

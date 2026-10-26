@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -22,15 +22,15 @@
  *
  *
  */
-
+#include <unordered_set>
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
 #include "config.h"
 #include "iblock.h"
 #include "OptUtils.h"
 #include "ilive.h"
-#include "ioptutil.h"
 #include "optmain.h"
+#include "irc.h"
 
 namespace Optimizer
 {
@@ -40,10 +40,9 @@ void Prealloc(int pass)
     int tempCountIn = tempCount;
     int i;
     bool done = false;
-    BriggsSet* eobGlobals;
+    std::set<int> eobGlobals;
     liveVariables();
-    globalVars = briggsAlloc(tempCount * 2 < 100 ? 100 : tempCount * 2);
-    eobGlobals = briggsAlloc(tempCount * 2 < 100 ? 100 : tempCount * 2);
+    globalVars.clear();
     for (; pass < 11 && !done; pass++)
     {
         for (i = 0; i < blockCount; i++)
@@ -52,40 +51,40 @@ void Prealloc(int pass)
             {
                 QUAD* tail = blockArray[i]->tail;
                 int j, k;
-                briggsClear(globalVars);
-                briggsClear(eobGlobals);
-                for (auto i : *blockArray[i]->liveOut)
+                globalVars.clear();
+                eobGlobals.clear();
+                for (auto i : liveOutTemps[i])
                 {
-                    briggsSet(globalVars, i);
-                    briggsSet(eobGlobals, i);
+                    globalVars.insert(i);
+                    eobGlobals.insert(i);
                 }
                 while (tail != blockArray[i]->head)
                 {
                     if ((tail->temps & TEMP_ANS) && (tail->ans->mode == i_direct))
                     {
-                        briggsReset(globalVars, tail->ans->offset->sp->i);
+                        globalVars.erase(tail->ans->offset->sp->i);
                     }
                     PreRegAlloc(tail, globalVars, eobGlobals, pass);
                     if ((tail->temps & TEMP_ANS) && (tail->ans->mode == i_ind))
                     {
                         if (tail->ans->offset)
-                            briggsSet(globalVars, tail->ans->offset->sp->i);
+                            globalVars.insert(tail->ans->offset->sp->i);
                         if (tail->ans->offset2)
-                            briggsSet(globalVars, tail->ans->offset2->sp->i);
+                            globalVars.insert(tail->ans->offset2->sp->i);
                     }
                     if (tail->temps & TEMP_LEFT)
                     {
                         if (tail->dc.left->offset)
-                            briggsSet(globalVars, tail->dc.left->offset->sp->i);
+                            globalVars.insert(tail->dc.left->offset->sp->i);
                         if (tail->dc.left->offset2)
-                            briggsSet(globalVars, tail->dc.left->offset2->sp->i);
+                            globalVars.insert(tail->dc.left->offset2->sp->i);
                     }
                     if (tail->temps & TEMP_RIGHT)
                     {
                         if (tail->dc.right->offset)
-                            briggsSet(globalVars, tail->dc.right->offset->sp->i);
+                            globalVars.insert(tail->dc.right->offset->sp->i);
                         if (tail->dc.right->offset2)
-                            briggsSet(globalVars, tail->dc.right->offset2->sp->i);
+                            globalVars.insert(tail->dc.right->offset2->sp->i);
                     }
                     tail = tail->back;
                 }
@@ -104,13 +103,13 @@ void CalculateBackendLives(void)
             QUAD* tail = blockArray[i]->tail;
             QUAD* head = blockArray[i]->head;
             unsigned long long liveRegs = 0;
-            int j, k;
+            int j, t;
             int gosubcolor = -1;
-            for (auto i : *blockArray[i]->liveOut)
+            for (auto j : liveOutTemps[i])
             {
-                liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[i]->color].reg1live;
-                if (chosenAssembler->arch->regNames[tempInfo[i]->color].reg2live >= 0)
-                    liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[i]->color].reg2live;
+                liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[colors[j]].regs[0];
+                if (chosenAssembler->arch->regNames[colors[j]].regs[1] >= 0)
+                    liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[colors[j]].regs[1];
             }
             while (tail != head)
             {
@@ -118,11 +117,9 @@ void CalculateBackendLives(void)
                 {
                     if (gosubcolor != -1)
                     {
-                        liveRegs &=
-                            ~(((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[gosubcolor]->color].reg1live);
-                        if (chosenAssembler->arch->regNames[tempInfo[gosubcolor]->color].reg2live >= 0)
-                            liveRegs &=
-                                ~(((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[gosubcolor]->color].reg2live);
+                        liveRegs &= ~(((unsigned long long)1) << chosenAssembler->arch->regNames[colors[gosubcolor]].regs[0]);
+                        if (chosenAssembler->arch->regNames[colors[gosubcolor]].regs[1] >= 0)
+                            liveRegs &= ~(((unsigned long long)1) << chosenAssembler->arch->regNames[colors[gosubcolor]].regs[1]);
                         gosubcolor = -1;
                     }
                 }
@@ -134,11 +131,9 @@ void CalculateBackendLives(void)
                         if (tail->ans->size < ISZ_FLOAT)
                         {
                             int tnum = tail->ans->offset->sp->i;
-                            liveRegs &=
-                                ~(((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg1live);
-                            if (chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live >= 0)
-                                liveRegs &=
-                                    ~(((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live);
+                            liveRegs &= ~(((unsigned long long)1) << chosenAssembler->arch->regNames[colors[tnum]].regs[0]);
+                            if (chosenAssembler->arch->regNames[colors[tnum]].regs[1] >= 0)
+                                liveRegs &= ~(((unsigned long long)1) << chosenAssembler->arch->regNames[colors[tnum]].regs[1]);
                         }
                     }
                     else
@@ -147,18 +142,16 @@ void CalculateBackendLives(void)
                         if (tail->ans->offset)
                         {
                             tnum = tail->ans->offset->sp->i;
-                            liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg1live;
-                            if (chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live >= 0)
-                                liveRegs |= ((unsigned long long)1)
-                                            << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live;
+                            liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[colors[tnum]].regs[0];
+                            if (chosenAssembler->arch->regNames[colors[tnum]].regs[1] >= 0)
+                                liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[colors[tnum]].regs[1];
                         }
                         if (tail->ans->offset2)
                         {
                             tnum = tail->ans->offset2->sp->i;
-                            liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg1live;
-                            if (chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live >= 0)
-                                liveRegs |= ((unsigned long long)1)
-                                            << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live;
+                            liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[colors[tnum]].regs[0];
+                            if (chosenAssembler->arch->regNames[colors[tnum]].regs[1] >= 0)
+                                liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[colors[tnum]].regs[1];
                         }
                     }
                 }
@@ -170,16 +163,16 @@ void CalculateBackendLives(void)
                         tnum = tail->dc.left->offset->sp->i;
                         if (tail->dc.left->retval)
                             gosubcolor = tnum;
-                        liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg1live;
-                        if (chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live >= 0)
-                            liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live;
+                        liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[colors[tnum]].regs[0];
+                        if (chosenAssembler->arch->regNames[colors[tnum]].regs[1] >= 0)
+                            liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[colors[tnum]].regs[1];
                     }
                     if (tail->dc.left->offset2)
                     {
                         tnum = tail->dc.left->offset2->sp->i;
-                        liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg1live;
-                        if (chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live >= 0)
-                            liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live;
+                        liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[colors[tnum]].regs[0];
+                        if (chosenAssembler->arch->regNames[colors[tnum]].regs[1] >= 0)
+                            liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[colors[tnum]].regs[1];
                     }
                 }
                 if (tail->temps & TEMP_RIGHT)
@@ -188,16 +181,16 @@ void CalculateBackendLives(void)
                     if ((tail->dc.right->offset) && (tail->dc.right->size < ISZ_FLOAT || tail->dc.right->mode == i_ind))
                     {
                         tnum = tail->dc.right->offset->sp->i;
-                        liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg1live;
-                        if (chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live >= 0)
-                            liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live;
+                        liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[colors[tnum]].regs[0];
+                        if (chosenAssembler->arch->regNames[colors[tnum]].regs[1] >= 0)
+                            liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[colors[tnum]].regs[1];
                     }
                     if (tail->dc.right->offset2)
                     {
                         tnum = tail->dc.right->offset2->sp->i;
-                        liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg1live;
-                        if (chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live >= 0)
-                            liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[tempInfo[tnum]->color].reg2live;
+                        liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[colors[tnum]].regs[0];
+                        if (chosenAssembler->arch->regNames[colors[tnum]].regs[1] >= 0)
+                            liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[colors[tnum]].regs[1];
                     }
                 }
                 if (tail->dc.opcode == i_coswitch)

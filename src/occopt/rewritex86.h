@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -36,7 +36,7 @@ void x86FastcallColor(QUAD* head);
 void x86PreColor(QUAD* head);
 void ProcessOneInd(SimpleExpression* match, SimpleExpression** ofs1, SimpleExpression** ofs2, SimpleExpression** ofs3, int* scale);
 void ProcessInd(SimpleExpression** ofs1, SimpleExpression** ofs2, SimpleExpression** ofs3, int* scale);
-int x86PreRegAlloc(QUAD* ins, BriggsSet* globalVars, BriggsSet* eobGlobals, int pass);
+int x86PreRegAlloc(QUAD* ins, std::set<int>& globalVars, std::set<int>& eobGlobals, int pass);
 int x86_examine_icode(QUAD* head);
 void x86InternalConflict(QUAD* head);
 }  // namespace Optimizer

@@ -53,7 +53,6 @@
 #include "ilstream.h"
 #include "ilunstream.h"
 #include "iconst.h"
-#include "ioptutil.h"
 #include "ipinning.h"
 #include "optmodules.h"
 #include "igcse.h"
@@ -160,7 +159,7 @@ void examine_icode(QUAD* head)
             break;
     }
 }
-int PreRegAlloc(QUAD* tail, BriggsSet* globalVars, BriggsSet* eobGlobals, int pass)
+int PreRegAlloc(QUAD* tail, std::set<int>& globalVars, std::set<int>& eobGlobals, int pass)
 {
     switch (architecture)
     {
@@ -175,7 +174,7 @@ int PreRegAlloc(QUAD* tail, BriggsSet* globalVars, BriggsSet* eobGlobals, int pa
 void CreateTempsAndBlocks(FunctionData* fd)
 {
     blockArray.clear();
-    blockArray.resize(blockCount);
+    blockArray.resize(blockCount + 1000);
     for (auto im : fd->imodeList)
     {
         if (im->offset)
@@ -262,7 +261,6 @@ void Optimize(SimpleSymbol* funcsp)
 
     /* backend modifies ICODE to improve code generation */
     examine_icode(intermed_head);
-
     /* register allocation - this first where we go into SSA form and backi s because
      * at this point for global allocation we had to reuse original
      * register names, but the register allocation phase works better
@@ -293,7 +291,6 @@ void Optimize(SimpleSymbol* funcsp)
 
         CalculateBackendLives();
     }
-    sFree();
     if (pinning)
     {
         RewriteForPinning();
@@ -321,7 +318,6 @@ void ProcessFunction(FunctionData* fd)
     // order is important on these next two, to get the stack initialized properly
     CreateBufferOverflowStubs(intermed_head, intermed_tail);
     CreateUninitializedVariableStubs(intermed_head, intermed_tail);
-    tFree();
     oFree();
 }
 void ProcessFunctions()
@@ -366,7 +362,6 @@ bool LoadFile(SharedMemory* parserMem)
 {
     bool rv = InputIntermediate(parserMem);
     flow_init();
-    BitInit();
     SSAInit();
     oinit();
     constoptinit();
@@ -377,6 +372,7 @@ bool LoadFile(SharedMemory* parserMem)
 }
 void SaveFile(std::string& name, SharedMemory* optimizerMem)
 {
+    cparams.prm_icdfile = true;
     OutputIntermediate(optimizerMem);
     if (WriteIcdFile.GetValue() || (cparams.prm_icdfile && !name.empty()))
     {

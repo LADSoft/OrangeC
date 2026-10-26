@@ -42,14 +42,16 @@
 #include "beinterfdefs.h"
 #include "config.h"
 #include "iblock.h"
-#include "OptUtils.h"
 #include "memory.h"
 #include "ilocal.h"
-
+#include "OptUtils.h"
 #define DOING_LCSE
 
 namespace Optimizer
 {
+std::vector<QUAD*> InstructionDefinesSsa;
+SimpleVector<FastList<QUAD*>> InstructionUsesSsa;
+std::vector<Block*> BlockDefinesSsa;
 std::vector<TempInfo*> tempInfo;
 std::vector<Block*> blockArray;
 
@@ -106,7 +108,7 @@ void add_intermed(Optimizer::QUAD* newQuad)
         case i_func:
             newQuad->ignoreMe = true;
             break;
-        case i_passthrough:
+        case i_inlineasm:
             break;
         default:
             if (newQuad->dc.left && newQuad->dc.left->runtimeData)
@@ -470,7 +472,7 @@ void dag_rundown(void)
 }
 
 /*-------------------------------------------------------------------------*/
-BLOCKLIST* newBlock(void)
+Block* NewBlock(void)
 {
     if (blockCount == 0)
     {
@@ -481,13 +483,10 @@ BLOCKLIST* newBlock(void)
         blockArray.resize(blockCount + 1000);
     }
     Block* block = Allocate<Block>();
-    BLOCKLIST* list = Allocate<BLOCKLIST>();
-    list->next = 0;
-    list->block = block;
     block->blocknum = blockCount++;
     blockArray[blockCount - 1] = block;
     currentBlock = block;
-    return list;
+    return block;
 }
 void addblock(int val)
 /*
@@ -515,10 +514,10 @@ void addblock(int val)
     q->dc.v.label = blockCount;
     add_intermed(q);
     /* now make a basic block and add to the blocklist */
-    list = newBlock();
-    list->block->head = intermed_tail;
-    list->block->tail = intermed_tail;
-    q->block = list->block;
+    auto block = NewBlock();
+    block->head = intermed_tail;
+    block->tail = intermed_tail;
+    q->block = block;
 }
 
 /*
@@ -772,17 +771,12 @@ void gen_nodag(enum i_ops op, Optimizer::IMODE* res, Optimizer::IMODE* left, Opt
 }
 void RemoveFromUses(Optimizer::QUAD* ins, int tnum)
 {
-    auto s = tempInfo[tnum]->instructionUses;
-    if (s)
-    {
-        s->erase(ins);
-    }
+    auto& s = InstructionUsesSsa[tnum];
+    s.remove(ins);
 }
 void InsertUses(Optimizer::QUAD* ins, int tnum)
 {
-    if (!tempInfo[tnum]->instructionUses)
-        tempInfo[tnum]->instructionUses = new InstructionList;
-    tempInfo[tnum]->instructionUses->insert(ins);
+    InstructionUsesSsa[tnum].push_front(ins);
     tempInfo[tnum]->instructionUsesLast = ins;
 }
 void RemoveInstruction(Optimizer::QUAD* ins)
@@ -819,7 +813,7 @@ void RemoveInstruction(Optimizer::QUAD* ins)
     {
         PHIDATA* pd = ins->dc.v.phi;
         struct _phiblock* pb = pd->temps;
-        tempInfo[pd->T0]->instructionDefines = nullptr;
+        InstructionDefinesSsa[pd->T0] = nullptr;
         while (pb)
         {
             RemoveFromUses(ins, pb->Tn);
@@ -832,7 +826,9 @@ void RemoveInstruction(Optimizer::QUAD* ins)
         {
             int tnum = ins->ans->offset->sp->i;
             if (ins->ans->mode == i_direct)
-                tempInfo[tnum]->instructionDefines = nullptr;
+            {
+                InstructionDefinesSsa[tnum] = nullptr;
+            }
             else
             {
                 if (ins->ans->offset)
@@ -874,7 +870,7 @@ void InsertInstruction(Optimizer::QUAD* before, Optimizer::QUAD* ins)
     {
         PHIDATA* pd = ins->dc.v.phi;
         struct _phiblock* pb = pd->temps;
-        tempInfo[pd->T0]->instructionDefines = ins;
+        InstructionDefinesSsa[pd->T0] = ins;
         while (pb)
         {
             InsertUses(ins, pb->Tn);
@@ -889,7 +885,7 @@ void InsertInstruction(Optimizer::QUAD* before, Optimizer::QUAD* ins)
             ins->temps |= TEMP_ANS;
             if (ins->ans->mode == i_direct)
             {
-                tempInfo[ins->ans->offset->sp->i]->instructionDefines = ins;
+                InstructionDefinesSsa[ins->ans->offset->sp->i] = ins;
             }
             else
             {

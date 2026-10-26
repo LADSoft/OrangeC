@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -614,8 +614,8 @@ void output_obj_file(void)
 
 void compile_start(char* name)
 {
-    Optimizer::LIST* newItem = beGlobalAllocate<Optimizer::LIST>();
-    newItem->data = beGlobalAllocate<char>(strlen(name) + 1);
+    Optimizer::LIST* newItem = globalAllocate<Optimizer::LIST>();
+    newItem->data = globalAllocate<char>(strlen(name) + 1);
     Utils::StrCpy((char*)newItem->data, strlen(name) + 1, name);
 
     oa_ini();

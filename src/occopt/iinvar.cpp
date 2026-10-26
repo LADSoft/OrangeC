@@ -28,7 +28,6 @@
 #include "iinvar.h"
 #include "iblock.h"
 #include "OptUtils.h"
-#include "ioptutil.h"
 #include "memory.h"
 #include "ilive.h"
 #include "ilocal.h"
@@ -64,42 +63,35 @@ static int current;
  */
 namespace Optimizer
 {
-static void EnterRef(QUAD* old, QUAD* newVal)
+static void WeedRefs(std::list<std::pair<QUAD*, QUAD*>>& refs)
 {
-    struct reflist* newRef = oAllocate<reflist>();
-    newRef->old = old;
-    newRef->newVal = newVal;
-    newRef->next = refs;
-    refs = newRef;
-}
-static void WeedRefs(void)
-{
-    while (refs)
+    for (auto&& ref : refs)
     {
-        if (refs->newVal->invarKeep)
+        QUAD* old = ref.first;
+        QUAD* newVal = ref.second;
+        if (newVal->invarKeep)
         {
-            refs->old->back->fwd = refs->old->fwd;
-            refs->old->fwd->back = refs->old->back;
-            if (refs->old == refs->old->block->tail)
-                refs->old->block->tail = refs->old->back;
+            old->back->fwd = old->fwd;
+            old->fwd->back = old->back;
+            if (old == old->block->tail)
+                old->block->tail = old->back;
         }
         else
         {
-            refs->newVal->back->fwd = refs->newVal->fwd;
-            refs->newVal->fwd->back = refs->newVal->back;
-            if (refs->newVal == refs->newVal->block->tail)
-                refs->newVal->block->tail = refs->newVal->back;
-            tempInfo[refs->old->ans->offset->sp->i]->blockDefines = refs->old->block;
-            tempInfo[refs->old->ans->offset->sp->i]->instructionDefines = refs->old;
+            newVal->back->fwd = newVal->fwd;
+            newVal->fwd->back = newVal->back;
+            if (newVal == newVal->block->tail)
+                newVal->block->tail = newVal->back;
+            InstructionDefinesSsa[old->ans->offset->sp->i] = old;
+            BlockDefinesSsa[old->ans->offset->sp->i] = old->block;
         }
-        refs = refs->next;
     }
 }
 static void keep(IMODE* l)
 {
     if (l && l->mode == i_direct && l->offset->type == se_tempref)
     {
-        QUAD* i = tempInfo[l->offset->sp->i]->instructionDefines;
+        QUAD* i = InstructionDefinesSsa[l->offset->sp->i];
         if (i->invarInserted)
         {
             i->invarKeep = true;
@@ -167,7 +159,8 @@ static void InsertAssign(Block* dest, QUAD* head, IMODE* ans, IMODE* left)
             insert = insert->back;
     } while (insert->dc.opcode != i_block && insert->dc.opcode != i_label);
 }
-static int MoveTo(Block* dest, Block* src, QUAD* head, IMODE* first = nullptr, IMODE* last = nullptr)
+static int MoveTo(std::list<std::pair<QUAD*, QUAD*>>& refs, Block* dest, Block* src, QUAD* head, IMODE* first = nullptr,
+                  IMODE* last = nullptr)
 {
     int rv = 0;
     QUAD* insert;
@@ -186,7 +179,7 @@ static int MoveTo(Block* dest, Block* src, QUAD* head, IMODE* first = nullptr, I
     QUAD* head2 = Allocate<QUAD>();
     *head2 = *head;
     if (!first && !last)
-        EnterRef(head, head2);
+        refs.push_back(std::pair(head, head2));
     if (last)
         head2->dc.left = last;
     head = head2;
@@ -195,8 +188,8 @@ static int MoveTo(Block* dest, Block* src, QUAD* head, IMODE* first = nullptr, I
     head->back = insert;
     head->fwd = insert->fwd;
     insert->fwd = insert->fwd->back = head;
-    tempInfo[head->ans->offset->sp->i]->blockDefines = dest;
-    tempInfo[head->ans->offset->sp->i]->instructionDefines = head;
+    BlockDefinesSsa[head->ans->offset->sp->i] = dest;
+    InstructionDefinesSsa[head->ans->offset->sp->i] = head;
     head->block = dest;
     head->invarInserted = true;
     if (!first && !last &&
@@ -209,7 +202,7 @@ static int MoveTo(Block* dest, Block* src, QUAD* head, IMODE* first = nullptr, I
     }
     return rv;
 }
-static void MoveExpression(Block* b, QUAD* head, Block* pbl, Block* pbr)
+static void MoveExpression(std::list<std::pair<QUAD*, QUAD*>>& refs, Block* b, QUAD* head, Block* pbl, Block* pbr)
 {
     if (IsAncestor(pbl, b) && !Blocked(pbl, b))
     {
@@ -219,30 +212,30 @@ static void MoveExpression(Block* b, QUAD* head, Block* pbl, Block* pbr)
             {
                 if (pbr->preWalk > pbl->preWalk)
                 {
-                    MoveTo(pbr, b, head);
+                    MoveTo(refs, pbr, b, head);
                 }
                 else
                 {
-                    MoveTo(pbl, b, head);
+                    MoveTo(refs, pbl, b, head);
                 }
             }
         }
         else if (pbl->preWalk < b->preWalk)
         {
-            MoveTo(pbl, b, head);
+            MoveTo(refs, pbl, b, head);
         }
     }
 }
-static bool isPhiUsing(Loop* considering, int temp)
+static bool isPhiUsing(std::unordered_map<Loop*, std::unordered_set<int>>& invariantPhiList, Loop* considering, int temp)
 {
     bool rv = false;
     if (temp != -1 && considering)
     {
-        rv = isset(considering->invariantPhiList, temp);
+        rv = invariantPhiList[considering].find(temp) != invariantPhiList[considering].end();
     }
     return rv;
 }
-static bool InvariantPhiUsing(QUAD* head)
+static bool InvariantPhiUsing(std::unordered_map<Loop*, std::unordered_set<int>>& invariantPhiList, QUAD* head)
 {
     int ans = head->ans->offset->sp->i;
     bool rv = false;
@@ -254,17 +247,19 @@ static bool InvariantPhiUsing(QUAD* head)
         left = head->dc.left->offset->sp->i;
     if (head->temps & TEMP_RIGHT)
         right = head->dc.right->offset->sp->i;
-    while (considering && !considering->invariantPhiList)
+    while (considering && invariantPhiList[considering].empty())
     {
         considering = considering->parent;
     }
     if (considering)
     {
-        rv &= !isPhiUsing(considering, ans) && !isPhiUsing(considering, left) && !isPhiUsing(considering, right);
+        rv &= !isPhiUsing(invariantPhiList, considering, ans) && !isPhiUsing(invariantPhiList, considering, left) &&
+              !isPhiUsing(invariantPhiList, considering, right);
     }
     return rv;
 }
-void ScanForInvariants(Block* b)
+void ScanForInvariants(std::list<std::pair<QUAD*, QUAD*>>& refs,
+                       std::unordered_map<Loop*, std::unordered_set<int>>& invariantPhiList, Block* b)
 {
     BLOCKLIST* bl = b->succ;
     QUAD* head = b->head;
@@ -279,52 +274,51 @@ void ScanForInvariants(Block* b)
             {
                 Loop* parent = head->block->inclusiveLoopParent;
                 struct _phiblock* pb;
-                if (!parent->invariantPhiList)
+                if (invariantPhiList[parent].empty())
                 {
                     Loop* last = parent->parent;
-                    while (last && !last->invariantPhiList)
+                    while (last && invariantPhiList[last].empty())
                         last = last->parent;
 
-                    parent->invariantPhiList = allocbit(tempCount);
+                    invariantPhiList[parent].clear();
                     if (last)
-                        memcpy(parent->invariantPhiList, last->invariantPhiList,
-                               ((tempCount) + (BITINTBITS - 1)) / BITINTBITS * sizeof(BITINT));
+                        invariantPhiList[parent] = invariantPhiList[last];
                 }
+                invariantPhiList[parent].insert(head->dc.v.phi->T0);
                 pb = head->dc.v.phi->temps;
                 while (pb)
                 {
-                    setbit(parent->invariantPhiList, pb->Tn);
+                    invariantPhiList[parent].insert(pb->Tn);
                     pb = pb->next;
                 }
-                setbit(parent->invariantPhiList, head->dc.v.phi->T0);
             }
             else if ((head->temps & TEMP_ANS) && head->ans->mode == i_direct && head->ans->size < ISZ_FLOAT)
             {
-                tempInfo[head->ans->offset->sp->i]->blockDefines = b;
+                BlockDefinesSsa[head->ans->offset->sp->i] = b;
                 if (!tempInfo[head->ans->offset->sp->i]->inductionLoop && (head->temps & (TEMP_LEFT | TEMP_RIGHT)))
                 {
                     bool canMove = true;
                     Block *pbl = nullptr, *pbr = nullptr;
                     if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
                     {
-                        pbl = tempInfo[head->dc.left->offset->sp->i]->blockDefines;
+                        pbl = BlockDefinesSsa[head->dc.left->offset->sp->i];
                     }
                     else if (head->dc.left->mode != i_immed)
                         canMove = false;
                     if ((head->temps & TEMP_RIGHT) && head->dc.right->mode == i_direct)
                     {
-                        pbr = tempInfo[head->dc.right->offset->sp->i]->blockDefines;
+                        pbr = BlockDefinesSsa[head->dc.right->offset->sp->i];
                     }
                     else if (head->dc.right && head->dc.right->mode != i_immed)
                         canMove = false;
                     if (head->atomic)
                         canMove = false;
                     if (canMove)
-                        canMove = InvariantPhiUsing(head);
+                        canMove = InvariantPhiUsing(invariantPhiList, head);
                     if (canMove)
                         if (pbl && pbl->preWalk != b->preWalk && pbl->nesting == b->nesting &&
                             (!pbr || (pbr->preWalk != b->preWalk && pbr->nesting == b->nesting)))
-                            MoveExpression(b, head, pbl, pbr);
+                            MoveExpression(refs, b, head, pbl, pbr);
                 }
             }
         }
@@ -334,7 +328,7 @@ void ScanForInvariants(Block* b)
     {
         if (!bl->block->preWalk)
         {
-            ScanForInvariants(bl->block);
+            ScanForInvariants(refs, invariantPhiList, bl->block);
         }
         bl = bl->next;
     }
@@ -396,6 +390,7 @@ IMODE* loadVarInd(IMODE* loadVar, int size)
 // this part is done outside the SSA process
 void ScanForVariableMotion(void)
 {
+    std::list<std::pair<QUAD*, QUAD*>> refs;
     if (loopCount < 2 || loopArray[loopCount - 2]->type == LT_BLOCK)
         return;
     // this first one is a map because we iterated over it, and this resulted in variances in code generation
@@ -624,10 +619,10 @@ void ScanForVariableMotion(void)
                         else
                         {
                             // else we can only do this optimization if nothing external would modify the variable
-                            for (int i = 0; i < parent->blocks->top; i++)
+                            for (auto i : blocksInLoop[parent->loopnum])
                             {
                                 doit = true;
-                                if (gosubBlocks.find(parent->blocks->data[i]) != gosubBlocks.end())
+                                if (gosubBlocks.find(i) != gosubBlocks.end())
                                 {
                                     doit = false;
                                     break;
@@ -650,7 +645,7 @@ void ScanForVariableMotion(void)
                             // this will be a duplicate of anything previously there as we need to rename the answer temp....
                             if (!firstUseInDominator)
                             {
-                                firstUseInDominator = MoveTo(dom, head->block, head, tempVar);
+                                firstUseInDominator = MoveTo(refs, dom, head->block, head, tempVar);
                             }
                             InsertAssign(dom, head, tempVar, head->ans);
                             InsertAssign(dom, head, loadVar, tempVar);
@@ -658,7 +653,7 @@ void ScanForVariableMotion(void)
                             {
                                 for (auto succ = parent->successors; succ; succ = succ->next)
                                 {
-                                    MoveTo(succ->block, loopDefines.front()->block, loopDefines.front(), nullptr, tempVar);
+                                    MoveTo(refs, succ->block, loopDefines.front()->block, loopDefines.front(), nullptr, tempVar);
                                 }
                             }
                             // now rename all uses within the loop
@@ -732,7 +727,10 @@ void MoveLoopVariables(void)
 {
     if (Optimizer::architecture != ARCHITECTURE_MSIL && !currentFunction->anyTry && !Optimizer::cparams.prm_debug)
     {
-        refs = nullptr;
+        BlockDefinesSsa.clear();
+        BlockDefinesSsa.resize(tempCount + 4000);
+        InstructionDefinesSsa.clear();
+        InstructionDefinesSsa.resize(tempCount + 4000);
         ScanForVariableMotion();
         // not weeding because we want to keep everything...
     }
@@ -741,14 +739,15 @@ void MoveLoopVariables(void)
 void MoveLoopInvariants(void)
 {
     int i;
-    refs = nullptr;
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
             blockArray[i]->preWalk = 0;
-    for (i = 0; i < tempCount; i++)
-        tempInfo[i]->blockDefines = nullptr;
+    InstructionDefinesSsa.clear();
+    InstructionDefinesSsa.resize(tempCount + 4000);
     current = 1;
-    ScanForInvariants(blockArray[0]);
-    WeedRefs();
+    std::list<std::pair<QUAD*, QUAD*>> refs;
+    std::unordered_map<Loop*, std::unordered_set<int>> invariantPhiList;
+    ScanForInvariants(refs, invariantPhiList, blockArray[0]);
+    WeedRefs(refs);
 }
 }  // namespace Optimizer

@@ -44,11 +44,11 @@
 #include "memory.h"
 #include "ilocal.h"
 #include "iflow.h"
-#include "ioptutil.h"
 #include "iloop.h"
 #include "ilive.h"
 #include <algorithm>
 #include <functional>
+#include "optmain.h"
 namespace Optimizer
 {
 QUAD *criticalThunks, **criticalThunkPtr;
@@ -112,12 +112,12 @@ static void RemoveDuplicateGotos(void)
         head = head->fwd;
     }
 }
-static void basicFlowInfo(std::unordered_map<int, Block*>& labels)
+static void basicFlowInfo(std::map<int, Block*>& labels)
 {
     QUAD *head = intermed_head, *block;
     int low = INT_MAX, high = 0;
     blockArray.clear();
-    blockArray.resize(blockCount);
+    blockArray.resize(blockCount + 1000);
     while (head)
     {
         criticalThunks = intermed_head;
@@ -163,7 +163,7 @@ static void flowinsert(BLOCKLIST** pos, Block* valuesource)
     nblock->block = valuesource;
 }
 /* create the flowgraph.  */
-static void gather_flowgraph(std::unordered_map<int, Block*>& labels)
+static void gather_flowgraph(std::map<int, Block*>& labels)
 {
     Block* temp;
     int i;
@@ -545,7 +545,8 @@ static int RemoveCriticalEdges(enum e_fgtype type, Block* parent, Block* in)
                     /* we won't need to revist this so we don't care what
                      * it does to the presetn tree walk
                      */
-                    BLOCKLIST* m = newBlock();
+                    BLOCKLIST* m = oAllocate<BLOCKLIST>();
+                    m->block = NewBlock();
                     BLOCKLIST* q;
 
                     QUAD *quad, *quad2;
@@ -696,13 +697,14 @@ static void PostDominators(void)
         }
         vectorData[vectorData[w].semi].bucket.insert(w);
         DomLink(p, w);
-        std::for_each(vectorData[p].bucket.begin(), vectorData[p].bucket.end(), [p, &vectorData](int v) {
+        for (auto v : vectorData[p].bucket)
+        {
             int u = domEval(vectorData, v);
             if (vectorData[u].semi >= p)
                 vectorData[v].idom = p;
             else
                 vectorData[v].idom = u;
-        });
+        }
         vectorData[p].bucket.clear();
     }
     for (w = 2; w <= domCount; w++)
@@ -760,13 +762,14 @@ static void Dominators(void)
         }
         vectorData[vectorData[w].semi].bucket.insert(w);
         DomLink(p, w);
-        std::for_each(vectorData[p].bucket.begin(), vectorData[p].bucket.end(), [p, &vectorData](int v) {
+        for (auto v : vectorData[p].bucket)
+        {
             int u = domEval(vectorData, v);
             if (vectorData[u].semi >= p)
                 vectorData[v].idom = p;
             else
                 vectorData[v].idom = u;
-        });
+        }
         vectorData[p].bucket.clear();
     }
     for (w = 2; w <= domCount; w++)
@@ -1178,7 +1181,7 @@ void doms_only(bool always)
     {
         QUAD* head = intermed_head;
         blockArray.clear();
-        blockArray.resize(blockCount);
+        blockArray.resize(blockCount + 1000);
         while (head)
         {
             if (head->dc.opcode == i_block)
@@ -1250,7 +1253,7 @@ void flows_and_doms(void)
     }
 
     RemoveDuplicateGotos();
-    std::unordered_map<int, Block*> labels;
+    std::map<int, Block*> labels;
     basicFlowInfo(labels);
     gather_flowgraph(labels);
     doms_only(true);

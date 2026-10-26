@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -74,7 +74,7 @@ AMODE* makedreg(int r)
  */
 {
     AMODE* ap;
-    ap = beLocalAllocate<AMODE>();
+    ap = localAllocate<AMODE>();
     ap->mode = am_dreg;
     ap->preg = r;
     ap->length = ISZ_UINT;
@@ -88,7 +88,7 @@ AMODE* makefreg(int r)
  */
 {
     AMODE* ap;
-    ap = beLocalAllocate<AMODE>();
+    ap = localAllocate<AMODE>();
     ap->mode = am_freg;
     ap->preg = r;
     ap->length = ISZ_LDOUBLE;
@@ -104,7 +104,7 @@ AMODE* copy_addr(AMODE* ap)
     AMODE* newap;
     if (ap == 0)
         return 0;
-    newap = beLocalAllocate<AMODE>();
+    newap = localAllocate<AMODE>();
     newap->mode = ap->mode;
     newap->preg = ap->preg;
     newap->sreg = ap->sreg;
@@ -166,7 +166,7 @@ OCODE* gen_code(int op, AMODE* ap1, AMODE* ap2)
 {
     OCODE* newitem;
 
-    newitem = beLocalAllocate<OCODE>();
+    newitem = localAllocate<OCODE>();
     newitem->opcode = (e_opcode)op;
     newitem->oper1 = copy_addr(ap1);
     newitem->oper2 = copy_addr(ap2);
@@ -216,7 +216,7 @@ OCODE* gen_code3(int op, AMODE* ap1, AMODE* ap2, AMODE* ap3)
  */
 {
     OCODE* newitem;
-    newitem = beLocalAllocate<OCODE>();
+    newitem = localAllocate<OCODE>();
     newitem->opcode = (e_opcode)op;
     newitem->oper1 = copy_addr(ap1);
     newitem->oper2 = copy_addr(ap2);
@@ -305,7 +305,7 @@ void gen_codelab(Optimizer::SimpleSymbol* lab)
  */
 {
     OCODE* newitem;
-    newitem = beLocalAllocate<OCODE>();
+    newitem = localAllocate<OCODE>();
     newitem->opcode = (e_opcode)op_funclabel;
     newitem->oper1 = (AMODE*)lab;
     newitem->oper2 = 0;
@@ -324,7 +324,7 @@ void gen_branch(int op, int label)
 
 void gen_comment(char* txt)
 {
-    OCODE* newitem = beLocalAllocate<OCODE>();
+    OCODE* newitem = localAllocate<OCODE>();
     newitem->opcode = (e_opcode)op_comment;
     newitem->oper2 = 0;
     newitem->oper1 = (AMODE*)txt;
@@ -361,7 +361,7 @@ void oa_gen_label(int labno)
  */
 {
     OCODE* newitem;
-    newitem = beLocalAllocate<OCODE>();
+    newitem = localAllocate<OCODE>();
     newitem->opcode = (e_opcode)op_label;
     newitem->oper1 = make_label(labno);
     add_peep(newitem);
@@ -1650,7 +1650,7 @@ void peep_setne(OCODE* ip)
 }
 void insert_peep_entry(OCODE* after, enum e_opcode opcode, int size, AMODE* ap1, AMODE* ap2)
 {
-    OCODE* a = beLocalAllocate<OCODE>();
+    OCODE* a = localAllocate<OCODE>();
     a->opcode = opcode;
     a->oper1 = ap1;
     a->oper2 = ap2;

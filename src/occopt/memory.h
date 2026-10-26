@@ -26,11 +26,6 @@
 #pragma once
 
 #include "ctypes.h"
-#if defined(BORLAND) || defined(__clang__) || defined(__GNUC__)
-// hack for buggy embarcadero compiler
-#    define beLocalAlloc(x) Alloc(x)
-#    define beGlobalAlloc(x) globalAlloc(x)
-#endif
 
 typedef struct _memblk_
 {
@@ -50,23 +45,12 @@ void* oAlloc(int size);
 void oFree(void);
 void* aAlloc(int size);
 void aFree(void);
-void* tAlloc(int size);
-void tFree(void);
-void* sAlloc(int size);
-void sFree(void);
 void SetGlobalFlag(bool flag, bool& old);
 void ReleaseGlobalFlag(bool old);
 bool GetGlobalFlag(void);
 char* litlate(const char* name);
 LCHAR* wlitlate(const LCHAR* name);
 
-template <class T>
-T* Allocate(int sz = 1)
-{
-    auto rv = static_cast<T*>(Alloc(sz * sizeof(T)));
-    new (rv) T;
-    return rv;
-}
 template <class T>
 T* nzAllocate(int sz = 1)
 {
@@ -89,20 +73,6 @@ T* aAllocate(int sz = 1)
     return rv;
 }
 template <class T>
-T* tAllocate(int sz = 1)
-{
-    auto rv = static_cast<T*>(tAlloc(sz * sizeof(T)));
-    new (rv) T;
-    return rv;
-}
-template <class T>
-T* sAllocate(int sz = 1)
-{
-    auto rv = static_cast<T*>(sAlloc(sz * sizeof(T)));
-    new (rv) T;
-    return rv;
-}
-template <class T>
 T* localAllocate(int sz = 1)
 {
     auto rv = static_cast<T*>(localAlloc(sz * sizeof(T)));
@@ -110,9 +80,9 @@ T* localAllocate(int sz = 1)
     return rv;
 }
 template <class T>
-T* beLocalAllocate(int sz = 1)
+T* Allocate(int sz = 1)
 {
-    auto rv = static_cast<T*>(beLocalAlloc(sz * sizeof(T)));
+    auto rv = static_cast<T*>(Alloc(sz * sizeof(T)));
     new (rv) T;
     return rv;
 }
@@ -120,14 +90,6 @@ template <class T>
 T* globalAllocate(int sz = 1)
 {
     auto rv = static_cast<T*>(globalAlloc(sz * sizeof(T)));
-    new (rv) T;
-    return rv;
-}
-
-template <class T>
-T* beGlobalAllocate(int sz = 1)
-{
-    auto rv = static_cast<T*>(beGlobalAlloc(sz * sizeof(T)));
     new (rv) T;
     return rv;
 }

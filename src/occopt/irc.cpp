@@ -28,6 +28,8 @@
 #include <cstring>
 #include <cstdlib>
 #include <climits>
+#include <stack>
+#include <algorithm>
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
 #include <vector>
@@ -39,14 +41,16 @@
 #include "igcse.h"
 #include "OptUtils.h"
 #include "ildata.h"
-#include "ioptutil.h"
 #include "memory.h"
 #include "ilive.h"
 #include "optmain.h"
 #include "irewrite.h"
 #include "iconfl.h"
 #include "ilocal.h"
-
+#include <array>
+#include <mutex>
+#include <algorithm>
+#include "beinterfdefs.h"
 #define MAX_INTERNAL_REGS 256
 
 #define REG_MAX (chosenAssembler->arch->registerCount)
@@ -74,107 +78,109 @@ namespace Optimizer
 {
 int maxAddr;
 int lc_maxauto;
+std::vector<char> colors;
+std::vector<bool> precolored;
 
-static int* tempStack;
-static int tempStackcount;
+static std::deque<int> tempStack;
 static unsigned long long regmask;
 static int localspill, spillcount;
-static unsigned* simplifyWorklist;
-static int simplifyBottom, simplifyTop;
-static BriggsSet* freezeWorklist;
-static BriggsSet* spillWorklist;
-static BriggsSet* spilledNodes;
-static BITINT* coalescedNodes;
-static BITINT* stackedTemps;
-static BITINT *adjacent, *adjacent1;
-static BITINT* workingMoves;
-static BITINT* activeMoves;
-static BITINT* coalescedMoves;
-static BITINT* constrainedMoves;
-static BITINT* frozenMoves;
-static BITINT* tempMoves[2];
-static QUAD** instructionList;
-static BriggsSet* spillProcessed;
-static short* hiMoves;
-static SPILL* spillList;
+static std::deque<int> simplifyWorkList;
+static std::unordered_set<int> coalescedNodes;
+static std::unordered_set<int> stackedTemps;
+static std::set<int> adjacent, adjacent1;
+static std::set<int> workingMoves;
+static std::unordered_set<int> activeMoves;
+static std::unordered_set<int> coalescedMoves;
+static std::unordered_set<int> constrainedMoves;
+static std::unordered_set<int> frozenMoves;
+static std::set<int> tempMoves[2];
+static std::vector<QUAD*> instructionList;
+static std::unordered_set<int> freezeWorkList;
+static std::list<int> spillWorkList;
+static std::unordered_set<int> spilledNodes;
+static std::unordered_set<int> spillProcessed;
+static std::unordered_map<int, int> hiMoves;
+std::map<int, std::set<int>> tempWorkingMoves;
 
-static int classCount, vertexCount;
-static unsigned* worstCase;
-static ARCH_REGCLASS** classes;
-static ARCH_REGVERTEX** vertexes;
+static std::vector<std::vector<unsigned>> worstCase;
+static std::vector<ARCH_REGCLASS*> regClasses;
+static std::vector<ARCH_REGVERTEX*> vertexes;
+
+static std::vector<ARCH_REGCLASS*> tempRegClasses;
+static std::vector<int> tempRegCounts;
+static std::vector<int> squeezes;
+static std::vector<std::vector<int>> rawSqueezes;
+static std::vector<int> degrees;
+static std::map<int, int> spillCosts;
+static std::vector<bool> doGlobals;
+static std::map<int, IMODE*> spilledVars;
+static std::map<int, bool> spilling;
+static std::map<int, bool> spilled;
+static std::map<int, bool> triedSpill;
+static std::map<int, bool> spillTemp;
 
 static int instructionCount;
-static int instructionByteCount;
+
+static int classCount, vertexCount;
 
 static int accesses;
-#define PUSH(t)                          \
-    {                                    \
-        tempStack[tempStackcount++] = t; \
-        setbit(stackedTemps, t);         \
+inline void PUSH(int t)
+{
+    tempStack.push_front(t);
+    stackedTemps.insert(t);
+}
+inline int POP()
+{
+    if (tempStack.empty())
+    {
+        return -1;
     }
-#define POP() (tempStackcount == 0 ? -1 : tempStack[--tempStackcount])
+    else
+    {
+        auto rv = tempStack.front();
+        tempStack.pop_front();
+        return rv;
+    }
+}
 
-static const UBYTE bitCounts[256] = {
-    0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3,
-    4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 1, 2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4,
-    4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 1,
-    2, 2, 3, 2, 3, 3, 4, 2, 3, 3, 4, 3, 4, 4, 5, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5,
-    4, 5, 5, 6, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 2, 3, 3, 4, 3, 4, 4, 5, 3, 4, 4, 5, 4, 5, 5, 6, 3, 4, 4, 5, 4, 5, 5,
-    6, 4, 5, 5, 6, 5, 6, 6, 7, 3, 4, 4, 5, 4, 5, 5, 6, 4, 5, 5, 6, 5, 6, 6, 7, 4, 5, 5, 6, 5, 6, 6, 7, 5, 6, 6, 7, 6, 7, 7, 8,
-};
+static void ResetTree(ARCH_REGVERTEX* child)
+{
+    for (auto c = child->cls; c; c = c->next)
+    {
+        c->aliasRegs.clear();
+    }
+    if (child->left)
+        ResetTree(child->left);
+    if (child->right)
+        ResetTree(child->right);
+}
 
 static void InitRegAliases(ARCH_REGDESC* desc)
 {
-    int i;
-    for (i = 0; i < REG_MAX; i++)
+    for (int i = 0; i < REG_MAX; i++)
     {
-        int j;
-#ifdef TESTBITS
-        desc[i].aliasBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) * 2 + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
-        *desc[i].aliasBits++ = REG_MAX;
-#else
-        desc[i].aliasBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
-#endif
-        setbit(desc[i].aliasBits, i);
-        for (j = 0; j < desc[i].aliasCount; j++)
-        {
-            setbit(desc[i].aliasBits, desc[i].aliases[j]);
-        }
+        desc[i].aliasRegs.push_back(0);
+        std::copy_backward(desc[i].aliasRegs.begin(), desc[i].aliasRegs.end() - 1, desc[i].aliasRegs.end());
+        desc[i].aliasRegs[0] = i;
     }
 }
 static void InitTree(ARCH_REGVERTEX* parent, ARCH_REGVERTEX* child)
 {
-    ARCH_REGCLASS* c = child->cls;
-    ARCH_REGVERTEX* v;
-    int i;
     child->parent = parent;
     child->index = vertexCount++;
-    while (c)
+    for (auto c = child->cls; c; c = c->next)
     {
         c->vertex = child->index;
         c->index = classCount++;
-#ifdef TESTBITS
-        c->aliasBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) * 2 + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
-        *c->aliasBits++ = REG_MAX;
-#else
-        c->aliasBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
-#endif
-#ifdef TESTBITS
-        c->regBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) * 2 + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
-        *c->regBits++ = REG_MAX;
-#else
-        c->regBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
-#endif
-        for (i = 0; i < c->regCount; i++)
+        for (int i = 0; i < c->regCount; ++i)
         {
-            int j;
-            setbit(c->regBits, c->regs[i]);
-            for (j = 0; j < (REG_MAX + BITINTBITS - 1) / BITINTBITS; j++)
-            {
-                c->aliasBits[j] |= chosenAssembler->arch->regNames[c->regs[i]].aliasBits[j];
-            }
+            std::set<int> temp;
+            std::vector<int> incomingRegs(chosenAssembler->arch->regNames[c->regs[i]].aliasRegs);
+            std::sort(incomingRegs.begin(), incomingRegs.end());
+            std::set_union(c->aliasRegs.begin(), c->aliasRegs.end(), incomingRegs.begin(), incomingRegs.end(),
+                           std::inserter(temp, temp.begin()));
+            c->aliasRegs = std::move(temp);
         }
-        c = c->next;
     }
     if (child->left)
         InitTree(child, child->left);
@@ -183,11 +189,9 @@ static void InitTree(ARCH_REGVERTEX* parent, ARCH_REGVERTEX* child)
 }
 static void LoadVertexes(ARCH_REGVERTEX* child)
 {
-    ARCH_REGCLASS* c = child->cls;
-    while (c)
+    for (auto c = child->cls; c; c = c->next)
     {
-        classes[c->index] = c;
-        c = c->next;
+        regClasses[c->index] = c;
     }
     vertexes[child->index] = child;
     if (child->left)
@@ -197,88 +201,75 @@ static void LoadVertexes(ARCH_REGVERTEX* child)
 }
 static void LoadWorstCase(void)
 {
-    int i, j, k, m;
-    worstCase = (unsigned*)calloc(classCount * classCount, sizeof(unsigned));
-    for (i = 0; i < classCount; i++)
+    worstCase.clear();
+    worstCase.resize(classCount);
+    for (auto&& t : worstCase)
+        t.resize(classCount);
+
+    for (int i = 0; i < classCount; i++)
     {
-        for (j = 0; j < classCount; j++)
+        for (int j = 0; j < classCount; j++)
         {
             int max = 0;
-            for (k = 0; k < classes[j]->regCount; k++)
+            for (int k = 0; k < regClasses[j]->regs.size(); k++)
             {
                 int count = 0;
-                for (m = 0; m < (REG_MAX + BITINTBITS - 1) / BITINTBITS; m++)
-                {
-                    BITINT x = classes[i]->regBits[m] & chosenAssembler->arch->regNames[classes[j]->regs[k]].aliasBits[m];
-                    int y;
-                    for (y = 0; y < sizeof(BITINT); y++)
-                    {
-                        count += bitCounts[x & 0xff];
-                        x >>= 8;
-                    }
-                }
+                std::vector<int> temp;
+                std::vector<int> reg1(regClasses[i]->regCount);
+                std::copy(regClasses[i]->regs.begin(), regClasses[i]->regs.begin() + regClasses[i]->regCount, reg1.begin());
+                std::sort(reg1.begin(), reg1.end());
+                std::vector<int> reg2(chosenAssembler->arch->regNames[regClasses[j]->regs[k]].aliasRegs);
+                std::sort(reg2.begin(), reg2.end());
+                std::set_intersection(reg1.begin(), reg1.end(), reg2.begin(), reg2.end(), std::inserter(temp, temp.begin()));
+                count = temp.size();
                 if (count > max)
                     max = count;
             }
-            worstCase[i * classCount + j] = max;
+            worstCase[i][j] = max;
         }
     }
 }
 static void LoadAliases(ARCH_REGVERTEX* v)
 {
-    ARCH_REGCLASS* c = v->cls;
-    int i;
-    int j;
-    int k;
     if (v->left)
         LoadAliases(v->left);
     if (v->right)
         LoadAliases(v->right);
-#ifdef TESTBITS
-    v->aliasBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) * 2 + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
-    *v->aliasBits++ = REG_MAX;
-#else
-    v->aliasBits = (BITINT*)calloc(sizeof(BITINT), sizeof(BITINT) + (REG_MAX + BITINTBITS - 1) / BITINTBITS);
-#endif
+    std::set<int> result;
     if (v->left)
     {
-        for (i = 0; i < (REG_MAX + BITINTBITS - 1) / BITINTBITS; i++)
-            v->aliasBits[i] |= v->left->aliasBits[i];
+        std::set_union(v->aliasRegs.begin(), v->aliasRegs.end(), v->left->aliasRegs.begin(), v->left->aliasRegs.end(),
+                       std::inserter(result, result.begin()));
+        v->aliasRegs = std::move(result);
     }
     if (v->right)
     {
-        for (i = 0; i < (REG_MAX + BITINTBITS - 1) / BITINTBITS; i++)
-            v->aliasBits[i] |= v->right->aliasBits[i];
+        std::set_union(v->aliasRegs.begin(), v->aliasRegs.end(), v->right->aliasRegs.begin(), v->right->aliasRegs.end(),
+                       std::inserter(result, result.begin()));
+        v->aliasRegs = std::move(result);
     }
-    while (c)
+    for (auto c = v->cls; c; c = c->next)
     {
-        for (i = 0; i < (REG_MAX + BITINTBITS - 1) / BITINTBITS; i++)
-            v->aliasBits[i] |= c->aliasBits[i];
+        std::set_union(v->aliasRegs.begin(), v->aliasRegs.end(), c->aliasRegs.begin(), c->aliasRegs.end(),
+                       std::inserter(result, result.begin()));
+        v->aliasRegs = std::move(result);
         c = c->next;
     }
 }
-void LoadSaturationBounds(void)
+void LoadSaturationBounds()
 {
-    int i, j;
-    for (i = 0; i < classCount; i++)
+    for (int i = 0; i < classCount; i++)
     {
-        classes[i]->saturationBound = (short*)calloc(sizeof(unsigned short), vertexCount);
-        for (j = 0; j < vertexCount; j++)
+        regClasses[i]->saturationBound.resize(vertexCount);
+        for (int j = 0; j < vertexCount; j++)
         {
-            int k;
             int rv = 0;
-            // this MIGHT be endian dependent...
-            for (k = 0; k < (REG_MAX + BITINTBITS - 1) / BITINTBITS; k++)
-            {
-                BITINT x = classes[i]->regBits[k] & vertexes[j]->aliasBits[k];
-                int y;
-                for (y = 0; y < sizeof(BITINT); y++)
-                {
-                    rv += bitCounts[x & 0xff];
-                    x >>= 8;
-                }
-            }
-            classes[i]->saturationBound[j] = rv;
+            std::vector<int> temp;
+            std::vector<int> reg1(regClasses[i]->regs);
+            std::sort(reg1.begin(), reg1.end());
+            std::set_intersection(reg1.begin(), reg1.end(), vertexes[j]->aliasRegs.begin(), vertexes[j]->aliasRegs.end(),
+                                  std::inserter(temp, temp.begin()));
+            regClasses[i]->saturationBound[j] = temp.size();
         }
     }
 }
@@ -286,12 +277,15 @@ void LoadSaturationBounds(void)
 void regInit(void)
 {
     using namespace Optimizer;
-    int i, j;
     classCount = vertexCount = 0;
-    InitRegAliases(chosenAssembler->arch->regNames);
+    static std::once_flag once_only;
+    std::call_once(once_only, []() { InitRegAliases(chosenAssembler->arch->regNames); });
+    ResetTree(chosenAssembler->arch->regRoot);
     InitTree(nullptr, chosenAssembler->arch->regRoot);
-    vertexes = (ARCH_REGVERTEX**)calloc(sizeof(ARCH_REGVERTEX*), vertexCount);
-    classes = (ARCH_REGCLASS**)calloc(sizeof(ARCH_REGCLASS*), classCount);
+    vertexes.clear();
+    vertexes.resize(vertexCount);
+    regClasses.clear();
+    regClasses.resize(classCount);
     LoadVertexes(chosenAssembler->arch->regRoot);
     LoadWorstCase();
     LoadAliases(chosenAssembler->arch->regRoot);
@@ -323,7 +317,7 @@ static void ScanForAnonymousVars(void)
     {
         if (head->dc.opcode != i_block && head->dc.opcode != i_blockend && head->dc.opcode != i_dbgblock &&
             head->dc.opcode != i_dbgblockend && head->dc.opcode != i_var && head->dc.opcode != i_label &&
-            head->dc.opcode != i_line && head->dc.opcode != i_passthrough)
+            head->dc.opcode != i_line && head->dc.opcode != i_inlineasm)
         {
             if (head->ans)
             {
@@ -407,7 +401,7 @@ void AllocateStackSpace(int begin)
     // get rid of any variables we don't care about in the output file...
     for (auto head = intermed_head; head; head = head->fwd)
     {
-        if (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode != i_label)
+        if (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_inlineasm && head->dc.opcode != i_label)
         {
             if (head->ans)
             {
@@ -553,21 +547,20 @@ static IMODE* make_ioffset(SimpleExpression* exp)
 }
 static void GetSpillVar(int i)
 {
-    SPILL* spill;
     SimpleExpression* exp = nullptr;
     SimpleType* tp = tempInfo[i]->enode->sp->tp;
     if (tempInfo[i]->enode->sp->invartemp)
     {
         auto i1 = tempInfo[i]->enode->sp->i;
-        if (tempInfo[i1]->instructionDefines)
+        if (InstructionDefinesSsa[i1])
         {
-            auto im0 = tempInfo[i1]->instructionDefines->dc.left;
+            auto im0 = InstructionDefinesSsa[i1]->dc.left;
             if (im0->mode == i_direct && im0->offset->type == se_tempref && im0->offset->sp->loadTemp)
             {
                 auto sp1 = im0->offset->sp;
-                if (tempInfo[sp1->i]->instructionDefines)
+                if (InstructionDefinesSsa[sp1->i])
                 {
-                    auto im1 = tempInfo[sp1->i]->instructionDefines->dc.left;
+                    auto im1 = InstructionDefinesSsa[sp1->i]->dc.left;
                     if (im1->mode == i_direct &&
                         (im1->offset->type == se_global || im1->offset->type == se_auto || im1->offset->type == se_absolute))
                     {
@@ -587,12 +580,9 @@ static void GetSpillVar(int i)
     }
     if (!exp)
         exp = spillVar(scc_auto, tp);
-    spill = tAllocate<SPILL>();
-    tempInfo[i]->spillVar = spill->imode = make_ioffset(exp);
-    spill->imode->offset->sp->spillVar = true;
-    spill->imode->size = tempInfo[i]->enode->sp->imvalue->size;
-    spill->uses = tAllocate<LIST>();
-    spill->uses->data = (void*)i;
+    spilledVars[i] = make_ioffset(exp);
+    spilledVars[i]->offset->sp->spillVar = true;
+    spilledVars[i]->size = tempInfo[i]->enode->sp->imvalue->size;
 }
 static void CopyLocalColors(void)
 {
@@ -600,25 +590,25 @@ static void CopyLocalColors(void)
     regmask = 0;
     while (head)
     {
-        if (head->dc.opcode == i_passthrough)
+        if (head->dc.opcode == i_inlineasm)
         {
             for (int i = 0; i < head->assemblyRegCount; i++)
                 if (head->assemblyRegs[i] != 255)
                     regmask |= chosenAssembler->arch->regNames[head->assemblyRegs[i] - 1].pushMask;
         }
-        else if (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode != i_label)
+        else if (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_inlineasm && head->dc.opcode != i_label)
         {
             if ((head->temps & TEMP_ANS) || (head->ans && head->ans->retval))
             {
                 if (head->ans->offset)
                 {
-                    head->ansColor = tempInfo[head->ans->offset->sp->i]->color;
+                    head->ansColor = colors[head->ans->offset->sp->i];
                     if (head->ansColor >= 0)
                         regmask |= chosenAssembler->arch->regNames[head->ansColor].pushMask;
                 }
                 if (head->ans->offset2)
                 {
-                    head->scaleColor = tempInfo[head->ans->offset2->sp->i]->color;
+                    head->scaleColor = colors[head->ans->offset2->sp->i];
                     if (head->scaleColor >= 0)
                         regmask |= chosenAssembler->arch->regNames[head->scaleColor].pushMask;
                 }
@@ -627,13 +617,13 @@ static void CopyLocalColors(void)
             {
                 if (head->dc.left->offset)
                 {
-                    head->leftColor = tempInfo[head->dc.left->offset->sp->i]->color;
+                    head->leftColor = colors[head->dc.left->offset->sp->i];
                     if (head->leftColor >= 0)
                         regmask |= chosenAssembler->arch->regNames[head->leftColor].pushMask;
                 }
                 if (head->dc.left->offset2)
                 {
-                    head->scaleColor = tempInfo[head->dc.left->offset2->sp->i]->color;
+                    head->scaleColor = colors[head->dc.left->offset2->sp->i];
                     if (head->scaleColor >= 0)
                         regmask |= chosenAssembler->arch->regNames[head->scaleColor].pushMask;
                 }
@@ -642,13 +632,13 @@ static void CopyLocalColors(void)
             {
                 if (head->dc.right->offset)
                 {
-                    head->rightColor = tempInfo[head->dc.right->offset->sp->i]->color;
+                    head->rightColor = colors[head->dc.right->offset->sp->i];
                     if (head->rightColor >= 0)
                         regmask |= chosenAssembler->arch->regNames[head->rightColor].pushMask;
                 }
                 if (head->dc.right->offset2)
                 {
-                    head->scaleColor = tempInfo[head->dc.right->offset2->sp->i]->color;
+                    head->scaleColor = colors[head->dc.right->offset2->sp->i];
                     if (head->scaleColor >= 0)
                         regmask |= chosenAssembler->arch->regNames[head->scaleColor].pushMask;
                 }
@@ -662,14 +652,14 @@ int SqueezeChange(int temp, int t, int delta)
     ARCH_REGVERTEX* v = vertexes[t];
     do
     {
-        int alpha = tempInfo[temp]->rawSqueeze[v->index];
+        int alpha = rawSqueezes[temp][v->index];
 
-        tempInfo[temp]->rawSqueeze[v->index] += delta;
+        rawSqueezes[temp][v->index] += delta;
 
         if (delta >= 0)
-            delta = imax(0, imin(delta, tempInfo[temp]->regClass->saturationBound[v->index] - alpha));
+            delta = imax(0, imin(delta, tempRegClasses[temp]->saturationBound[v->index] - alpha));
         else
-            delta = imin(0, imax(delta, delta - (tempInfo[temp]->regClass->saturationBound[v->index] - alpha)));
+            delta = imin(0, imax(delta, delta - (tempRegClasses[temp]->saturationBound[v->index] - alpha)));
 
         v = v->parent;
     } while (delta && v);
@@ -679,51 +669,47 @@ void SqueezeInit(void)
 {
     int i;
     for (i = 0; i < tempCount; i++)
-        if (tempInfo[i]->doGlobal && !tempInfo[i]->precolored)
+        if (doGlobals[i] && !precolored[i])
         {
-            tempInfo[i]->squeeze = 0;
-            if (tempInfo[i]->rawSqueeze)
-                memset(tempInfo[i]->rawSqueeze, 0, sizeof(tempInfo[0]->rawSqueeze[0]) * vertexCount);
+            squeezes[i] = 0;
+            if (rawSqueezes[i].size())
+                std::fill(rawSqueezes[i].begin(), rawSqueezes[i].end(), 0);
             else
-                tempInfo[i]->rawSqueeze = aAllocate<int>(vertexCount);
-            tempInfo[i]->degree = 0;
+                rawSqueezes[i].resize(vertexCount);
+            degrees[i] = 0;
         }
     for (i = 0; i < tempCount; i++)
     {
-        if (tempInfo[i]->doGlobal && !tempInfo[i]->precolored)
+        if (doGlobals[i] && !precolored[i])
         {
-            UBYTE regs[MAX_INTERNAL_REGS];
-            int j;
-            int k, n;
-            memset(regs, 0, sizeof(regs));
+            std::set<int> regs;
+            int n;
             EvaluateConflicts(i, [i, &regs](int n) {
-                if (!tempInfo[n]->precolored)
+                if (!precolored[n])
                 {
-                    tempInfo[i]->squeeze +=
-                        SqueezeChange(i, tempInfo[n]->regClass->vertex,
-                                      +worstCase[tempInfo[i]->regClass->index * classCount + tempInfo[n]->regClass->index]);
-                    tempInfo[i]->degree++;
+                    squeezes[i] +=
+                        SqueezeChange(i, tempRegClasses[n]->vertex, +worstCase[tempRegClasses[i]->index][tempRegClasses[n]->index]);
+                    degrees[i]++;
                 }
                 else
                 {
-                    regs[tempInfo[n]->color] = true;
+                    regs.insert(colors[n]);
                 }
             });
-            tempInfo[i]->regCount = tempInfo[i]->regClass->regCount;
-            for (j = 0; j < REG_MAX; j++)
-                if (regs[j])
+            tempRegCounts[i] = tempRegClasses[i]->regCount;
+            for (auto j : regs)
+            {
+                if (tempRegClasses[i]->aliasRegs.find(j) != tempRegClasses[i]->aliasRegs.end())
                 {
-                    if (isset(tempInfo[i]->regClass->aliasBits, j))
-                    {
-                        tempInfo[i]->regCount--;
-                    }
+                    tempRegCounts[i]--;
                 }
+            }
         }
     }
 }
 static void CalculateFunctionFlags(void)
 {
-    BriggsSet* exposed = briggsAlloct(tempCount);
+    std::set<int> exposed;
     int i, j;
     for (j = 0; j < tempCount; j++)
         tempInfo[j]->liveAcrossFunctionCall = false;
@@ -734,29 +720,27 @@ static void CalculateFunctionFlags(void)
         {
             QUAD* tail = blk->tail;
             int j, k;
-            briggsClear(exposed);
-            for (auto i : *blk->liveOut)
-                briggsSet(exposed, i);
+            exposed = liveOutTemps[blk->blocknum];
             while (tail != blk->head)
             {
                 if (tail->dc.opcode == i_gosub || tail->dc.opcode == i_cmpxchgweak || tail->dc.opcode == i_cmpxchgstrong)
                 {
-                    for (j = 0; j < exposed->top; j++)
-                        tempInfo[exposed->data[j]]->liveAcrossFunctionCall = true;
+                    for (auto j : exposed)
+                        tempInfo[j]->liveAcrossFunctionCall = true;
                 }
                 if (tail->temps & TEMP_ANS)
                 {
                     if (tail->ans->mode == i_direct)
                     {
                         int tnum = tail->ans->offset->sp->i;
-                        briggsReset(exposed, tnum);
+                        exposed.erase(tnum);
                     }
                     else if (tail->ans->mode == i_ind)
                     {
                         if (tail->ans->offset)
-                            briggsSet(exposed, tail->ans->offset->sp->i);
+                            exposed.insert(tail->ans->offset->sp->i);
                         if (tail->ans->offset2)
-                            briggsSet(exposed, tail->ans->offset2->sp->i);
+                            exposed.insert(tail->ans->offset2->sp->i);
                     }
                 }
                 if (tail->temps & TEMP_LEFT)
@@ -765,25 +749,22 @@ static void CalculateFunctionFlags(void)
                         if (!tail->dc.left->retval)
                         {
                             if (tail->dc.left->offset)
-                                briggsSet(exposed, tail->dc.left->offset->sp->i);
+                                exposed.insert(tail->dc.left->offset->sp->i);
                             if (tail->dc.left->offset2)
-                                briggsSet(exposed, tail->dc.left->offset2->sp->i);
+                                exposed.insert(tail->dc.left->offset2->sp->i);
                         }
                     }
                 if (tail->temps & TEMP_RIGHT)
                     if (tail->dc.right->mode == i_ind || tail->dc.right->mode == i_direct)
                     {
                         if (tail->dc.right->offset)
-                            briggsSet(exposed, tail->dc.right->offset->sp->i);
+                            exposed.insert(tail->dc.right->offset->sp->i);
                         if (tail->dc.right->offset2)
-                            briggsSet(exposed, tail->dc.right->offset2->sp->i);
+                            exposed.insert(tail->dc.right->offset2->sp->i);
                     }
                 tail = tail->back;
             }
         }
-    }
-    {
-        static int count = 0;
     }
 }
 static void InitClasses(void)
@@ -795,28 +776,25 @@ static void InitClasses(void)
         {
             if (!tempInfo[i]->liveAcrossFunctionCall)
             {
-                tempInfo[i]->regClass = chosenAssembler->arch->regClasses[abs(tempInfo[i]->size) * 2];
-                tempInfo[i]->regCount = tempInfo[i]->regClass->regCount;
+                tempRegClasses[i] = chosenAssembler->arch->regClasses[abs(tempInfo[i]->size) * 2];
+                tempRegCounts[i] = tempRegClasses[i]->regCount;
             }
             else
             {
-                tempInfo[i]->regClass = chosenAssembler->arch->regClasses[abs(tempInfo[i]->size) * 2 + 1];
-                tempInfo[i]->regCount = tempInfo[i]->regClass->regCount;
+                tempRegClasses[i] = chosenAssembler->arch->regClasses[abs(tempInfo[i]->size) * 2 + 1];
+                tempRegCounts[i] = tempRegClasses[i]->regCount;
             }
         }
-        if (!tempInfo[i]->regClass)
-            tempInfo[i]->doGlobal = false;
+        if (!tempRegClasses[i])
+            doGlobals[i] = false;
     }
 }
 static void CountInstructions(bool first)
 {
     QUAD* head = intermed_head;
     int i;
-    for (i = 0; i < tempCount; i++)
-    {
-        TempInfo* t = tempInfo[i];
-        t->doGlobal = false;
-    }
+    doGlobals.clear();
+    doGlobals.resize(tempCount + 4000);
     instructionCount = 0;
     while (head)
     {
@@ -832,9 +810,9 @@ static void CountInstructions(bool first)
             case i_dbgblockend:
             case i_varstart:
                 break;
-            case i_passthrough:
+            case i_inlineasm:
                 for (int i = 0; i < head->assemblyRegCount; i++)
-                    tempInfo[head->assemblyTempRegStart + i]->doGlobal = true;
+                    doGlobals[head->assemblyTempRegStart + i] = true;
                 break;
             default:
                 head->index = instructionCount++;
@@ -842,33 +820,33 @@ static void CountInstructions(bool first)
                 {
                     if (head->ans->offset)
                     {
-                        tempInfo[head->ans->offset->sp->i]->doGlobal = true;
+                        doGlobals[head->ans->offset->sp->i] = true;
                     }
                     if (head->ans->offset2)
                     {
-                        tempInfo[head->ans->offset2->sp->i]->doGlobal = true;
+                        doGlobals[head->ans->offset2->sp->i] = true;
                     }
                 }
                 if (head->temps & TEMP_LEFT)
                 {
                     if (head->dc.left->offset)
                     {
-                        tempInfo[head->dc.left->offset->sp->i]->doGlobal = true;
+                        doGlobals[head->dc.left->offset->sp->i] = true;
                     }
                     if (head->dc.left->offset2)
                     {
-                        tempInfo[head->dc.left->offset2->sp->i]->doGlobal = true;
+                        doGlobals[head->dc.left->offset2->sp->i] = true;
                     }
                 }
                 if (head->temps & TEMP_RIGHT)
                 {
                     if (head->dc.right->offset)
                     {
-                        tempInfo[head->dc.right->offset->sp->i]->doGlobal = true;
+                        doGlobals[head->dc.right->offset->sp->i] = true;
                     }
                     if (head->dc.right->offset2)
                     {
-                        tempInfo[head->dc.right->offset2->sp->i]->doGlobal = true;
+                        doGlobals[head->dc.right->offset2->sp->i] = true;
                     }
                 }
                 break;
@@ -876,20 +854,36 @@ static void CountInstructions(bool first)
         head = head->fwd;
     }
     for (i = 0; i < tempCount; i++)
-        tempInfo[i]->inUse = tempInfo[i]->doGlobal;
-    instructionByteCount = (instructionCount + BITINTBITS - 1) / BITINTBITS;
+        tempInfo[i]->inUse = doGlobals[i];
 
-    instructionCount += 1000;
-    workingMoves = tallocbit(instructionCount);
-    activeMoves = tallocbit(instructionCount);
-    coalescedMoves = tallocbit(instructionCount);
-    constrainedMoves = tallocbit(instructionCount);
-    frozenMoves = tallocbit(instructionCount);
-    tempMoves[0] = tallocbit(instructionCount);
-    tempMoves[1] = tallocbit(instructionCount);
-    hiMoves = tAllocate<short>(instructionCount);
-    instructionList = tAllocate<QUAD*>(instructionCount);
-    instructionCount -= 1000;
+    spillCosts.clear();
+    workingMoves.clear();
+    spilledVars.clear();
+    spilling.clear();
+    spillTemp.clear();
+    activeMoves.clear();
+    coalescedMoves.clear();
+    constrainedMoves.clear();
+    frozenMoves.clear();
+    tempMoves[0].clear();
+    tempMoves[1].clear();
+    hiMoves.clear();
+    tempWorkingMoves.clear();
+
+    instructionList.clear();
+    tempRegClasses.clear();
+    tempRegCounts.clear();
+    squeezes.clear();
+    rawSqueezes.clear();
+    degrees.clear();
+    spillCosts.clear();
+
+    instructionList.resize(instructionCount);
+    tempRegClasses.resize(tempCount + 4000);
+    tempRegCounts.resize(tempCount + 4000);
+    squeezes.resize(tempCount + 4000);
+    rawSqueezes.resize(tempCount + 4000);
+    degrees.resize(tempCount + 4000);
     head = intermed_head;
     while (head)
     {
@@ -916,24 +910,17 @@ static void Adjacent1(int n);
 static bool BriggsCoalesceInit(int u, int v, int n)
 {
     int k = 0;
-    int i, t;
-    int K;
     Adjacent1(u);
     Adjacent(v);
-    for (i = 0; i < (tempCount + BITINTBITS - 1) / BITINTBITS; i++)
+    std::set<int> working;
+    std::set_union(adjacent.begin(), adjacent.end(), adjacent1.begin(), adjacent1.end(), std::inserter(working, working.begin()));
+    adjacent = working;
+    for (auto&& t : working)
     {
-        // this is endian dependent sad to say... the new compiler ought to do things in 32 bit words ALWAYS
-        BITINT x = adjacent[i] |= adjacent1[i];
-        if (x)
-        {
-            int n = i * BITINTBITS;
-            for (t = n; t < n + BITINTBITS; t++, x >>= 1)
-                if (x & 1)
-                    if (tempInfo[t]->squeeze >= tempInfo[t]->regCount)
-                        k++;
-        }
+        if (squeezes[t] >= tempRegCounts[t])
+            k++;
     }
-    K = imin(tempInfo[u]->regClass->regCount, tempInfo[v]->regClass->regCount);
+    auto K = imin(tempRegClasses[u]->regCount, tempRegClasses[v]->regCount);
     if (k >= K)
     {
         hiMoves[n] = k - (K - 1);
@@ -947,20 +934,18 @@ static bool BriggsCoalesceInit(int u, int v, int n)
 static bool GeorgeCoalesceInit(int u, int v, int n)
 {
     /*u is precolored, v is not */
-    int k = 0, i, t;
     Adjacent(v);
-    for (i = 0; i < (tempCount + BITINTBITS - 1) / BITINTBITS; i++)
-        if (adjacent[i])
-            for (t = i * BITINTBITS; t < i * BITINTBITS + BITINTBITS; t++)
-                if (isset(adjacent, t))
-                    if (tempInfo[t]->squeeze >= tempInfo[t]->regCount)
-                    {
-                        if (!isConflicting(u, t))
-                        {
-                            k++;
-                        }
-                    }
-
+    int k = 0;
+    for (auto t : adjacent)
+    {
+        if (squeezes[t] >= tempRegCounts[t])
+        {
+            if (!isConflicting(u, t))
+            {
+                k++;
+            }
+        }
+    }
     if (k > 0)
     {
         hiMoves[n] = k;
@@ -1001,8 +986,6 @@ static void Build(Block* b)
         for (i = 0; i < tempCount; i++)
         {
             TempInfo* t = tempInfo[i];
-            t->workingMoves = nullptr;
-            t->spillCost = 0;
             t->temp = 0;
         }
         b = blockArray[0];
@@ -1019,29 +1002,27 @@ static void Build(Block* b)
                 {
                     int u = head->ans->offset->sp->i;
                     int v = head->dc.left->offset->sp->i;
-                    if (tempInfo[u]->regClass && (tempInfo[u]->regClass == tempInfo[v]->regClass ||
-                                                  fsizeFromISZ(tempInfo[u]->size) == fsizeFromISZ(tempInfo[v]->size)))
+                    if (tempRegClasses[u] && (tempRegClasses[u] == tempRegClasses[v] ||
+                                              fsizeFromISZ(tempInfo[u]->size) == fsizeFromISZ(tempInfo[v]->size)))
                     {
                         TempInfo* t;
-                        setbit(workingMoves, head->index);
-                        t = tempInfo[u];
-                        if (!t->workingMoves)
-                            t->workingMoves = tallocbit(instructionCount);
-                        setbit(t->workingMoves, head->index);
+                        workingMoves.insert(head->index);
+                        tempWorkingMoves[u].insert(head->index);
+                        tempWorkingMoves[v].insert(head->index);
 
-                        t = tempInfo[v];
-                        if (!t->workingMoves)
-                            t->workingMoves = tallocbit(instructionCount);
-                        setbit(t->workingMoves, head->index);
-                        if (tempInfo[u]->precolored)
+                        if (precolored[u])
                         {
-                            if (!tempInfo[v]->precolored)
+                            if (!precolored[v])
                                 GeorgeCoalesceInit(u, v, head->index);
                         }
-                        else if (tempInfo[v]->precolored)
+                        else if (precolored[v])
+                        {
                             GeorgeCoalesceInit(v, u, head->index);
+                        }
                         else
+                        {
                             BriggsCoalesceInit(u, v, head->index);
+                        }
                     }
                 }
             }
@@ -1050,24 +1031,24 @@ static void Build(Block* b)
         {
             if (head->ans->offset)
             {
-                tempInfo[head->ans->offset->sp->i]->spillCost += head->block->spillCost;
+                spillCosts[head->ans->offset->sp->i] += head->block->spillCost;
             }
             if (head->ans->offset2)
             {
-                tempInfo[head->ans->offset2->sp->i]->spillCost += head->block->spillCost;
+                spillCosts[head->ans->offset2->sp->i] += head->block->spillCost;
             }
         }
         if (head->temps & TEMP_LEFT)
         {
             if (head->dc.left->offset)
             {
-                tempInfo[head->dc.left->offset->sp->i]->spillCost += head->block->spillCost;
+                spillCosts[head->dc.left->offset->sp->i] += head->block->spillCost;
                 if (!tiny(head, head->dc.left))
                     tempInfo[head->dc.left->offset->sp->i]->temp = 1;
             }
             if (head->dc.left->offset2)
             {
-                tempInfo[head->dc.left->offset2->sp->i]->spillCost += head->block->spillCost;
+                spillCosts[head->dc.left->offset2->sp->i] += head->block->spillCost;
                 tempInfo[head->dc.left->offset2->sp->i]->temp = 1;
             }
         }
@@ -1075,13 +1056,13 @@ static void Build(Block* b)
         {
             if (head->dc.right->offset)
             {
-                tempInfo[head->dc.right->offset->sp->i]->spillCost += head->block->spillCost;
+                spillCosts[head->dc.right->offset->sp->i] += head->block->spillCost;
                 if (!tiny(head, head->dc.right))
                     tempInfo[head->dc.right->offset->sp->i]->temp = 1;
             }
             if (head->dc.right->offset2)
             {
-                tempInfo[head->dc.right->offset2->sp->i]->spillCost += head->block->spillCost;
+                spillCosts[head->dc.right->offset2->sp->i] += head->block->spillCost;
                 tempInfo[head->dc.right->offset2->sp->i]->temp = 1;
             }
         }
@@ -1096,294 +1077,228 @@ static void Build(Block* b)
 }
 static void Adjacent(int n)
 {
-    int x = (tempCount + BITINTBITS - 1) / BITINTBITS;
-    memset(adjacent, 0, x * sizeof(BITINT));
-    std::unique_ptr<BITINT> confl(new BITINT[x]);
-    memset(confl.get(), 0, x * sizeof(BITINT));
-    EvaluateConflicts(n, [&confl](int i) { setbit(confl.get(), i); });
-    int i;
-    for (i = 0; i < x; i++)
-    {
-        BITINT v;
-        if (confl.get()[i])
+    adjacent.clear();
+
+    EvaluateConflicts(n, [](int i) {
+        if (stackedTemps.find(i) == stackedTemps.end() && coalescedNodes.find(i) == coalescedNodes.end())
         {
-            adjacent[i] = confl.get()[i] & ~(stackedTemps[i] | coalescedNodes[i]);
+            adjacent.insert(i);
         }
-    }
+    });
 }
 static void Adjacent1(int n)
 {
-    int i;
-    int x = (tempCount + BITINTBITS - 1) / BITINTBITS;
-    memset(adjacent1, 0, x * sizeof(BITINT));
-    std::unique_ptr<BITINT> confl(new BITINT[x]);
-    memset(confl.get(), 0, x * sizeof(BITINT));
-    EvaluateConflicts(n, [&confl](int i) { setbit(confl.get(), i); });
-    for (i = 0; i < x; i++)
-    {
-        if (confl.get()[i])
+    adjacent1.clear();
+    // this is the same as adjacent, needs to be looked at sometime...
+    EvaluateConflicts(n, [](int i) {
+        if (stackedTemps.find(i) == stackedTemps.end() && coalescedNodes.find(i) == coalescedNodes.end())
         {
-            adjacent1[i] = confl.get()[i] & ~(stackedTemps[i] | coalescedNodes[i]);
+            adjacent1.insert(i);
         }
-    }
+    });
 }
-static BITINT* NodeMoves(int n, int index)
+static std::set<int>& NodeMoves(int n, int index)
 {
-    if (tempInfo[n]->workingMoves)
+    if (!tempWorkingMoves[n].empty())
     {
         int i;
-        BITINT* rv = tempMoves[index];
-        BITINT* p = rv;
-        BITINT* w = tempInfo[n]->workingMoves;
-        memset(p, 0, instructionByteCount * sizeof(BITINT));
-        for (i = 0; i < instructionByteCount; i++)
+        std::set<int>& rv = tempMoves[index];
+        std::set<int>& p = rv;
+        std::set<int>& w = tempWorkingMoves[n];
+        p.clear();
+        for (auto i : w)
         {
-            if (w[i])
-                p[i] = w[i] & (activeMoves[i] | workingMoves[i]);
+            if (activeMoves.find(i) != activeMoves.end() || workingMoves.find(i) != workingMoves.end())
+                p.insert(i);
         }
         return rv;
     }
-    return nullptr;
+    static std::set<int> emptyrv;
+    return emptyrv;
 }
 static bool MoveRelated(int n, int index)
 {
-    BITINT* data = NodeMoves(n, index);
-    if (data)
-    {
-        int i;
-        for (i = 0; i < instructionByteCount; i++)
-            if (data[i])
-                return true;
-    }
-    return false;
+    std::set<int>& data = NodeMoves(n, index);
+    return !data.empty();
 }
-static void MkWorklist(void)
+static void MkWorkList(void)
 {
     int i;
     /* going backwatds to get spill temps first */
     for (i = 0; i < tempCount; i++)
     {
         TempInfo* t = tempInfo[i];
-        if (t->doGlobal && !t->precolored && t->ircinitial)
+        if (doGlobals[i] && !precolored[i] && t->ircinitial)
         {
-            t->doGlobal = false;
+            doGlobals[i] = false;
             t->ircinitial = false;
-            if (t->squeeze >= t->regCount)
+            if (squeezes[i] >= tempRegCounts[i])
             {
-                briggsSet(spillWorklist, i);
+                spillWorkList.push_front(i);
             }
             else if (MoveRelated(i, 0))
             {
-                briggsSet(freezeWorklist, i);
+                freezeWorkList.insert(i);
             }
             else
             {
-                simplifyWorklist[simplifyTop++] = i;
+                simplifyWorkList.push_back(i);
             }
         }
     }
 }
-static void EnableMoves(BITINT* nodes, int index)
+static void EnableMoves(std::set<int>& nodes, int index)
 {
-    int i, t;
-    for (i = 0; i < (tempCount + BITINTBITS - 1) / BITINTBITS; i++)
-        if (nodes[i])
-            for (t = i * BITINTBITS; t < i * BITINTBITS + BITINTBITS; t++)
-                if (isset(nodes, t))
+    for (auto t : nodes)
+    {
+        std::set<int>& nm = NodeMoves(t, index);
+        for (auto k : nm)
+        {
+            if (activeMoves.find(k) != activeMoves.end())
+            {
+                --hiMoves[k];
+                if (hiMoves[k] <= 0)
                 {
-                    BITINT* nm = NodeMoves(t, index);
-                    int j;
-                    if (nm)
-                    {
-                        for (j = 0; j < instructionByteCount; j++)
-                        {
-                            if (activeMoves[j] & nm[j])
-                            {
-                                int k;
-                                for (k = j * BITINTBITS; k < j * BITINTBITS + BITINTBITS; k++)
-                                {
-                                    if (isset(activeMoves, k) && isset(nm, k))
-                                    {
-                                        --hiMoves[k];
-                                        if (hiMoves[k] <= 0)
-                                        {
-                                            clearbit(activeMoves, k);
-                                            setbit(workingMoves, k);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    activeMoves.erase(k);
+                    workingMoves.insert(k);
                 }
+            }
+        }
+    }
 }
 static void DecrementDegree(int m, int n)
 {
-    if (!tempInfo[m]->precolored)
+    if (!precolored[m])
     {
-        int cur = tempInfo[m]->squeeze;
-        tempInfo[m]->squeeze +=
-            SqueezeChange(m, tempInfo[n]->regClass->vertex,
-                          -(int)worstCase[tempInfo[m]->regClass->index * classCount + tempInfo[n]->regClass->index]);
-        tempInfo[m]->degree--;
-        if (cur == tempInfo[m]->regCount && tempInfo[m]->squeeze < tempInfo[m]->regCount)
+        int cur = squeezes[m];
+        squeezes[m] +=
+            SqueezeChange(m, tempRegClasses[n]->vertex, -(int)worstCase[tempRegClasses[m]->index][tempRegClasses[n]->index]);
+        degrees[m]--;
+        if (cur == tempRegCounts[m] && squeezes[m] < tempRegCounts[m])
         {
             Adjacent(m);
-            //            setbit(adjacent, m);
             EnableMoves(adjacent, 1);
-            briggsReset(spillWorklist, m);
+            spillWorkList.remove(m);
             if (MoveRelated(m, 1))
             {
-                briggsSet(freezeWorklist, m);
+                freezeWorkList.insert(m);
             }
             else
             {
-                simplifyWorklist[simplifyTop++] = m;
+                simplifyWorkList.push_back(m);
             }
         }
     }
 }
 static void Simplify(void)
 {
-    int n = simplifyWorklist[simplifyBottom++];
+    int n = simplifyWorkList.front();
+    simplifyWorkList.pop_front();
     int i, t;
-    if (simplifyBottom == simplifyTop)
-        simplifyBottom = simplifyTop = 0;
-    if (tempInfo[n]->regClass)
+    if (tempRegClasses[n])
     {
         PUSH(n);
         Adjacent1(n);
-        briggsReset(freezeWorklist, n);  // DAL I added this because it seemed needed
-        if (tempInfo[n]->squeeze >= tempInfo[n]->regCount)
+        freezeWorkList.erase(n);  // DAL I added this because it seemed needed
+        if (squeezes[n] >= tempRegCounts[n])
             EnableMoves(adjacent1, 0);
-        for (i = 0; i < (tempCount + BITINTBITS - 1) / BITINTBITS; i++)
-            if (adjacent1[i])
-                for (t = i * BITINTBITS; t < i * BITINTBITS + BITINTBITS; t++)
-                    if (isset(adjacent1, t))
-                        DecrementDegree(t, n);
+        for (auto t : adjacent1)
+            DecrementDegree(t, n);
     }
 }
 static void AddWorkList(int u)
 {
-    if (!tempInfo[u]->precolored && !MoveRelated(u, 1) && tempInfo[u]->squeeze < tempInfo[u]->regCount)
+    if (!precolored[u] && !MoveRelated(u, 1) && squeezes[u] < tempRegCounts[u])
     {
-        briggsReset(freezeWorklist, u);
-        simplifyWorklist[simplifyTop++] = u;
+        freezeWorkList.erase(u);
+        simplifyWorkList.push_back(u);
     }
 }
 static int Combine(int u, int v)
 {
-    int i, t;
-    unsigned z;
-    int max = (tempCount + BITINTBITS - 1) / BITINTBITS;
-    bool losingHiDegreeNode;
-    BITINT *tu, *tv;
-    /*
-    if (!tempInfo[v]->precolored && !tempInfo[u]->precolored)
-        if (ConflictNeighbors(v) > ConflictNeighbors(u))
-        {
-            int n = v;
-            v = u;
-            u = n;
-        }
-    */
-    if (briggsTest(freezeWorklist, v))
-        briggsReset(freezeWorklist, v);
+    if (freezeWorkList.find(v) != freezeWorkList.end())
+    {
+        freezeWorkList.erase(v);
+    }
     else
-        briggsReset(spillWorklist, v);
-    setbit(coalescedNodes, v);
+    {
+        spillWorkList.remove(v);
+    }
+    coalescedNodes.insert(v);
     tempInfo[v]->partition = u;
     // assumes that the more stringent set has less elements
     if (tempInfo[v]->liveAcrossFunctionCall)
     {
-        tempInfo[u]->regClass = tempInfo[v]->regClass;
-        tempInfo[u]->regCount = tempInfo[v]->regCount;
+        tempRegClasses[u] = tempRegClasses[v];
+        tempRegCounts[u] = tempRegCounts[v];
         tempInfo[u]->liveAcrossFunctionCall = true;
     }
     else if (tempInfo[u]->liveAcrossFunctionCall)
     {
-        tempInfo[v]->regClass = tempInfo[u]->regClass;
-        tempInfo[u]->regCount = tempInfo[v]->regCount;
+        tempRegClasses[v] = tempRegClasses[u];
+        // this next line seems a little wrong but it works...
+        tempRegCounts[u] = tempRegCounts[v];
         tempInfo[v]->liveAcrossFunctionCall = true;
     }
-    if (tempInfo[u]->precolored)
+    if (precolored[u])
     {
-        BITINT* nm = tempInfo[v]->workingMoves;
-        int j;
-        for (j = 0; j < instructionByteCount; j++)
+        std::set<int>& nm = tempWorkingMoves[v];
+        for (auto k : nm)
         {
-            int z;
-            if ((z = nm[j]))
+            if (instructionList[k])
             {
-                int k;
-                int m = j * BITINTBITS;
-                for (k = m; k < m + BITINTBITS; k++, z >>= 1)
+                int x = instructionList[k]->ans->offset->sp->i;
+                int y = instructionList[k]->dc.left->offset->sp->i;
+                if (!precolored[x] && !precolored[y])
                 {
-                    if ((z & 1) && instructionList[k])
-                    {
-                        int x = instructionList[k]->ans->offset->sp->i;
-                        int y = instructionList[k]->dc.left->offset->sp->i;
-                        if (!tempInfo[x]->precolored && !tempInfo[y]->precolored)
-                        {
-                            hiMoves[k] = 0;
-                            setbit(tempInfo[u]->workingMoves, k);
-                        }
-                    }
+                    hiMoves[k] = 0;
+                    tempWorkingMoves[u].insert(k);
                 }
             }
         }
     }
     else
     {
-        tu = tempInfo[u]->workingMoves;
-        tv = tempInfo[v]->workingMoves;
-        if (tv)
+        auto&& tu = tempWorkingMoves[u];
+        auto&& tv = tempWorkingMoves[v];
+        if (!tv.empty())
         {
-            if (!tu)
-            {
-                tempInfo[u]->workingMoves = tu = tallocbit(instructionCount);  // DAL this was modified....
-            }
-            for (i = 0; i < instructionByteCount; i++)
-                tu[i] |= tv[i];
+            std::set<int> temp;
+            std::set_union(tu.begin(), tu.end(), tv.begin(), tv.end(), std::inserter(temp, temp.begin()));
+            tu = std::move(temp);
         }
     }
-    losingHiDegreeNode = tempInfo[u]->squeeze >= tempInfo[u]->regCount && tempInfo[v]->squeeze >= tempInfo[v]->regCount;
+    bool losingHiDegreeNode = squeezes[u] >= tempRegCounts[u] && squeezes[v] >= tempRegCounts[v];
 
-    std::unique_ptr<BITINT> confl(new BITINT[max]);
-    memset(confl.get(), 0, max * sizeof(BITINT));
-    EvaluateConflicts(v, [&confl](int i) { setbit(confl.get(), i); });
-
-    for (i = 0; i < max; i++)
-        if ((z = confl.get()[i] & ~coalescedNodes[i]))
-            for (t = i * BITINTBITS; t < i * BITINTBITS + BITINTBITS; t++, z >>= 1)
-                if (z & 1)
-                {
-                    if (t != u && !isConflicting(t, u))
-                    {
-                        insertConflict(t, u);
-                        if (!tempInfo[u]->precolored)
-                        {
-                            tempInfo[u]->squeeze +=
-                                SqueezeChange(u, tempInfo[t]->regClass->vertex,
-                                              +worstCase[tempInfo[u]->regClass->index * classCount + tempInfo[t]->regClass->index]);
-                            tempInfo[u]->degree++;
-                        }
-                        if (!tempInfo[t]->precolored)
-                        {
-                            tempInfo[t]->squeeze +=
-                                SqueezeChange(t, tempInfo[u]->regClass->vertex,
-                                              +worstCase[tempInfo[t]->regClass->index * classCount + tempInfo[u]->regClass->index]);
-                            tempInfo[t]->degree++;
-                        }
-                    }
-                    DecrementDegree(t, v);
-                }
-    if (tempInfo[u]->squeeze >= tempInfo[u]->regCount)
-    {
-        if (briggsTest(freezeWorklist, u))
+    EvaluateConflicts(v, [u, v](int t) {
+        if (coalescedNodes.find(t) == coalescedNodes.end())
         {
-            briggsReset(freezeWorklist, u);
-            briggsSet(spillWorklist, u);
+            if (t != u && !isConflicting(t, u))
+            {
+                insertConflict(t, u);
+                if (!precolored[u])
+                {
+                    squeezes[u] +=
+                        SqueezeChange(u, tempRegClasses[t]->vertex, +worstCase[tempRegClasses[u]->index][tempRegClasses[t]->index]);
+                    degrees[u]++;
+                }
+                if (!precolored[t])
+                {
+                    squeezes[t] +=
+                        SqueezeChange(t, tempRegClasses[u]->vertex, +worstCase[tempRegClasses[t]->index][tempRegClasses[u]->index]);
+                    degrees[t]++;
+                }
+            }
+            DecrementDegree(t, v);
+        }
+    });
+
+    if (squeezes[u] >= tempRegCounts[u])
+    {
+        if (freezeWorkList.find(u) != freezeWorkList.end())
+        {
+            freezeWorkList.erase(u);
+            spillWorkList.push_front(u);
         }
     }
     if (losingHiDegreeNode)
@@ -1399,12 +1314,11 @@ static bool AllOK(int u, int v)
     if (tempInfo[u]->enode->sp->imvalue->retval)
         return false;
     Adjacent(v);
-    for (i = 0; i < (tempCount + BITINTBITS - 1) / BITINTBITS; i++)
-        if (adjacent[i])
-            for (t = i * BITINTBITS; t < i * BITINTBITS + BITINTBITS; t++)
-                if (isset(adjacent, t))
-                    if (!tempInfo[t]->precolored && tempInfo[t]->squeeze >= tempInfo[t]->regCount && !isConflicting(t, u))
-                        return false;
+    for (auto t : adjacent)
+    {
+        if (!precolored[t] && squeezes[t] >= tempRegCounts[t] && !isConflicting(t, u))
+            return false;
+    }
     return true;
 }
 static bool Conservative(int u, int v)
@@ -1412,27 +1326,26 @@ static bool Conservative(int u, int v)
     int i, t, k = 0;
     Adjacent1(u);
     Adjacent(v);
-    for (i = 0; i < (tempCount + BITINTBITS - 1) / BITINTBITS; i++)
+    std::set<int> working;
+    std::set_union(adjacent.begin(), adjacent.end(), adjacent1.begin(), adjacent1.end(), std::inserter(working, working.begin()));
+    for (auto&& t : working)
     {
-        adjacent[i] |= adjacent1[i];
-        if (adjacent[i])
-            for (t = i * BITINTBITS; t < i * BITINTBITS + BITINTBITS; t++)
-                if (isset(adjacent, t))
-                    if (tempInfo[t]->squeeze >= tempInfo[t]->regCount)
-                        ++k;
+        if (squeezes[t] >= tempRegCounts[t])
+            ++k;
     }
-    return k < tempInfo[u]->regClass->regCount && k < tempInfo[v]->regClass->regCount;
+    adjacent = std::move(working);
+    return k < tempRegClasses[u]->regCount && k < tempRegClasses[v]->regCount;
 }
 static bool conflictsWithSameColor(int u, int v)
 {
-    if (tempInfo[u]->precolored)
+    if (precolored[u])
     {
         bool rv = false;
         EvaluateConflicts(v, [&rv, u](int j) {
             if (!rv)
             {
                 int k = findPartition(j);
-                if (tempInfo[k]->precolored && tempInfo[k]->color == tempInfo[u]->color)
+                if (precolored[k] && colors[k] == colors[u])
                 {
                     rv = true;
                 }
@@ -1445,12 +1358,11 @@ static bool conflictsWithSameColor(int u, int v)
 }
 static bool inBothRegClasses(int u, int v)
 {
-    if (tempInfo[u]->precolored)
+    if (precolored[u])
     {
-        int n = tempInfo[u]->color;
-        int i;
-        for (i = 0; i < tempInfo[v]->regCount; i++)
-            if (n == tempInfo[v]->regClass->regs[i])
+        int n = colors[u];
+        for (int i = 0; i < tempRegCounts[v]; i++)
+            if (n == tempRegClasses[v]->regs[i])
                 return true;
         return false;
     }
@@ -1458,70 +1370,49 @@ static bool inBothRegClasses(int u, int v)
 }
 static bool Coalesce(void)
 {
-    int i;
-    int sel = -1;
-
-    for (i = 0; i < instructionByteCount; i++)
+    if (!workingMoves.empty())
     {
-        BITINT x;
-        if ((x = workingMoves[i]))
-        {
-            int j;
-            for (j = 0; x; j++, x >>= 1)
-            {
-                if (x & 1)
-                {
-                    sel = i * BITINTBITS + j;
-                    goto join;
-                }
-            }
-        }
-    }
-join:
-    if (sel != -1)
-    {
+        auto sel = *workingMoves.begin();
         int u, v;
         u = findPartition(instructionList[sel]->ans->offset->sp->i);
         v = findPartition(instructionList[sel]->dc.left->offset->sp->i);
-        clearbit(workingMoves, sel);
-        clearbit(tempInfo[u]->workingMoves, sel);
-        clearbit(tempInfo[v]->workingMoves, sel);
-        if (tempInfo[v]->precolored || (!tempInfo[u]->precolored && tempInfo[u]->spilled))
+        workingMoves.erase(sel);
+        tempWorkingMoves[u].erase(sel);
+        tempWorkingMoves[v].erase(sel);
+        if (precolored[v] || (!precolored[u] && spilled[u]))
         {
-            int n = u;
-            u = v;
-            v = n;
+            std::swap(u, v);
         }
         if (u == v)
         {
             /* same reg, discard it */
-            setbit(coalescedMoves, sel);
+            coalescedMoves.insert(sel);
             AddWorkList(u);
         }
-        else if (tempInfo[v]->precolored || isConflicting(u, v) || conflictsWithSameColor(u, v) || !inBothRegClasses(u, v))
+        else if (precolored[v] || isConflicting(u, v) || conflictsWithSameColor(u, v) || !inBothRegClasses(u, v))
         {
             /* both precolored or otherwise in conflict, can't do anything with it */
-            setbit(constrainedMoves, sel);
+            constrainedMoves.insert(sel);
             AddWorkList(u);
             AddWorkList(v);
         }
-        else if ((tempInfo[u]->precolored && AllOK(u, v)) || (!tempInfo[u]->precolored && Conservative(u, v)))
+        else if ((precolored[u] && AllOK(u, v)) || (!precolored[u] && Conservative(u, v)))
         {
             /* zero or one precolored reg, constraints ok, coalesce */
-            setbit(coalescedMoves, sel);
+            coalescedMoves.insert(sel);
             AddWorkList(Combine(u, v));
         }
         else
         {
             /* zero or one precolored reg, constraints not ok, we can't coalesce at this time */
-            setbit(activeMoves, sel);
+            activeMoves.insert(sel);
             hiMoves[sel] = 0;
-            if (tempInfo[u]->precolored)
+            if (precolored[u])
             {
-                if (!tempInfo[v]->precolored)
+                if (!precolored[v])
                     GeorgeCoalesceInit(u, v, sel);
             }
-            else if (tempInfo[v]->precolored)
+            else if (precolored[v])
                 GeorgeCoalesceInit(v, u, sel);
             else
                 BriggsCoalesceInit(u, v, sel);
@@ -1533,82 +1424,65 @@ join:
 }
 static void FreezeMoves(int u)
 {
-    BITINT* nm;
+    std::set<int>& nm = NodeMoves(u, 0);
     int i;
-    nm = NodeMoves(u, 0);
-    if (nm)
+    for (auto j : nm)
     {
-        for (i = 0; i < instructionByteCount; i++)
+        int v;
+        int n = instructionList[j]->ans->offset->sp->i;
+        if (findPartition(n) == u)
         {
-            if (nm[i])
+            v = instructionList[j]->dc.left->offset->sp->i;
+        }
+        else
+        {
+            v = instructionList[j]->ans->offset->sp->i;
+        }
+        if (v != -1)
+        {
+            if (activeMoves.find(j) != activeMoves.end())
             {
-                int j;
-                for (j = i * BITINTBITS; j < i * BITINTBITS + BITINTBITS; j++)
-                {
-                    if (isset(nm, j))
-                    {
-                        int v;
-                        int n = instructionList[j]->ans->offset->sp->i;
-                        if (findPartition(n) == u)
-                        {
-                            v = instructionList[j]->dc.left->offset->sp->i;
-                        }
-                        else
-                        {
-                            v = instructionList[j]->ans->offset->sp->i;
-                        }
-                        if (v != -1)
-                        {
-                            if (isset(activeMoves, j))
-                            {
-                                clearbit(activeMoves, j);
-                            }
-                            else
-                            {
-                                clearbit(workingMoves, j);
-                                clearbit(tempInfo[v]->workingMoves, j);
-                                clearbit(tempInfo[u]->workingMoves, j);
-                            }
-                            setbit(frozenMoves, j);
-                            if (tempInfo[v]->squeeze < tempInfo[v]->regCount && !MoveRelated(v, 1))
-                            {
-                                briggsReset(freezeWorklist, v);
-                                simplifyWorklist[simplifyTop++] = v;
-                            }
-                        }
-                    }
-                }
+                activeMoves.erase(j);
+            }
+            else
+            {
+                workingMoves.erase(j);
+                tempWorkingMoves[v].erase(j);
+                tempWorkingMoves[u].erase(j);
+            }
+            frozenMoves.insert(j);
+            if (squeezes[v] < tempRegCounts[v] && !MoveRelated(v, 1))
+            {
+                freezeWorkList.erase(v);
+                simplifyWorkList.push_back(v);
             }
         }
     }
 }
 static void Freeze(void)
 {
-    int u = freezeWorklist->data[0];
-    briggsReset(freezeWorklist, u);
-    simplifyWorklist[simplifyTop++] = u;
+    int u = *freezeWorkList.begin();
+    freezeWorkList.erase(u);
+    simplifyWorkList.push_back(u);
     FreezeMoves(u);
 }
 static unsigned SpillCost(int i)
 {
     int cost;
-    LIST* def = tempInfo[i]->idefines;
-    LIST* use = tempInfo[i]->iuses;
-    if (!def || !use)
+    auto& def = instructionDefines[i];
+    auto& use = instructionUses[i];
+    if (def.empty() || use.empty())
         return UINT_MAX;
-    if (!def->next && !use->next)
+    if (def.size() == 1 && use.size() == 1)
     {
-        QUAD* q = (QUAD*)use->data;
-        if (((QUAD*)def->data)->index == q->index - 1)
+        QUAD* q = use.front();
+        ;
+        if (def.front()->index == q->index - 1)
             if (!(q->temps & TEMP_ANS) && q->dc.opcode == i_assn && q->ans->offset->type != se_add && q->ans->mode == i_direct &&
                 (q->ans->offset->sp && q->ans->offset->sp->spillVar))
                 return UINT_MAX;
     }
-    //	if (!use)
-    //	{
-    //		return tempInfo[i]->regCount - tempInfo[i]->squeeze;
-    //	}
-    cost = tempInfo[i]->spillCost;  // tempInfo[i]->degree;
+    cost = spillCosts[i];  // tempInfo[i]->degree;
     if (cost <= UINT_MAX - 1 - REG_MAX)
         return cost + REG_MAX;
     return UINT_MAX - 1;
@@ -1619,10 +1493,9 @@ static void SelectSpill(void)
     unsigned priority = UINT_MAX;
     int i;
     bool printing = false;
-    for (i = 0; i < spillWorklist->top; i++)
+    for (auto s : spillWorkList)
     {
-        int s = spillWorklist->data[i];
-        if (!tempInfo[s]->spilled)
+        if (!spilled[s])
         {
             unsigned n = SpillCost(s);
             if (n < priority)
@@ -1635,82 +1508,68 @@ static void SelectSpill(void)
     if (priority == UINT_MAX)
     {
         int sz;
-        m = spillWorklist->data[0];
+        m = *spillWorkList.begin();
         sz = 0;
         // no good candidates, select the first...
-        for (i = 0; i < spillWorklist->top; i++)
+        for (auto s : spillWorkList)
         {
-            int s = spillWorklist->data[i];
-            if (!tempInfo[s]->spilled && sizeFromISZ(tempInfo[s]->size) > sz)
+            if (!spilled[s] && sizeFromISZ(tempInfo[s]->size) > sz)
             {
                 m = s;
                 sz = sizeFromISZ(tempInfo[s]->size);
             }
         }
     }
-    briggsReset(spillWorklist, m);
-    if (tempInfo[m]->triedSpill)
-        briggsSet(spilledNodes, m);
+    spillWorkList.remove(m);
+    if (triedSpill[m])
+        spilledNodes.insert(m);
     else
-        simplifyWorklist[simplifyTop++] = m;
-    tempInfo[m]->triedSpill = true;
+        simplifyWorkList.push_back(m);
+    triedSpill[m] = true;
     FreezeMoves(m);
 }
 static void AssignColors(void)
 {
-    int n;
     int i, j;
     int m;
-    UBYTE* order = chosenAssembler->arch->regOrder;
-    int count = *order++;
+    for (auto m : tempStack)  // this traverses the stack backwards since we are pushing at the front
     {
-        int pos;
-        for (pos = tempStackcount - 1; pos >= 0; pos--)
-        {
-            n = tempStack[pos];
-            if (n != -1)
+        std::set<int> regs;
+        ARCH_REGCLASS* cls = tempRegClasses[m];
+        EvaluateConflicts(m, [&regs](int j) {
+            int u = findPartition(j);
+            if (colors[u] >= 0)
             {
-                bool regs[MAX_INTERNAL_REGS];
-                ARCH_REGCLASS* cls = tempInfo[n]->regClass;
-                tempStack[pos] = -1;
-                for (i = 0; i < sizeof(regs); i++)
-                    regs[i] = true;
-                EvaluateConflicts(n, [&regs](int j) {
-                    int u = findPartition(j);
-                    if (tempInfo[u]->color >= 0)
-                    {
-                        int x = tempInfo[u]->color;
-                        int k;
-                        regs[x] = false;
-                        for (k = 0; k < chosenAssembler->arch->regNames[x].aliasCount; k++)
-                        {
-                            regs[chosenAssembler->arch->regNames[x].aliases[k]] = false;
-                        }
-                    }
-                });
-                for (i = 0; i < cls->regCount; i++)
-                    if (regs[cls->regs[i]])
-                    {
-                        tempInfo[n]->color = cls->regs[i];
-                        tempInfo[n]->enode->sp->regmode = 2;
-                        break;
-                    }
-                if (i == cls->regCount)
+                int x = colors[u];
+                int k;
+                regs.insert(x);
+                for (k = 0; k < chosenAssembler->arch->regNames[x].aliasRegs.size(); k++)
                 {
-                    briggsSet(spilledNodes, n);
+                    regs.insert(chosenAssembler->arch->regNames[x].aliasRegs[k]);
                 }
             }
+        });
+        for (i = 0; i < cls->regCount; i++)
+            if (regs.find(cls->regs[i]) == regs.end())
+            {
+                colors[m] = cls->regs[i];
+                tempInfo[m]->enode->sp->regmode = 2;
+                break;
+            }
+        if (i == cls->regCount)
+        {
+            spilledNodes.insert(m);
         }
     }
-    tempStackcount = 0;
+    tempStack.clear();
     for (i = 0; i < tempCount; i++)
-        tempInfo[i]->color = tempInfo[findPartition(i)]->color;
+        colors[i] = colors[findPartition(i)];
 }
 static IMODE* InsertLoad(QUAD* head, IMODE* mem)
 {
     QUAD* insert;
     IMODE* t = InitTempOpt(mem->size, mem->size);
-    tempInfo[t->offset->sp->i]->spilled = true;
+    spilled[t->offset->sp->i] = true;
     tempInfo[t->offset->sp->i]->ircinitial = true;
     head = head->back;
     insert = Allocate<QUAD>();
@@ -1730,10 +1589,10 @@ static void InsertStore(QUAD* head, IMODE** im, IMODE* mem)
     QUAD* insert;
     int tn = t->offset->sp->i;
     int ta = (*im)->offset->sp->i;
-    tempInfo[tn]->spilled = true;
-    tempInfo[tn]->precolored = tempInfo[ta]->precolored;
+    spilled[tn] = true;
+    precolored[tn] = precolored[ta];
     tempInfo[tn]->enode->sp->regmode = tempInfo[ta]->enode->sp->regmode;
-    tempInfo[tn]->color = tempInfo[ta]->color;
+    colors[tn] = colors[ta];
     tempInfo[tn]->ircinitial = true;
     *im = t;
     insert = Allocate<QUAD>();
@@ -1742,7 +1601,7 @@ static void InsertStore(QUAD* head, IMODE** im, IMODE* mem)
     insert->dc.left = t;
     insert->block = head->block;
     insert->index = -1;
-    if (tempInfo[tn]->precolored)
+    if (precolored[tn])
         insert->precolored |= TEMP_LEFT;
     InsertInstruction(head, insert);
     accesses++;
@@ -1750,100 +1609,96 @@ static void InsertStore(QUAD* head, IMODE** im, IMODE* mem)
 static void RewriteAllSpillNodes(void)
 {
     QUAD* head = intermed_head;
-    int spillVars[6], i, j;
-    IMODE* spillNodes[6];
+    std::array<int, 6> tempSpillVars;
+    std::array<IMODE*, 6> tempSpillNodes;
     //    IMODE *mem = tempInfo[n]->spillVar;
     while (head)
     {
         IMODE* t;
-        memset(spillVars, 0xff, sizeof(spillVars));
-        memset(spillNodes, 0, sizeof(spillNodes));
+        std::fill(tempSpillVars.begin(), tempSpillVars.end(), -1);
+        std::fill(tempSpillNodes.begin(), tempSpillNodes.end(), nullptr);
         if (head->temps & TEMP_ANS)
         {
             if (head->ans->mode == i_direct)
             {
-                if (tempInfo[head->ans->offset->sp->i]->spilling)
+                if (spilling[head->ans->offset->sp->i])
                 {
-                    InsertStore(head, &head->ans, tempInfo[head->ans->offset->sp->i]->spillVar);
+                    InsertStore(head, &head->ans, spilledVars[head->ans->offset->sp->i]);
                 }
             }
             else
             {
-                if (head->ans->offset && head->ans->offset->type == se_tempref && tempInfo[head->ans->offset->sp->i]->spilling)
-
-                    spillVars[0] = head->ans->offset->sp->i;
-                if (head->ans->offset2 && head->ans->offset2->type == se_tempref && tempInfo[head->ans->offset2->sp->i]->spilling)
-                    spillVars[1] = head->ans->offset2->sp->i;
+                if (head->ans->offset && head->ans->offset->type == se_tempref && spilling[head->ans->offset->sp->i])
+                    tempSpillVars[0] = head->ans->offset->sp->i;
+                if (head->ans->offset2 && head->ans->offset2->type == se_tempref && spilling[head->ans->offset2->sp->i])
+                    tempSpillVars[1] = head->ans->offset2->sp->i;
             }
         }
         if (head->temps & TEMP_LEFT)
         {
-            if (head->dc.left->offset && head->dc.left->offset->type == se_tempref &&
-                tempInfo[head->dc.left->offset->sp->i]->spilling)
-                spillVars[2] = head->dc.left->offset->sp->i;
-            if (head->dc.left->offset2 && head->dc.left->offset2->type == se_tempref &&
-                tempInfo[head->dc.left->offset2->sp->i]->spilling)
-                spillVars[3] = head->dc.left->offset2->sp->i;
+            if (head->dc.left->offset && head->dc.left->offset->type == se_tempref && spilling[head->dc.left->offset->sp->i])
+                tempSpillVars[2] = head->dc.left->offset->sp->i;
+            if (head->dc.left->offset2 && head->dc.left->offset2->type == se_tempref && spilling[head->dc.left->offset2->sp->i])
+                tempSpillVars[3] = head->dc.left->offset2->sp->i;
         }
         if (head->temps & TEMP_RIGHT)
         {
-            if (head->dc.right->offset && head->dc.right->offset->type == se_tempref &&
-                tempInfo[head->dc.right->offset->sp->i]->spilling)
-                spillVars[4] = head->dc.right->offset->sp->i;
-            if (head->dc.right->offset2 && head->dc.right->offset2->type == se_tempref &&
-                tempInfo[head->dc.right->offset2->sp->i]->spilling)
-                spillVars[5] = head->dc.right->offset2->sp->i;
+            if (head->dc.right->offset && head->dc.right->offset->type == se_tempref && spilling[head->dc.right->offset->sp->i])
+                tempSpillVars[4] = head->dc.right->offset->sp->i;
+            if (head->dc.right->offset2 && head->dc.right->offset2->type == se_tempref && spilling[head->dc.right->offset2->sp->i])
+                tempSpillVars[5] = head->dc.right->offset2->sp->i;
         }
         // this is all to guard against loading the same var two or more times for the same instruction
         // which is both optimally bad and can also lead to insidious bugs
         // because of some assumptions made by the rewrite module
-        for (i = 0; i < 6; i++)
-            if (spillVars[i] != -1)
+        for (int i = 0; i < 6; i++)
+            if (tempSpillVars[i] != -1)
             {
+                int j;
                 for (j = 0; j < i; j++)
-                    if (spillVars[j] == spillVars[i])
+                    if (tempSpillVars[j] == tempSpillVars[i])
                     {
                         break;
                     }
                 if (j >= i)
                 {
-                    spillNodes[i] = InsertLoad(head, tempInfo[spillVars[i]]->spillVar);
+                    tempSpillNodes[i] = InsertLoad(head, spilledVars[tempSpillVars[i]]);
                 }
                 else
                 {
-                    spillNodes[i] = spillNodes[j];
+                    tempSpillNodes[i] = tempSpillNodes[j];
                 }
             }
-        if (spillNodes[0] || spillNodes[1])
+        if (tempSpillNodes[0] || tempSpillNodes[1])
         {
             IMODE* im = Allocate<IMODE>();
             *im = *head->ans;
             head->ans = im;
         }
-        if (spillNodes[0])
-            head->ans->offset = spillNodes[0]->offset;
-        if (spillNodes[1])
-            head->ans->offset2 = spillNodes[1]->offset;
-        if (spillNodes[2] || spillNodes[3])
+        if (tempSpillNodes[0])
+            head->ans->offset = tempSpillNodes[0]->offset;
+        if (tempSpillNodes[1])
+            head->ans->offset2 = tempSpillNodes[1]->offset;
+        if (tempSpillNodes[2] || tempSpillNodes[3])
         {
             IMODE* im = Allocate<IMODE>();
             *im = *head->dc.left;
             head->dc.left = im;
         }
-        if (spillNodes[2])
-            head->dc.left->offset = spillNodes[2]->offset;
-        if (spillNodes[3])
-            head->dc.left->offset2 = spillNodes[3]->offset;
-        if (spillNodes[4] || spillNodes[5])
+        if (tempSpillNodes[2])
+            head->dc.left->offset = tempSpillNodes[2]->offset;
+        if (tempSpillNodes[3])
+            head->dc.left->offset2 = tempSpillNodes[3]->offset;
+        if (tempSpillNodes[4] || tempSpillNodes[5])
         {
             IMODE* im = Allocate<IMODE>();
             *im = *head->dc.right;
             head->dc.right = im;
         }
-        if (spillNodes[4])
-            head->dc.right->offset = spillNodes[4]->offset;
-        if (spillNodes[5])
-            head->dc.right->offset2 = spillNodes[5]->offset;
+        if (tempSpillNodes[4])
+            head->dc.right->offset = tempSpillNodes[4]->offset;
+        if (tempSpillNodes[5])
+            head->dc.right->offset2 = tempSpillNodes[5]->offset;
         head = head->fwd;
     }
 }
@@ -1851,102 +1706,80 @@ static void RewriteAllSpillNodes(void)
 static void SpillColor(void)
 {
     int i;
-    for (i = 0; i < spilledNodes->top; i++)
+    for (auto n : spilledNodes)
     {
-        int n = spilledNodes->data[i];
-        if (!tempInfo[n]->spillVar)
+        if (!spilledVars[n])
             GetSpillVar(n);
     }
 }
 /* attempt to use the same spill var for any spilled variables
  * which are connected by an uncoalesced move
  */
-static void SpillCoalesce(BriggsSet* C, BriggsSet* S)
+static void SpillCoalesce(std::unordered_set<int>& C, std::unordered_set<int>& S)
 {
     typedef struct _move_
     {
-        struct _move_* next;
         int a;
         int b;
         int cost;
-        LIST* uses;
+        std::list<QUAD*> uses;
     } MOVE;
-    MOVE *moves = nullptr, **mt;
-    int i;
-    for (i = 0; i < S->top; i++)
+    std::list<MOVE> moves;
+    for (auto n : S)
     {
-        int n = S->data[i];
-        BITINT* nm = tempInfo[n]->workingMoves;
-        int j;
-        if (nm)
+        std::set<int>& nm = tempWorkingMoves[n];
+        for (auto k : nm)
         {
-            for (j = 0; j < instructionByteCount; j++)
+            if (coalescedMoves.find(k) == coalescedMoves.end())
             {
-                if (nm[j] & ~coalescedMoves[j])
+                QUAD* head = instructionList[k];
+                if (head)
                 {
-                    int k;
-                    for (k = j * BITINTBITS; k < j * BITINTBITS + BITINTBITS; k++)
+                    int a = head->ans->offset->sp->i;
+                    int b = head->dc.left->offset->sp->i;
+                    if (fsizeFromISZ(tempInfo[a]->size) == fsizeFromISZ(tempInfo[b]->size))
                     {
-                        if (isset(nm, k) && !isset(coalescedMoves, k))
+                        bool test;
+                        if (n == a)
+                            test = S.find(b) != S.end();
+                        else
+                            test = S.find(a) != S.end();
+                        if (test)
                         {
-                            QUAD* head = instructionList[k];
-                            if (head)
+                            if (C.find(a) != C.end() || C.find(b) != C.end())
                             {
-                                bool test;
-                                int a = head->ans->offset->sp->i;
-                                int b = head->dc.left->offset->sp->i;
-                                if (fsizeFromISZ(tempInfo[a]->size) == fsizeFromISZ(tempInfo[b]->size) &&
-                                    !tempInfo[a]->directSpill && !tempInfo[b]->directSpill)
+                                if (a > b)
                                 {
+                                    std::swap(a, b);
+                                }
+                                auto it = moves.begin();
+                                for (; it != moves.end(); ++it)
+                                {
+                                    auto mt = *it;
+                                    if (mt.a == a && mt.b == b)
                                     {
-                                        if (n == a)
-                                            test = briggsTest(S, b);
-                                        else
-                                            test = briggsTest(S, a);
-                                        if (test)
+                                        auto it = mt.uses.begin();
+                                        for (; it != mt.uses.end(); ++it)
                                         {
-                                            if (briggsTest(C, a) || briggsTest(C, b))
-                                            {
-                                                if (a > b)
-                                                {
-                                                    int temp = a;
-                                                    a = b;
-                                                    b = temp;
-                                                }
-                                                mt = &moves;
-                                                while (*mt)
-                                                {
-                                                    if ((*mt)->a == a && (*mt)->b == b)
-                                                    {
-                                                        LIST** l = &(*mt)->uses;
-                                                        while (*l)
-                                                        {
-                                                            if ((*l)->data == (void*)head)
-                                                                break;
-                                                            l = &(*l)->next;
-                                                        }
-                                                        if (!*l)
-                                                        {
-                                                            *l = tAllocate<LIST>();
-                                                            (*l)->data = (void*)head;
-                                                            (*mt)->cost += head->block->spillCost;
-                                                        }
-                                                        break;
-                                                    }
-                                                    mt = &(*mt)->next;
-                                                }
-                                                if (!*mt)
-                                                {
-                                                    *mt = tAllocate<MOVE>();
-                                                    (*mt)->a = a;
-                                                    (*mt)->b = b;
-                                                    (*mt)->cost = head->block->spillCost;
-                                                    (*mt)->uses = tAllocate<LIST>();
-                                                    (*mt)->uses->data = (void*)head;
-                                                }
-                                            }
+                                            if ((*it) == head)
+                                                break;
                                         }
+                                        if (it == mt.uses.end())
+                                        {
+                                            mt.uses.push_back(head);
+                                            mt.cost += head->block->spillCost;
+                                        }
+                                        break;
                                     }
+                                }
+                                if (it == moves.end())
+                                {
+                                    MOVE mt = {0};
+                                    mt.a = a;
+                                    mt.b = b;
+                                    mt.cost = head->block->spillCost;
+                                    mt.uses.push_back(head);
+                                    moves.push_back(std::move(mt));
                                 }
                             }
                         }
@@ -1955,41 +1788,37 @@ static void SpillCoalesce(BriggsSet* C, BriggsSet* S)
             }
         }
     }
-    while (moves)
+    while (!moves.empty())
     {
+        std::list<MOVE>::iterator mv;
         unsigned cost = 0;
-        MOVE **mv = nullptr, *ml;
-        mt = &moves;
-        while (*mt)
+        for (auto it = moves.begin(); it != moves.end(); ++it)
         {
-            if (cost < (*mt)->cost)
+            auto&& mt = *it;
+            if (cost < mt.cost)
             {
-                mv = mt;
-                cost = (*mt)->cost;
+                mv = it;
+                cost = mt.cost;
             }
-            mt = &(*mt)->next;
         }
-        ml = *mv;
-        *mv = (*mv)->next;
-        if (!isConflicting(ml->a, ml->b))
+        if (!isConflicting(mv->a, mv->b))
         {
-            LIST* uses = ml->uses;
-            if (tempInfo[ml->a]->spillVar)
+            if (spilledVars[mv->a])
             {
-                if (tempInfo[ml->b]->spillVar)  // just in case...
+                if (spilledVars[mv->b])  // just in case...
                 {
                     // deallocate one of the spills
                     QUAD* head;
-                    IMODE* spill = tempInfo[ml->b]->spillVar;
-                    IMODE* nw = tempInfo[ml->a]->spillVar;
+                    IMODE* spill = spilledVars[mv->b];
+                    IMODE* nw = spilledVars[mv->a];
                     int i;
                     if (nw != spill)
                     {
                         spill->offset->sp->allocate = false;
                         // make sure all uses of the deallocated spill get renamed
                         for (i = 0; i < tempCount; i++)
-                            if (tempInfo[i]->spillVar == spill)
-                                tempInfo[i]->spillVar = nw;
+                            if (spilledVars[i] == spill)
+                                spilledVars[i] = nw;
                         head = intermed_head;
                         while (head)
                         {
@@ -2002,48 +1831,40 @@ static void SpillCoalesce(BriggsSet* C, BriggsSet* S)
                     }
                 }
                 else
-                    tempInfo[ml->b]->spillVar = tempInfo[ml->a]->spillVar;
+                    spilledVars[mv->b] = spilledVars[mv->a];
             }
-            else if (tempInfo[ml->b]->spillVar)
+            else if (spilledVars[mv->b])
             {
-                tempInfo[ml->a]->spillVar = tempInfo[ml->b]->spillVar;
+                spilledVars[mv->a] = spilledVars[mv->b];
             }
             else
             {
-                GetSpillVar(ml->a);
-                tempInfo[ml->b]->spillVar = tempInfo[ml->a]->spillVar;
+                GetSpillVar(mv->a);
+                spilledVars[mv->b] = spilledVars[mv->a];
             }
-            //            JoinConflictLists(ml->a, ml->b);
         }
+        moves.erase(mv);
     }
 }
-static void InsertCandidates(int W, BriggsSet* L)
+static void InsertCandidates(int W, std::unordered_set<int>& L)
 {
-    BITINT* moves = tempInfo[W]->workingMoves;
+    std::set<int>& moves = tempWorkingMoves[W];
     int i;
-    if (moves)
+    for (auto&& j : moves)
     {
-        for (i = 0; i < instructionByteCount; i++)
+        if (coalescedMoves.find(j) == coalescedMoves.end())
         {
-            if (moves[i] & ~coalescedMoves[i])
+            QUAD* head = instructionList[j];
+            if (head)
             {
-                int j;
-                for (j = i * BITINTBITS; j < i * BITINTBITS + BITINTBITS; j++)
-                    if (isset(moves, j) && !isset(coalescedMoves, j))
-                    {
-                        QUAD* head = instructionList[j];
-                        if (head)
-                        {
-                            int n = head->ans->offset->sp->i;
-                            if (n == W)
-                                n = head->dc.left->offset->sp->i;
-                            if (!tempInfo[n]->spilled && !briggsTest(spillProcessed, n))
-                            {
-                                briggsSet(L, n);
-                                briggsSet(spillProcessed, n);
-                            }
-                        }
-                    }
+                int n = head->ans->offset->sp->i;
+                if (n == W)
+                    n = head->dc.left->offset->sp->i;
+                if (!spilled[n] && spillProcessed.find(n) == spillProcessed.end())
+                {
+                    L.insert(n);
+                    spillProcessed.insert(n);
+                }
             }
         }
     }
@@ -2105,83 +1926,70 @@ static unsigned lscost(int size)
             return 1;
     }
 }
-static unsigned SpillPropagateSavings(int w, BriggsSet* S)
+static unsigned SpillPropagateSavings(int w, std::unordered_set<int>& S)
 {
     unsigned savings = 0;
-    BITINT* moves = tempInfo[w]->workingMoves;
+    std::set<int>& moves = tempWorkingMoves[w];
     int i;
-    for (i = 0; i < instructionByteCount; i++)
+    for (auto j : moves)
     {
-        if (moves[i] & ~coalescedMoves[i])
+        if (coalescedMoves.find(j) == coalescedMoves.end())
         {
-            int j;
-            for (j = i * BITINTBITS; j < i * BITINTBITS + BITINTBITS; j++)
-                if (isset(moves, j) && !isset(coalescedMoves, j))
+            QUAD* head = instructionList[j];
+            if (head)
+            {
+                int n = head->ans->offset->sp->i;
+                if (n == w)
+                    n = head->dc.left->offset->sp->i;
+                if (S.find(n) != S.end() && !isConflicting(n, w))
                 {
-                    QUAD* head = instructionList[j];
-                    if (head)
-                    {
-                        int n = head->ans->offset->sp->i;
-                        if (n == w)
-                            n = head->dc.left->offset->sp->i;
-                        if (briggsTest(S, n) && !isConflicting(n, w))
-                        {
-                            int sv;
-                            int cost = lscost(abs(tempInfo[n]->enode->sp->imvalue->size));
-                            if (UINT_MAX / cost < head->block->spillCost)
-                                return UINT_MAX;
-                            sv = cost * head->block->spillCost;
-                            if (UINT_MAX - sv < savings)
-                                return UINT_MAX;
-                            savings += sv;
-                        }
-                    }
+                    int sv;
+                    int cost = lscost(abs(tempInfo[n]->enode->sp->imvalue->size));
+                    if (UINT_MAX / cost < head->block->spillCost)
+                        return UINT_MAX;
+                    sv = cost * head->block->spillCost;
+                    if (UINT_MAX - sv < savings)
+                        return UINT_MAX;
+                    savings += sv;
                 }
+            }
         }
     }
     return savings;
 }
-static void SpillPropagate(BriggsSet* P, BriggsSet* S, BriggsSet* L, BriggsSet* NP)
+static void SpillPropagate(std::unordered_set<int>& P, std::unordered_set<int>& S, std::unordered_set<int>& L,
+                           std::unordered_set<int>& NP)
 {
-    int i;
-    briggsClear(L);
-    briggsClear(NP);
-    for (i = 0; i < P->top; i++)
+    L.clear();
+    NP.clear();
+    for (auto i : P)
+        InsertCandidates(i, L);
+    while (!L.empty())
     {
-        InsertCandidates(P->data[i], L);
-    }
-    while (L->top)
-    {
-        int w = L->data[0];
-        briggsReset(L, w);
-        if (SpillPropagateSavings(w, S) >= tempInfo[w]->spillCost)
+        int w = *L.begin();
+        L.erase(w);
+        if (SpillPropagateSavings(w, S) >= spillCosts[w])
         {
-            briggsSet(S, w);
-            briggsSet(NP, w);
+            S.insert(w);
+            NP.insert(w);
             InsertCandidates(w, L);
         }
     }
-    briggsClear(P);
-    for (i = 0; i < NP->top; i++)
-    {
-        briggsSet(P, NP->data[i]);
-    }
+    P = NP;
 }
 static void SpillPropagateAndCoalesce(void)
 {
-    BriggsSet* P = briggsAlloct(tempCount);
-    BriggsSet* np = briggsAlloct(tempCount);
-    BriggsSet* L = briggsAlloct(tempCount);
+    std::unordered_set<int> P;
+    std::unordered_set<int> np;
+    std::unordered_set<int> L;
     int i;
-    spillList = nullptr;
-    spillProcessed = briggsAlloct(tempCount);
-    for (i = 0; i < spilledNodes->top; i++)
-        briggsSet(P, spilledNodes->data[i]);
+    spillProcessed.clear();
+    P = spilledNodes;
     do
     {
         SpillCoalesce(P, spilledNodes);
         SpillPropagate(P, spilledNodes, L, np);
-    } while (P->top);
+    } while (!P.empty());
 }
 /* this routine and its callees don't bother to update
  * most internal tables, since what is going to happen after
@@ -2192,54 +2000,52 @@ static void RewriteProgram(void)
     int i;
     SpillPropagateAndCoalesce();
     SpillColor();
+    spilling.clear();
     for (i = 0; i < tempCount; i++)
     {
-        tempInfo[i]->spilling = false;
         tempInfo[i]->iuTemp = tempInfo[i]->inUse;
     }
-    for (i = 0; i < spilledNodes->top; i++)
+    for (auto n : spilledNodes)
     {
-        int n = spilledNodes->data[i];
-        tempInfo[n]->spilling = true;
-        tempInfo[n]->spilled = true;
+        spilling[n] = true;
+        spilled[n] = true;
     }
     RewriteAllSpillNodes();
     for (i = 0; i < tempCount; i++)
     {
-        if (tempInfo[i]->color != -1 || isset(coalescedNodes, i))
+        if (colors[i] != -1 || coalescedNodes.find(i) != coalescedNodes.end())
             tempInfo[i]->ircinitial = true;
     }
-    /*
-    for (i=0; i < tempCount; i++)
-    {
-            tempInfo[i]->doGlobal = tempInfo[i]->iuTemp != tempInfo[i]->inUse
-                briggsSet(coalescedNodes, i)
-                || tempInfo[i]->color >= 0;
-    }
-    */
     // letting restart of the algorithm clear necessary variables
 }
 static IMODE* copyImode(IMODE* in)
 {
-    IMODE* im = Allocate<IMODE>();
-    *im = *in;
-    if (im->offset)
+    SimpleExpression *offset = nullptr, *offset2 = nullptr;
+    if (in->offset)
     {
-        int tnum = im->offset->sp->i;
-        if (tnum < spilledNodes->size && isset(coalescedNodes, tnum))
+        int tnum = in->offset->sp->i;
+        if (coalescedNodes.find(tnum) != coalescedNodes.end())
         {
-            im->offset = tempInfo[findPartition(tnum)]->enode;
+            offset = tempInfo[findPartition(tnum)]->enode;
         }
     }
-    if (im->offset2)
+    if (in->offset2)
     {
-        int tnum = im->offset2->sp->i;
-        if (tnum < spilledNodes->size && isset(coalescedNodes, tnum))
+        int tnum = in->offset2->sp->i;
+        if (coalescedNodes.find(tnum) != coalescedNodes.end())
         {
-            im->offset2 = tempInfo[findPartition(tnum)]->enode;
+            offset2 = tempInfo[findPartition(tnum)]->enode;
         }
     }
-    return im;
+    if (offset || offset2)
+    {
+        IMODE* im = Allocate<IMODE>();
+        *im = *in;
+        im->offset = offset;
+        im->offset2 = offset2;
+        return im;
+    }
+    return in;
 }
 static void KeepCoalescedNodes(void)
 {
@@ -2248,7 +2054,7 @@ static void KeepCoalescedNodes(void)
     while (head)
     {
         QUAD* next = head->fwd;
-        if (head->index != -1 && isset(coalescedMoves, head->index))
+        if (head->index != -1 && coalescedMoves.find(head->index) != coalescedMoves.end())
         {
             instructionList[head->index] = nullptr;
             if (head == head->block->tail)
@@ -2273,8 +2079,8 @@ static void KeepCoalescedNodes(void)
         }
         head = next;
     }
-    bitarrayClear(coalescedNodes, tempCount);
-    bitarrayClear(coalescedMoves, instructionCount);
+    coalescedNodes.clear();
+    coalescedMoves.clear();
     for (i = 0; i < tempCount; i++)
         tempInfo[i]->partition = i;
 }
@@ -2304,10 +2110,10 @@ void Precolor(bool optimized)
 {
     QUAD* head = intermed_head;
     int i;
+    std::fill(colors.begin(), colors.end(), -1);
+    std::fill(precolored.begin(), precolored.end(), false);
     for (i = 0; i < tempCount; i++)
     {
-        tempInfo[i]->color = -1;
-        tempInfo[i]->precolored = false;
         if (tempInfo[i]->enode)
             tempInfo[i]->enode->sp->regmode = 0;
     }
@@ -2322,7 +2128,7 @@ void Precolor(bool optimized)
     }
     for (i = 0; i < tempCount; i++)
     {
-        tempInfo[i]->ircinitial = !tempInfo[i]->precolored;
+        tempInfo[i]->ircinitial = !precolored[i];
     }
 }
 void RearrangePrecolors(void)
@@ -2396,7 +2202,7 @@ void RearrangePrecolors(void)
 }
 void retemp(void)
 {
-    unsigned* map = tAllocate<unsigned>(tempCount);
+    std::vector<unsigned> map(tempCount);
     int i, cur = 0;
     QUAD* head;
     for (i = 0; i < tempCount; i++)
@@ -2406,12 +2212,12 @@ void retemp(void)
     head = intermed_head;
     while (head)
     {
-        if (head->dc.opcode == i_passthrough)
+        if (head->dc.opcode == i_inlineasm)
         {
             for (int i = 0; i < head->assemblyRegCount; i++)
                 tempInfo[head->assemblyTempRegStart + i]->inUse = true;
         }
-        else if (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode != i_label)
+        else if (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_inlineasm && head->dc.opcode != i_label)
         {
             if (head->ans)
             {
@@ -2444,6 +2250,7 @@ void retemp(void)
             tempInfo[cur] = tempInfo[i];
             tempInfo[cur]->enode->sp->retemp = true;
             tempInfo[cur]->enode->sp->i = cur;
+            InstructionDefinesSsa[cur] = InstructionDefinesSsa[i];
             cur++;
         }
     for (i = cur; i < tempCount; i++)
@@ -2452,7 +2259,7 @@ void retemp(void)
     head = intermed_head;
     while (head)
     {
-        if (head->dc.opcode == i_passthrough)
+        if (head->dc.opcode == i_inlineasm)
         {
             head->assemblyTempRegStart = map[head->assemblyTempRegStart];
             for (int i = 0; i < head->assemblyRegCount; i++)
@@ -2462,7 +2269,7 @@ void retemp(void)
                 tempInfo[n]->enode->sp->i = map[n];
             }
         }
-        else if (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_passthrough && head->dc.opcode != i_label)
+        else if (head->dc.opcode != i_block && !head->ignoreMe && head->dc.opcode != i_inlineasm && head->dc.opcode != i_label)
         {
             if (head->ans)
             {
@@ -2516,11 +2323,15 @@ void AllocateRegisters(QUAD* head)
     int spills = 0;
     int passes = 0;
     (void)head;
+    int n = tempCount;
     retemp();
+    spilled.clear();
+    triedSpill.clear();
     accesses = 0;
     Prealloc(3);
     CalculateNesting();
     Precolor(cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size);
+    static int count3;
     while (true)
     {
 
@@ -2528,58 +2339,54 @@ void AllocateRegisters(QUAD* head)
         passes++;
         if (passes >= 100)
             break;
-        tFree();
-        briggsFreet();
         ResetConflict();
 
         for (i = 0; i < tempCount; i++)
         {
-            if (!tempInfo[i]->precolored)
+            if (!precolored[i])
             {
-                tempInfo[i]->color = -1;
+                colors[i] = -1;
                 if (tempInfo[i]->enode)
                     tempInfo[i]->enode->sp->regmode = 0;
             }
-            tempInfo[i]->workingMoves = nullptr;
             tempInfo[i]->partition = i;
         }
+        tempWorkingMoves.clear();
         CountInstructions(first);
-        simplifyBottom = simplifyTop = 0;
-        tempCount += 3000;
-        simplifyWorklist = tAllocate<unsigned>(tempCount);
-        freezeWorklist = briggsAlloct(tempCount);
-        spillWorklist = briggsAlloct(tempCount);
-        spilledNodes = briggsAlloct(tempCount);
-        coalescedNodes = tallocbit(tempCount);
-        adjacent = tallocbit(tempCount);
-        adjacent1 = tallocbit(tempCount);
-        stackedTemps = tallocbit(tempCount);
-        tempStack = tAllocate<int>(tempCount);
-        tempCount -= 3000;
+        simplifyWorkList.clear();
+        freezeWorkList.clear();
+        spillWorkList.clear();
+        spilledNodes.clear();
+        coalescedNodes.clear();
+        adjacent.clear();
+        adjacent1.clear();
+        stackedTemps.clear();
+        tempStack.clear();
         liveVariables();
         CalculateFunctionFlags();
         InitClasses();
         definesInfo();
         usesInfo();
-        CalculateConflictGraph(nullptr, true);
+        std::unordered_set<int> temp;
+        CalculateConflictGraph(temp, true);
         SqueezeInit();
         Build(nullptr);
-        MkWorklist();
+        MkWorkList();
         for (i = 0; i < tempCount; i++)
         {
-            if (tempInfo[i]->degree)
-                tempInfo[i]->spillCost = tempInfo[i]->spillCost / tempInfo[i]->degree;
+            if (degrees[i])
+                spillCosts[i] = spillCosts[i] / degrees[i];
         }
         first = false;
         while (true)
         {
-            if (simplifyBottom != simplifyTop)
+            if (!simplifyWorkList.empty())
                 Simplify();
             else if (Coalesce())
                 ;
-            else if (freezeWorklist->top)
+            else if (!freezeWorkList.empty())
                 Freeze();
-            else if (spillWorklist->top != 0)
+            else if (!spillWorkList.empty())
             {
                 if (firstSpill)
                 {
@@ -2595,17 +2402,17 @@ void AllocateRegisters(QUAD* head)
         }
         for (i = 0; i < tempCount; i++)
         {
-            if (!tempInfo[i]->precolored)
+            if (!precolored[i])
             {
-                tempInfo[i]->color = -1;
+                colors[i] = -1;
                 if (tempInfo[i]->enode)
                     tempInfo[i]->enode->sp->regmode = 0;
             }
         }
         AssignColors();
-        if (spilledNodes->top != 0)
+        if (!spilledNodes.empty())
         {
-            spills += spilledNodes->top;
+            spills += spilledNodes.size();
             RewriteProgram();
         }
         else
@@ -2613,12 +2420,11 @@ void AllocateRegisters(QUAD* head)
             break;
         }
     }
+
     KeepCoalescedNodes();
     CopyLocalColors();
     if (passes >= 100)
         diag("register allocator failed");
-    tFree();
-    briggsFreet();
     ResetConflict();
     registersAssigned = true;
 }

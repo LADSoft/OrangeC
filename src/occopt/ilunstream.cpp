@@ -417,7 +417,7 @@ static Optimizer::QUAD* UnstreamInstruction(FunctionData& fd)
         if (rv->dc.opcode != i_block)
             currentBlock->tail = rv;
     }
-    if (rv->dc.opcode == i_passthrough)
+    if (rv->dc.opcode == i_inlineasm)
     {
         rv->dc.left = (Optimizer::IMODE*)UnstreamAssemblyInstruction();
         int len = UnstreamIndex();
@@ -1092,7 +1092,7 @@ static void ResolveInstruction(Optimizer::QUAD* q, const std::vector<std::string
 {
     switch (q->dc.opcode)
     {
-        case i_passthrough:
+        case i_inlineasm:
             ResolveAssemblyInstruction((OCODE*)q->dc.left, texts);
             break;
         case i_icon:

@@ -30,6 +30,8 @@ namespace Optimizer
 {
 extern int maxAddr;
 extern int lc_maxauto;
+extern std::vector<char> colors;
+extern std::vector<bool> precolored;
 
 typedef struct _spill_
 {
@@ -38,7 +40,6 @@ typedef struct _spill_
     LIST* uses;
 } SPILL;
 
-void LoadSaturationBounds(void);
 void alloc_init(void);
 void AllocateStackSpace(int begin);
 void FillInPrologue(QUAD* head, SimpleSymbol* funcsp);

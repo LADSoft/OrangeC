@@ -26,6 +26,7 @@
 #include <cstdio>
 #include <malloc.h>
 #include <cstring>
+#include <unordered_set>
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
 #include "optmodules.h"
@@ -36,7 +37,7 @@
 #include "OptUtils.h"
 #include "ialias.h"
 #include "optmain.h"
-#include "ioptutil.h"
+
 #include "memory.h"
 #include "ilocal.h"
 
@@ -321,7 +322,7 @@ static void GCSEProcessBlock(Block* b)
                 // gosub may modify memory
                 ModifiesGosub();
             }
-            else if (temp.dc.opcode == i_passthrough)
+            else if (temp.dc.opcode == i_inlineasm)
             {
                 // passthrough
                 ModifiesGosub();

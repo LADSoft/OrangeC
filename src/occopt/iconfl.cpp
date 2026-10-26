@@ -27,6 +27,7 @@
 #include <malloc.h>
 #include <cstring>
 #include <climits>
+#include <unordered_map>
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
 #include "config.h"
@@ -35,23 +36,16 @@
 #include "irc.h"
 #include "optmain.h"
 #include "memory.h"
-#include "ioptutil.h"
 #include "iconfl.h"
 #include <functional>
 #include <algorithm>
-
+#include <ilive.h>
 namespace Optimizer
 {
-static std::unordered_map<int, std::unordered_set<int>> conflicts;
+static std::unordered_map<int, std::set<int>> conflicts;
 
 void conflictini(void) { ResetConflict(); }
 void EvaluateConflicts(int n, std::function<void(int)> func) { std::for_each(conflicts[n].begin(), conflicts[n].end(), func); }
-int ConflictNeighbors(int n)
-{
-    // the original code never set neighbors to anything other than 0...    this is likely a bug bit it has worked a long time...
-    return 0;
-    //    return conflicts[n].size();
-}
 void ResetConflict(void) { conflicts.clear(); }
 int findPartition(int T0)
 {
@@ -87,7 +81,7 @@ void insertConflict(int i, int j)
     conflicts[i].insert(j);
     conflicts[j].insert(i);
 }
-void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
+void CalculateConflictGraph(std::unordered_set<int>& nodes, bool optimize)
 {
     int i;
     std::unordered_set<int> live;
@@ -101,10 +95,10 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
             QUAD* head = blockArray[i]->head;
             int k;
             live.clear();
-            for (auto i : *blockArray[i]->liveOut)
+            for (auto j : liveOutTemps[i])
             {
-                if (!nodes || briggsTest(nodes, i))
-                    live.insert(i);
+                if (nodes.empty() || nodes.find(j) != nodes.end())
+                    live.insert(j);
             }
             do
             {
@@ -113,18 +107,21 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                 {
                     PHIDATA* pd = tail->dc.v.phi;
                     struct _phiblock* pb = pd->temps;
-                    if (!nodes || briggsTest(nodes, pd->T0))
+                    if (nodes.empty() || nodes.find(pd->T0) != nodes.end())
                     {
-                        std::for_each(live.begin(), live.end(), [pd](int i) { insertConflict(i, pd->T0); });
+                        for (auto i : live)
+                        {
+                            insertConflict(i, pd->T0);
+                        }
                     }
                     while (pb)
                     {
-                        if (!nodes || briggsTest(nodes, pb->Tn))
+                        if (nodes.empty() || nodes.find(pb->Tn) != nodes.end())
                         {
                             struct _phiblock* pb2 = pd->temps;
                             while (pb2)
                             {
-                                if (!nodes || briggsTest(nodes, pb2->Tn))
+                                if (nodes.empty() || nodes.find(pb2->Tn) != nodes.end())
                                 {
                                     if (live.find(pb->Tn) != live.end() || live.find(pb2->Tn) != live.end())
                                         insertConflict(pb->Tn, pb2->Tn);
@@ -137,7 +134,7 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                     pb = pd->temps;
                     while (pb)
                     {
-                        if (!nodes || briggsTest(nodes, pb->Tn))
+                        if (nodes.empty() || nodes.find(pb->Tn) != nodes.end())
                         {
                             live.insert(pb->Tn);
                         }
@@ -166,7 +163,7 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                         }
                     }
                 }
-                else if (tail->dc.opcode == i_passthrough)
+                else if (tail->dc.opcode == i_inlineasm)
                 {
                     if (optimize)
                     {
@@ -174,8 +171,10 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                         if (tail->assemblyRegs[0] != 255)
                         {
                             live.erase(tail->assemblyTempRegStart);
-                            std::for_each(live.begin(), live.end(),
-                                          [tail](int i) { insertConflict(i, tail->assemblyTempRegStart); });
+                            for (auto i : live)
+                            {
+                                insertConflict(i, tail->assemblyTempRegStart);
+                            }
                         }
                         // src regs
                         for (int i = 1; i < tail->assemblyRegCount; i++)
@@ -189,7 +188,7 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                     {
                         int tnum = tail->ans->offset->sp->i;
                         int k = -1;
-                        if (!nodes || briggsTest(nodes, tnum))
+                        if (nodes.empty() || nodes.find(tnum) != nodes.end())
                         {
                             if (optimize)
                             {
@@ -239,10 +238,11 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                                 }
                             }
 
-                            std::for_each(live.begin(), live.end(), [tnum, k](int i) {
+                            for (auto i : live)
+                            {
                                 if (i != k)
                                     insertConflict(i, tnum);
-                            });
+                            }
                         }
                     }
                     else if (tail->ans->mode == i_ind)
@@ -250,7 +250,7 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                         if (tail->ans->offset)
                         {
                             int tnum = tail->ans->offset->sp->i;
-                            if (!nodes || briggsTest(nodes, tnum))
+                            if (nodes.empty() || nodes.find(tnum) != nodes.end())
                             {
                                 live.insert(tnum);
                             }
@@ -258,7 +258,7 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                         if (tail->ans->offset2)
                         {
                             int tnum = tail->ans->offset2->sp->i;
-                            if (!nodes || briggsTest(nodes, tnum))
+                            if (nodes.empty() || nodes.find(tnum) != nodes.end())
                             {
                                 live.insert(tnum);
                             }
@@ -270,7 +270,7 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                     if (tail->dc.left->offset)
                     {
                         int tnum = tail->dc.left->offset->sp->i;
-                        if (!nodes || briggsTest(nodes, tnum))
+                        if (nodes.empty() || nodes.find(tnum) != nodes.end())
                         {
                             live.insert(tnum);
                         }
@@ -278,7 +278,7 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                     if (tail->dc.left->offset2)
                     {
                         int tnum = tail->dc.left->offset2->sp->i;
-                        if (!nodes || briggsTest(nodes, tnum))
+                        if (nodes.empty() || nodes.find(tnum) != nodes.end())
                         {
                             live.insert(tnum);
                         }
@@ -289,7 +289,7 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                     if (tail->dc.right->offset)
                     {
                         int tnum = tail->dc.right->offset->sp->i;
-                        if (!nodes || briggsTest(nodes, tnum))
+                        if (nodes.empty() || nodes.find(tnum) != nodes.end())
                         {
                             live.insert(tnum);
                         }
@@ -297,7 +297,7 @@ void CalculateConflictGraph(BriggsSet* nodes, bool optimize)
                     if (tail->dc.right->offset2)
                     {
                         int tnum = tail->dc.right->offset2->sp->i;
-                        if (!nodes || briggsTest(nodes, tnum))
+                        if (nodes.empty() || nodes.find(tnum) != nodes.end())
                         {
                             live.insert(tnum);
                         }

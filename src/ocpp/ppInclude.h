@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -53,7 +53,6 @@ class ppInclude
         fullname(Fullname),
         current(nullptr),
         expr(unsignedchar, dialect_),
-        forcedEOF(false),
         nextIndex(0),
         piper(pipeName),
         noErr(NoErr),
@@ -124,7 +123,6 @@ class ppInclude
     void Release() { current->Release(); }
     bool has_include(const std::string& args);
     bool has_include_next(const std::string& args);
-    void ForceEOF() { forcedEOF = true; }
     std::set<std::string>& GetUserIncludes() { return userIncludes; }
     std::set<std::string>& GetSysIncludes() { return sysIncludes; }
     void EnterGccSystemHeader();
@@ -166,7 +164,6 @@ class ppInclude
     ppCtx* ctx;
     std::string inProc;
     bool asmpp;
-    bool forcedEOF;
     bool noErr;
     std::string dummy;
     int nextIndex;

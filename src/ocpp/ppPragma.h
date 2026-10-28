@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -354,16 +354,11 @@ class Once
         include = Include;
         items.clear();
     }
-    void CheckForMultiple()
-    {
-        if (!AddToList())
-            TriggerEOF();
-    }
+    bool IsInList(const std::string& name);
+    void AddToList();
 
   protected:
     Once() : include(nullptr) {}
-    bool AddToList();
-    void TriggerEOF();
 
   private:
     struct OnceItem

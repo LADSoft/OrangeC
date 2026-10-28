@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -273,15 +273,19 @@ void ppPragma::HandleSR(Tokenizer& tk, bool startup)
 }
 Startups::~Startups() {}
 
-bool Once::AddToList()
+bool Once::IsInList(const std::string& name)
 {
-    OnceItem item(include->GetErrFile());
-    if (items.find(item) != items.end())
-        return false;
-    items.insert(item);
-    return true;
+    OnceItem item(name);
+    return items.find(item) != items.end();
 }
-void Once::TriggerEOF() { include->ForceEOF(); }
+void Once::AddToList()
+{
+    if (!IsInList(include->GetErrFile()))
+    {
+        OnceItem item(include->GetErrFile());
+        items.insert(item);
+    }
+}
 
 bool Once::OnceItem::operator<(const OnceItem& right) const
 {
@@ -537,7 +541,7 @@ void ppPragma::HandleComment(Tokenizer& tk)
         }
     }
 }
-void ppPragma::HandleOnce(Tokenizer& tk) { Once::Instance()->CheckForMultiple(); }
+void ppPragma::HandleOnce(Tokenizer& tk) { Once::Instance()->AddToList(); }
 
 void ppPragma::HandleIgnoreGlobalInit(Tokenizer& tk)
 {

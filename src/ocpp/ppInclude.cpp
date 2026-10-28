@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -75,6 +75,8 @@ bool ppInclude::CheckInclude(kw token, const std::string& args)
         if (gccSystemHeaders.find(name) != gccSystemHeaders.end())
             return true;
 #endif
+        if (Once::Instance()->IsInList(name))
+            return true;
         pushFile(name, line1, false, foundAsSystem, dirs_traversed);
         return true;
     }
@@ -229,7 +231,6 @@ bool ppInclude::popFile()
     {
         current = nullptr;
     }
-    forcedEOF = false;
     return true;
 }
 std::string ppInclude::ParseName(const std::string& args, bool& specifiedAsSystem)
@@ -366,7 +367,7 @@ std::string ppInclude::SrchPath(bool system, const std::string& name, const std:
                                 int& filesSkipped)
 {
     const char* path = searchPath.c_str();
-    if (    *path == '\0' && !system && skipUntilDepth)
+    if (*path == '\0' && !system && skipUntilDepth)
     {
         filesSkipped++;
     }
@@ -496,20 +497,17 @@ bool ppInclude::GetLine(std::string& line, int& lineno)
 {
     while (current)
     {
-        if (!forcedEOF)
+        if (current->GetLine(line))
         {
-            if (current->GetLine(line))
-            {
-                if (current && !files.empty())
-                    lineno = GetErrLineNo();
-                else
-                    lineno = INT_MIN;
-                if (asmpp)
-                    StripAsmComment(line);
-                return true;
-            }
-            current->CheckErrors();
+            if (current && !files.empty())
+                lineno = GetErrLineNo();
+            else
+                lineno = INT_MIN;
+            if (asmpp)
+                StripAsmComment(line);
+            return true;
         }
+        current->CheckErrors();
         if (!inProc.empty())
         {
             Errors::Error("File ended with " + inProc + " in progress");

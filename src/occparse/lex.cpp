@@ -1650,6 +1650,7 @@ void SplitGreaterThanFromRightShift()
     *lex = *currentLex;
     lex->type = LexType::l_kw_;
     lex->kw = kw;
+    lex->splitFromRightShift = true;
     currentLex = lex;
 }
 void SkipToEol() { linePointer = (const unsigned char*)currentLine.c_str() + currentLine.size(); }

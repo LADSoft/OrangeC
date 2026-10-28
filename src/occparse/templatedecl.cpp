@@ -1507,6 +1507,11 @@ LexemeStream* TemplateArgGetDefault(bool isExpression)
             rv->Add(lex);
             ++current;
         }
+        if (currentLex->splitFromRightShift)
+        {
+            rv->Add(currentLex);
+            currentLex->splitFromRightShift = false;
+        }
     }
     return rv;
 }

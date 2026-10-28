@@ -4433,7 +4433,7 @@ int StatementGenerator::CountInlineStatements(std::list<Statement*>* block)
                     rv++;
                     rv += CountInlineStatements(stmt->lower) + CountInlineStatements(stmt->blockTail);
                     break;
-                case StatementNode::passthrough_:
+                case StatementNode::inlineasm_:
                 case StatementNode::nop_:
                     break;
                 case StatementNode::datapassthrough_:

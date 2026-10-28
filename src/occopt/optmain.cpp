@@ -61,7 +61,7 @@
 
 #include "newoperator.h"
 
-int usingEsp;
+int noStackTrace;
 
 Optimizer::SimpleSymbol* currentFunction;
 namespace Parser
@@ -73,6 +73,7 @@ bool IsCompiler() { return true; }
 
 namespace Optimizer
 {
+int noStackFrame;
 CmdSwitchParser SwitchParser;
 CmdSwitchBool single(SwitchParser, 's', false, {"single"});
 CmdSwitchBool WriteIcdFile(SwitchParser, 'Y', false);
@@ -159,7 +160,7 @@ void examine_icode(QUAD* head)
             break;
     }
 }
-int PreRegAlloc(QUAD* tail, std::set<int>& globalVars, std::set<int>& eobGlobals, int pass)
+int PreRegAlloc(QUAD* tail, SimpleBitSet& globalVars, SimpleBitSet& eobGlobals, int pass)
 {
     switch (architecture)
     {
@@ -245,7 +246,6 @@ void Optimize(SimpleSymbol* funcsp)
     flows_and_doms();
     gatherLocalInfo(functionVariables);
     RunOptimizerModules();
-
     if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !dontOptimizeFunction)
     {
         if (cparams.icd_flags & ICD_QUITEARLY)
@@ -282,7 +282,6 @@ void Optimize(SimpleSymbol* funcsp)
     peep_icode(false); /* peephole optimizations at the ICODE level */
     RemoveCriticalThunks();
     removeDead(blockArray[0]); /* remove dead blocks */
-
     /* now do the actual allocation */
     if (!(chosenAssembler->arch->denyopts & DO_NOREGALLOC))
     {
@@ -302,9 +301,9 @@ void ProcessFunction(FunctionData* fd)
 {
     bool hasCanary = HasCanary(fd);
     // part of the runtime relies on EBP of the caller being set properly...
-    currentFunction->usesEsp &= !Optimizer::cparams.prm_stackprotect;
+    currentFunction->noStackFrame &= !Optimizer::cparams.prm_stackprotect;
 
-    SetUsesESP(currentFunction->usesEsp);
+    noStackFrame = currentFunction->noStackFrame;
     Parser::anonymousNotAlloc = 0;
     CreateTempsAndBlocks(fd);
     Optimize(currentFunction);
@@ -372,7 +371,6 @@ bool LoadFile(SharedMemory* parserMem)
 }
 void SaveFile(std::string& name, SharedMemory* optimizerMem)
 {
-    cparams.prm_icdfile = true;
     OutputIntermediate(optimizerMem);
     if (WriteIcdFile.GetValue() || (cparams.prm_icdfile && !name.empty()))
     {
@@ -433,6 +431,9 @@ int main(int argc, char* argv[]) MAINTRY
     {
         ToolChain::Usage(usageText);
     }
+
+    cparams.prm_icdfile |= WriteIcdFile.GetValue();
+
     SharedMemory* parserMem = nullptr;
     SharedMemory* optimizerMem = nullptr;
     std::string outputFile;

@@ -46,11 +46,59 @@
 
 namespace Optimizer
 {
-std::set<int> globalVars;
-std::unordered_map<int, std::set<int>> liveInTemps;
-std::unordered_map<int, std::set<int>> liveOutTemps;
-static std::unordered_map<int, std::set<int>> liveGenTemps;
-static std::unordered_map<int, std::set<int>> liveKillsTemps;
+SimpleBitSet globalVars;
+std::vector<SimpleBitSet> liveInTemps;
+std::vector<SimpleBitSet> liveOutTemps;
+struct LiveData
+{
+    LiveData(int blocks, int temps)
+    {
+        globals.clear();
+        globals.resize(temps + 2000);
+        liveIn.resize(blocks);
+        liveOut.resize(blocks);
+        gen.resize(blocks);
+        kills.resize(blocks);
+        for (int i = 0; i < blocks; i++)
+        {
+            if (blockArray[i])
+            {
+                liveIn[i].resize(temps + 200);
+                liveOut[i].resize(temps + 200);
+                gen[i].resize(temps + 200);
+                kills[i].resize(temps + 200);
+            }
+        }
+    }
+    ~LiveData()
+    {
+        liveInTemps.clear();
+        liveInTemps.resize(blockCount + 100);
+        liveOutTemps.clear();
+        liveOutTemps.resize(blockCount + 100);
+
+        for (int i = 0; i < liveIn.size(); i++)
+        {
+            liveInTemps[i] = std::move(liveIn[i]);
+            liveOutTemps[i] = std::move(liveOut[i]);
+        }
+        globalVars = std::move(globals);
+        for (int j = 0; j < tempCount; j++)
+            if (globalVars.isset(j))
+            {
+                tempInfo[j]->liveAcrossBlock = true;
+            }
+            else
+            {
+                tempInfo[j]->liveAcrossBlock = false;
+            }
+    }
+    std::vector<SimpleBitSet> liveIn;
+    std::vector<SimpleBitSet> liveOut;
+    std::vector<SimpleBitSet> gen;
+    std::vector<SimpleBitSet> kills;
+    SimpleBitSet globals;
+};
 static bool hasPhi;
 QUAD* beforeJmp(QUAD* I, bool before)
 {
@@ -92,9 +140,9 @@ QUAD* beforeJmp(QUAD* I, bool before)
     //		return start->back;
     return start;
 }
-static void liveSetup(void)
+static void liveSetup(LiveData& liveData)
 {
-    std::set<int> exposed;
+    SimpleBitSet exposed(tempCount);
     int i;
     for (i = 0; i < blockCount; i++)
     {
@@ -111,26 +159,26 @@ static void liveSetup(void)
                     PHIDATA* pd = tail->dc.v.phi;
                     struct _phiblock* pb = pd->temps;
                     hasPhi = true;
-                    exposed.erase(pd->T0);
-                    liveGenTemps[blk->blocknum].erase(pd->T0);
-                    liveKillsTemps[blk->blocknum].insert(pd->T0);
+                    exposed.clrbit(pd->T0);
+                    liveData.gen[blk->blocknum].clrbit(pd->T0);
+                    liveData.kills[blk->blocknum].setbit(pd->T0);
                     while (pb)
                     {
-                        exposed.insert(pb->Tn);
-                        liveGenTemps[blk->blocknum].insert(pb->Tn);
+                        exposed.setbit(pb->Tn);
+                        liveData.gen[blk->blocknum].setbit(pb->Tn);
                         pb = pb->next;
                     }
                 }
                 else if (tail->dc.opcode == i_inlineasm)
                 {
                     int tnum = tail->assemblyTempRegStart;
-                    exposed.erase(tnum);
-                    liveGenTemps[blk->blocknum].erase(tnum);
-                    liveKillsTemps[blk->blocknum].insert(tnum);
+                    exposed.clrbit(tnum);
+                    liveData.gen[blk->blocknum].clrbit(tnum);
+                    liveData.kills[blk->blocknum].setbit(tnum);
                     for (int i = 1; i < tail->assemblyRegCount; i++)
                     {
-                        exposed.insert(tnum + i);
-                        liveGenTemps[blk->blocknum].insert(tnum + i);
+                        exposed.setbit(tnum + i);
+                        liveData.gen[blk->blocknum].setbit(tnum + i);
                     }
                 }
                 else
@@ -140,21 +188,21 @@ static void liveSetup(void)
                         if (tail->ans->mode == i_direct)
                         {
                             int tnum = tail->ans->offset->sp->i;
-                            exposed.erase(tnum);
-                            liveGenTemps[blk->blocknum].erase(tnum);
-                            liveKillsTemps[blk->blocknum].insert(tnum);
+                            exposed.clrbit(tnum);
+                            liveData.gen[blk->blocknum].clrbit(tnum);
+                            liveData.kills[blk->blocknum].setbit(tnum);
                         }
                         else if (tail->ans->mode == i_ind)
                         {
                             if (tail->ans->offset)
                             {
-                                exposed.insert(tail->ans->offset->sp->i);
-                                liveGenTemps[blk->blocknum].insert(tail->ans->offset->sp->i);
+                                exposed.setbit(tail->ans->offset->sp->i);
+                                liveData.gen[blk->blocknum].setbit(tail->ans->offset->sp->i);
                             }
                             if (tail->ans->offset2)
                             {
-                                exposed.insert(tail->ans->offset2->sp->i);
-                                liveGenTemps[blk->blocknum].insert(tail->ans->offset2->sp->i);
+                                exposed.setbit(tail->ans->offset2->sp->i);
+                                liveData.gen[blk->blocknum].setbit(tail->ans->offset2->sp->i);
                             }
                         }
                     }
@@ -165,13 +213,13 @@ static void liveSetup(void)
                             {
                                 if (tail->dc.left->offset)
                                 {
-                                    exposed.insert(tail->dc.left->offset->sp->i);
-                                    liveGenTemps[blk->blocknum].insert(tail->dc.left->offset->sp->i);
+                                    exposed.setbit(tail->dc.left->offset->sp->i);
+                                    liveData.gen[blk->blocknum].setbit(tail->dc.left->offset->sp->i);
                                 }
                                 if (tail->dc.left->offset2)
                                 {
-                                    exposed.insert(tail->dc.left->offset2->sp->i);
-                                    liveGenTemps[blk->blocknum].insert(tail->dc.left->offset2->sp->i);
+                                    exposed.setbit(tail->dc.left->offset2->sp->i);
+                                    liveData.gen[blk->blocknum].setbit(tail->dc.left->offset2->sp->i);
                                 }
                             }
                         }
@@ -180,29 +228,26 @@ static void liveSetup(void)
                         {
                             if (tail->dc.right->offset)
                             {
-                                exposed.insert(tail->dc.right->offset->sp->i);
-                                liveGenTemps[blk->blocknum].insert(tail->dc.right->offset->sp->i);
+                                exposed.setbit(tail->dc.right->offset->sp->i);
+                                liveData.gen[blk->blocknum].setbit(tail->dc.right->offset->sp->i);
                             }
                             if (tail->dc.right->offset2)
                             {
-                                exposed.insert(tail->dc.right->offset2->sp->i);
-                                liveGenTemps[blk->blocknum].insert(tail->dc.right->offset2->sp->i);
+                                exposed.setbit(tail->dc.right->offset2->sp->i);
+                                liveData.gen[blk->blocknum].setbit(tail->dc.right->offset2->sp->i);
                             }
                         }
                 }
                 if (tail != blk->head) /* in case tail == head */
                     tail = tail->back; /* skipping the actual block statement */
             } while (tail != blk->head);
-            std::set<int> temp;
-            std::set_union(globalVars.begin(), globalVars.end(), exposed.begin(), exposed.end(), std::inserter(temp, temp.begin()));
-            globalVars = std::move(temp);
+            liveData.globals.union_from(exposed);
         }
     }
-    for (auto t : globalVars)
-        tempInfo[t]->liveAcrossBlock = true;
 }
-static void liveOut()
+static void liveOut(LiveData& liveData)
 {
+    SimpleBitSet temp(tempCount);
     std::list<unsigned> workList;
     std::list<unsigned> reverseOrder;
     int i;
@@ -252,37 +297,28 @@ static void liveOut()
         reverseOrder.pop_front();
         Block* b = blockArray[n];
         b->visiteddfst = false;  // visited this pass (flag has taken on negative logic
-        liveOutTemps[b->blocknum].clear();
-        std::set<int> temp, temp1;
+        liveData.liveOut[b->blocknum].clear();
         // for each successor
         BLOCKLIST* bl = b->succ;
         while (bl)
         {
             // add the successor's livein nodes to our liveout nodes
-            std::set_union(liveOutTemps[b->blocknum].begin(), liveOutTemps[b->blocknum].end(),
-                           liveInTemps[bl->block->blocknum].begin(), liveInTemps[bl->block->blocknum].end(),
-                           std::inserter(temp, temp.begin()));
-            liveOutTemps[b->blocknum] = std::move(temp);
+            liveData.liveOut[b->blocknum].union_from(liveData.liveIn[bl->block->blocknum]);
             bl = bl->next;
         }
 
         // this next bit recalculates the liveIn for this block
         // the next bit calculates gen | (liveout & ~kills)
-        for (auto i : liveOutTemps[b->blocknum])
-        {
-            // livout & ~kills
-            if (liveKillsTemps[b->blocknum].find(i) == liveKillsTemps[b->blocknum].end())
-                temp1.insert(i);
-        }
-        // add in gen
-        std::set_union(temp1.begin(), temp1.end(), liveGenTemps[b->blocknum].begin(), liveGenTemps[b->blocknum].end(),
-                       std::inserter(temp, temp.begin()));
+        temp.clear();
+        liveData.kills[b->blocknum].doinvert(temp);
+        liveData.liveOut[b->blocknum].dointersect(temp, temp);
+        liveData.gen[b->blocknum].dounion(temp, temp);
 
         // if liveIn has changed
-        if (liveInTemps[b->blocknum] != temp)
+        if (liveData.liveIn[b->blocknum] != temp)
         {
             // assign the new liveIn
-            liveInTemps[b->blocknum] = std::move(temp);
+            liveData.liveIn[b->blocknum] = temp;
 
             // for each predecessor
             bl = b->pred;
@@ -309,7 +345,7 @@ static void liveOut()
             {
                 QUAD* t = blockArray[i]->tail->fwd;
                 /* this doesn't follow the normal handling rules
-                 * so we remove and insert it by hand
+                 * so we remove and setbit it by hand
                  */
                 if (t && t->dc.opcode == i_blockend)
                 {
@@ -321,7 +357,7 @@ static void liveOut()
                 QUAD* q = Allocate<QUAD>();
                 t = blockArray[i]->tail;
                 q->dc.opcode = i_blockend;
-                q->dc.v.data = &liveOutTemps[i];
+                q->dc.v.data = &liveData.liveOut[i];
                 q->block = blockArray[i];
                 q->fwd = t->fwd;
                 q->back = t;
@@ -332,7 +368,7 @@ static void liveOut()
         }
     }
 }
-static void killPhiPaths1(void)
+static void killPhiPaths1(LiveData& liveData)
 {
     int i;
     for (i = 0; i < blockCount; i++)
@@ -359,7 +395,7 @@ static void killPhiPaths1(void)
                         {
                             if (pb->Tn != pb2->Tn)
                             {
-                                liveKillsTemps[bl->block->blocknum].insert(pb2->Tn);
+                                liveData.kills[bl->block->blocknum].setbit(pb2->Tn);
                             }
                             pb2 = pb2->next;
                         }
@@ -373,7 +409,7 @@ static void killPhiPaths1(void)
         }
     }
 }
-static void killPhiPaths2(void)
+static void killPhiPaths2(LiveData& liveData)
 {
     int i;
     for (i = 0; i < blockCount; i++)
@@ -398,7 +434,7 @@ static void killPhiPaths2(void)
                         struct _phiblock* pb2 = pd->temps;
                         while (pb2)
                         {
-                            liveOutTemps[bl->block->blocknum].erase(pb2->Tn);
+                            liveData.liveOut[bl->block->blocknum].clrbit(pb2->Tn);
                             pb2 = pb2->next;
                         }
                         pb = pb->next;
@@ -411,7 +447,7 @@ static void killPhiPaths2(void)
         }
     }
 }
-static void markLiveInstruction(std::unordered_set<int>& live, QUAD* ins)
+static void markLiveInstruction(SimpleBitSet& live, QUAD* ins)
 {
     switch (ins->dc.opcode)
     {
@@ -474,13 +510,13 @@ static void markLiveInstruction(std::unordered_set<int>& live, QUAD* ins)
             ins->live = true;
             break;
         case i_phi:
-            if (live.find(ins->dc.v.phi->T0) != live.end())
+            if (live.isset(ins->dc.v.phi->T0))
             {
                 struct _phiblock* pb = ins->dc.v.phi->temps;
                 ins->live = true;
                 while (pb)
                 {
-                    live.insert(pb->Tn);
+                    live.setbit(pb->Tn);
                     pb = pb->next;
                 }
             }
@@ -489,7 +525,7 @@ static void markLiveInstruction(std::unordered_set<int>& live, QUAD* ins)
             if (!(ins->temps & TEMP_ANS) || ins->ans->mode == i_ind ||
                 ((chosenAssembler->arch->denyopts & DO_NODEADPUSHTOTEMP) && ins->ans->offset->sp->pushedtotemp))
                 ins->live = true;
-            else if ((ins->temps & TEMP_ANS) && live.find(ins->ans->offset->sp->i) != live.end())
+            else if ((ins->temps & TEMP_ANS) && live.isset(ins->ans->offset->sp->i))
                 ins->live = true;
 
             break;
@@ -500,14 +536,14 @@ static void markLiveInstruction(std::unordered_set<int>& live, QUAD* ins)
         {
             if (ins->ans->mode == i_direct)
             {
-                live.erase(ins->ans->offset->sp->i);
+                live.clrbit(ins->ans->offset->sp->i);
             }
             else if (ins->ans->mode == i_ind)
             {
                 if (ins->ans->offset)
-                    live.insert(ins->ans->offset->sp->i);
+                    live.setbit(ins->ans->offset->sp->i);
                 if (ins->ans->offset2)
-                    live.insert(ins->ans->offset2->sp->i);
+                    live.setbit(ins->ans->offset2->sp->i);
             }
         }
         if (ins->temps & TEMP_LEFT)
@@ -515,9 +551,9 @@ static void markLiveInstruction(std::unordered_set<int>& live, QUAD* ins)
             if (ins->dc.left->mode == i_direct || ins->dc.left->mode == i_ind)
             {
                 if (ins->dc.left->offset)
-                    live.insert(ins->dc.left->offset->sp->i);
+                    live.setbit(ins->dc.left->offset->sp->i);
                 if (ins->dc.left->offset2)
-                    live.insert(ins->dc.left->offset2->sp->i);
+                    live.setbit(ins->dc.left->offset2->sp->i);
             }
         }
         if (ins->temps & TEMP_RIGHT)
@@ -525,16 +561,16 @@ static void markLiveInstruction(std::unordered_set<int>& live, QUAD* ins)
             if (ins->dc.right->mode == i_direct || ins->dc.right->mode == i_ind)
             {
                 if (ins->dc.right->offset)
-                    live.insert(ins->dc.right->offset->sp->i);
+                    live.setbit(ins->dc.right->offset->sp->i);
                 if (ins->dc.right->offset2)
-                    live.insert(ins->dc.right->offset2->sp->i);
+                    live.setbit(ins->dc.right->offset2->sp->i);
             }
         }
     }
 }
 void removeDead(Block* b)
 {
-    std::unordered_set<int> live;
+    SimpleBitSet live(tempCount);
     int j, k;
     QUAD* tail;
     BLOCKLIST* bl;
@@ -558,10 +594,7 @@ void removeDead(Block* b)
     }
     b->visiteddfst = true;
     live.clear();
-    std::unordered_set<int> temp;
-    std::set_union(live.begin(), live.end(), liveOutTemps[b->blocknum].begin(), liveOutTemps[b->blocknum].end(),
-                   std::inserter(temp, temp.begin()));
-    live = std::move(temp);
+    live.union_from(liveOutTemps[b->blocknum]);
     tail = b->tail;
     while (tail != b->head->back)
     {
@@ -620,28 +653,22 @@ void removeDead(Block* b)
 }
 void liveVariables(void)
 {
+    LiveData liveData(blockCount, tempCount);
     int i;
     hasPhi = false;
-    globalVars.clear();
     int ccount = 0;
     for (i = 0; i < tempCount; i++)
         if (tempInfo[i]->inUse)
             ccount++;
-    liveGenTemps.clear();
-    liveKillsTemps.clear();
-    liveInTemps.clear();
-    liveOutTemps.clear();
     for (i = 0; i < tempCount; i++)
     {
         tempInfo[i]->liveAcrossBlock = false;
     }
-    liveSetup();
+    liveSetup(liveData);
     if (hasPhi)
-        killPhiPaths1();
-    liveOut();
+        killPhiPaths1(liveData);
+    liveOut(liveData);
     if (hasPhi)
-        killPhiPaths2();
-    // liveGenTemps.clear();
-    // liveKillsTemps.clear();
+        killPhiPaths2(liveData);
 }
 }  // namespace Optimizer

@@ -51,6 +51,8 @@
 #include <mutex>
 #include <algorithm>
 #include "beinterfdefs.h"
+#include "configx86.h"
+
 #define MAX_INTERNAL_REGS 256
 
 #define REG_MAX (chosenAssembler->arch->registerCount)
@@ -91,18 +93,15 @@ static std::set<int> adjacent, adjacent1;
 static std::set<int> workingMoves;
 static std::unordered_set<int> activeMoves;
 static std::unordered_set<int> coalescedMoves;
-static std::unordered_set<int> constrainedMoves;
-static std::unordered_set<int> frozenMoves;
 static std::set<int> tempMoves[2];
 static std::vector<QUAD*> instructionList;
-static std::unordered_set<int> freezeWorkList;
+static std::list<int> freezeWorkList;
 static std::list<int> spillWorkList;
 static std::unordered_set<int> spilledNodes;
-static std::unordered_set<int> spillProcessed;
 static std::unordered_map<int, int> hiMoves;
 std::map<int, std::set<int>> tempWorkingMoves;
 
-static std::vector<std::vector<unsigned>> worstCase;
+static std::vector<std::vector<unsigned>> worstCase[2];
 static std::vector<ARCH_REGCLASS*> regClasses;
 static std::vector<ARCH_REGVERTEX*> vertexes;
 
@@ -143,18 +142,6 @@ inline int POP()
     }
 }
 
-static void ResetTree(ARCH_REGVERTEX* child)
-{
-    for (auto c = child->cls; c; c = c->next)
-    {
-        c->aliasRegs.clear();
-    }
-    if (child->left)
-        ResetTree(child->left);
-    if (child->right)
-        ResetTree(child->right);
-}
-
 static void InitRegAliases(ARCH_REGDESC* desc)
 {
     for (int i = 0; i < REG_MAX; i++)
@@ -172,15 +159,6 @@ static void InitTree(ARCH_REGVERTEX* parent, ARCH_REGVERTEX* child)
     {
         c->vertex = child->index;
         c->index = classCount++;
-        for (int i = 0; i < c->regCount; ++i)
-        {
-            std::set<int> temp;
-            std::vector<int> incomingRegs(chosenAssembler->arch->regNames[c->regs[i]].aliasRegs);
-            std::sort(incomingRegs.begin(), incomingRegs.end());
-            std::set_union(c->aliasRegs.begin(), c->aliasRegs.end(), incomingRegs.begin(), incomingRegs.end(),
-                           std::inserter(temp, temp.begin()));
-            c->aliasRegs = std::move(temp);
-        }
     }
     if (child->left)
         InitTree(child, child->left);
@@ -199,11 +177,10 @@ static void LoadVertexes(ARCH_REGVERTEX* child)
     if (child->right)
         LoadVertexes(child->right);
 }
-static void LoadWorstCase(void)
+static void LoadWorstCase(int useNoStackFrame)
 {
-    worstCase.clear();
-    worstCase.resize(classCount);
-    for (auto&& t : worstCase)
+    worstCase[useNoStackFrame].resize(classCount);
+    for (auto&& t : worstCase[useNoStackFrame])
         t.resize(classCount);
 
     for (int i = 0; i < classCount; i++)
@@ -211,12 +188,13 @@ static void LoadWorstCase(void)
         for (int j = 0; j < classCount; j++)
         {
             int max = 0;
-            for (int k = 0; k < regClasses[j]->regs.size(); k++)
+            for (int k = 0; k < regClasses[j]->regCount[useNoStackFrame]; k++)
             {
                 int count = 0;
                 std::vector<int> temp;
-                std::vector<int> reg1(regClasses[i]->regCount);
-                std::copy(regClasses[i]->regs.begin(), regClasses[i]->regs.begin() + regClasses[i]->regCount, reg1.begin());
+                std::vector<int> reg1(regClasses[i]->regCount[useNoStackFrame]);
+                std::copy(regClasses[i]->regs.begin(), regClasses[i]->regs.begin() + regClasses[i]->regCount[useNoStackFrame],
+                          reg1.begin());
                 std::sort(reg1.begin(), reg1.end());
                 std::vector<int> reg2(chosenAssembler->arch->regNames[regClasses[j]->regs[k]].aliasRegs);
                 std::sort(reg2.begin(), reg2.end());
@@ -225,51 +203,63 @@ static void LoadWorstCase(void)
                 if (count > max)
                     max = count;
             }
-            worstCase[i][j] = max;
+            worstCase[useNoStackFrame][i][j] = max;
         }
     }
 }
-static void LoadAliases(ARCH_REGVERTEX* v)
+static void LoadAliases(int useNoStackFrame, ARCH_REGVERTEX* v)
 {
     if (v->left)
-        LoadAliases(v->left);
+        LoadAliases(useNoStackFrame, v->left);
     if (v->right)
-        LoadAliases(v->right);
+        LoadAliases(useNoStackFrame, v->right);
     std::set<int> result;
+
     if (v->left)
     {
-        std::set_union(v->aliasRegs.begin(), v->aliasRegs.end(), v->left->aliasRegs.begin(), v->left->aliasRegs.end(),
+        std::set_union(v->aliasRegs[useNoStackFrame].begin(), v->aliasRegs[useNoStackFrame].end(),
+                       v->left->aliasRegs[useNoStackFrame].begin(), v->left->aliasRegs[useNoStackFrame].end(),
                        std::inserter(result, result.begin()));
-        v->aliasRegs = std::move(result);
+        v->aliasRegs[useNoStackFrame] = std::move(result);
     }
     if (v->right)
     {
-        std::set_union(v->aliasRegs.begin(), v->aliasRegs.end(), v->right->aliasRegs.begin(), v->right->aliasRegs.end(),
+        std::set_union(v->aliasRegs[useNoStackFrame].begin(), v->aliasRegs[useNoStackFrame].end(),
+                       v->right->aliasRegs[useNoStackFrame].begin(), v->right->aliasRegs[useNoStackFrame].end(),
                        std::inserter(result, result.begin()));
-        v->aliasRegs = std::move(result);
+        v->aliasRegs[useNoStackFrame] = std::move(result);
     }
     for (auto c = v->cls; c; c = c->next)
     {
-        std::set_union(v->aliasRegs.begin(), v->aliasRegs.end(), c->aliasRegs.begin(), c->aliasRegs.end(),
+        for (int i = 0; i < c->regCount[useNoStackFrame]; ++i)
+        {
+            std::vector<int> incomingRegs(chosenAssembler->arch->regNames[c->regs[i]].aliasRegs);
+            std::sort(incomingRegs.begin(), incomingRegs.end());
+            std::set_union(c->aliasRegs[useNoStackFrame].begin(), c->aliasRegs[useNoStackFrame].end(), incomingRegs.begin(),
+                           incomingRegs.end(), std::inserter(result, result.begin()));
+            c->aliasRegs[useNoStackFrame] = std::move(result);
+        }
+        std::set_union(v->aliasRegs[useNoStackFrame].begin(), v->aliasRegs[useNoStackFrame].end(),
+                       c->aliasRegs[useNoStackFrame].begin(), c->aliasRegs[useNoStackFrame].end(),
                        std::inserter(result, result.begin()));
-        v->aliasRegs = std::move(result);
-        c = c->next;
+        v->aliasRegs[useNoStackFrame] = std::move(result);
     }
 }
-void LoadSaturationBounds()
+void LoadSaturationBounds(int useNoStackFrame)
 {
     for (int i = 0; i < classCount; i++)
     {
-        regClasses[i]->saturationBound.resize(vertexCount);
+        regClasses[i]->saturationBound[useNoStackFrame].resize(vertexCount);
         for (int j = 0; j < vertexCount; j++)
         {
             int rv = 0;
             std::vector<int> temp;
             std::vector<int> reg1(regClasses[i]->regs);
+            reg1.resize(regClasses[i]->regCount[useNoStackFrame]);
             std::sort(reg1.begin(), reg1.end());
-            std::set_intersection(reg1.begin(), reg1.end(), vertexes[j]->aliasRegs.begin(), vertexes[j]->aliasRegs.end(),
-                                  std::inserter(temp, temp.begin()));
-            regClasses[i]->saturationBound[j] = temp.size();
+            std::set_intersection(reg1.begin(), reg1.end(), vertexes[j]->aliasRegs[useNoStackFrame].begin(),
+                                  vertexes[j]->aliasRegs[useNoStackFrame].end(), std::inserter(temp, temp.begin()));
+            regClasses[i]->saturationBound[useNoStackFrame][j] = temp.size();
         }
     }
 }
@@ -278,18 +268,21 @@ void regInit(void)
 {
     using namespace Optimizer;
     classCount = vertexCount = 0;
-    static std::once_flag once_only;
-    std::call_once(once_only, []() { InitRegAliases(chosenAssembler->arch->regNames); });
-    ResetTree(chosenAssembler->arch->regRoot);
+    InitRegAliases(chosenAssembler->arch->regNames);
+
     InitTree(nullptr, chosenAssembler->arch->regRoot);
-    vertexes.clear();
+
     vertexes.resize(vertexCount);
-    regClasses.clear();
     regClasses.resize(classCount);
+
     LoadVertexes(chosenAssembler->arch->regRoot);
-    LoadWorstCase();
-    LoadAliases(chosenAssembler->arch->regRoot);
-    LoadSaturationBounds();
+
+    LoadWorstCase(0);
+    LoadWorstCase(1);
+    LoadAliases(0, chosenAssembler->arch->regRoot);
+    LoadAliases(1, chosenAssembler->arch->regRoot);
+    LoadSaturationBounds(0);
+    LoadSaturationBounds(1);
 }
 namespace Optimizer
 {
@@ -657,9 +650,9 @@ int SqueezeChange(int temp, int t, int delta)
         rawSqueezes[temp][v->index] += delta;
 
         if (delta >= 0)
-            delta = imax(0, imin(delta, tempRegClasses[temp]->saturationBound[v->index] - alpha));
+            delta = imax(0, imin(delta, tempRegClasses[temp]->saturationBound[noStackFrame][v->index] - alpha));
         else
-            delta = imin(0, imax(delta, delta - (tempRegClasses[temp]->saturationBound[v->index] - alpha)));
+            delta = imin(0, imax(delta, delta - (tempRegClasses[temp]->saturationBound[noStackFrame][v->index] - alpha)));
 
         v = v->parent;
     } while (delta && v);
@@ -667,6 +660,7 @@ int SqueezeChange(int temp, int t, int delta)
 }
 void SqueezeInit(void)
 {
+
     int i;
     for (i = 0; i < tempCount; i++)
         if (doGlobals[i] && !precolored[i])
@@ -687,8 +681,8 @@ void SqueezeInit(void)
             EvaluateConflicts(i, [i, &regs](int n) {
                 if (!precolored[n])
                 {
-                    squeezes[i] +=
-                        SqueezeChange(i, tempRegClasses[n]->vertex, +worstCase[tempRegClasses[i]->index][tempRegClasses[n]->index]);
+                    squeezes[i] += SqueezeChange(i, tempRegClasses[n]->vertex,
+                                                 +worstCase[noStackFrame][tempRegClasses[i]->index][tempRegClasses[n]->index]);
                     degrees[i]++;
                 }
                 else
@@ -696,10 +690,10 @@ void SqueezeInit(void)
                     regs.insert(colors[n]);
                 }
             });
-            tempRegCounts[i] = tempRegClasses[i]->regCount;
+            tempRegCounts[i] = tempRegClasses[i]->regCount[noStackFrame];
             for (auto j : regs)
             {
-                if (tempRegClasses[i]->aliasRegs.find(j) != tempRegClasses[i]->aliasRegs.end())
+                if (tempRegClasses[i]->aliasRegs[noStackFrame].find(j) != tempRegClasses[i]->aliasRegs[noStackFrame].end())
                 {
                     tempRegCounts[i]--;
                 }
@@ -709,7 +703,7 @@ void SqueezeInit(void)
 }
 static void CalculateFunctionFlags(void)
 {
-    std::set<int> exposed;
+    SimpleBitSet exposed(tempCount);
     int i, j;
     for (j = 0; j < tempCount; j++)
         tempInfo[j]->liveAcrossFunctionCall = false;
@@ -725,22 +719,23 @@ static void CalculateFunctionFlags(void)
             {
                 if (tail->dc.opcode == i_gosub || tail->dc.opcode == i_cmpxchgweak || tail->dc.opcode == i_cmpxchgstrong)
                 {
-                    for (auto j : exposed)
-                        tempInfo[j]->liveAcrossFunctionCall = true;
+                    for (j = 0; j < exposed.size(); j++)
+                        if (exposed.isset(j))
+                            tempInfo[j]->liveAcrossFunctionCall = true;
                 }
                 if (tail->temps & TEMP_ANS)
                 {
                     if (tail->ans->mode == i_direct)
                     {
                         int tnum = tail->ans->offset->sp->i;
-                        exposed.erase(tnum);
+                        exposed.clrbit(tnum);
                     }
                     else if (tail->ans->mode == i_ind)
                     {
                         if (tail->ans->offset)
-                            exposed.insert(tail->ans->offset->sp->i);
+                            exposed.setbit(tail->ans->offset->sp->i);
                         if (tail->ans->offset2)
-                            exposed.insert(tail->ans->offset2->sp->i);
+                            exposed.setbit(tail->ans->offset2->sp->i);
                     }
                 }
                 if (tail->temps & TEMP_LEFT)
@@ -749,18 +744,18 @@ static void CalculateFunctionFlags(void)
                         if (!tail->dc.left->retval)
                         {
                             if (tail->dc.left->offset)
-                                exposed.insert(tail->dc.left->offset->sp->i);
+                                exposed.setbit(tail->dc.left->offset->sp->i);
                             if (tail->dc.left->offset2)
-                                exposed.insert(tail->dc.left->offset2->sp->i);
+                                exposed.setbit(tail->dc.left->offset2->sp->i);
                         }
                     }
                 if (tail->temps & TEMP_RIGHT)
                     if (tail->dc.right->mode == i_ind || tail->dc.right->mode == i_direct)
                     {
                         if (tail->dc.right->offset)
-                            exposed.insert(tail->dc.right->offset->sp->i);
+                            exposed.setbit(tail->dc.right->offset->sp->i);
                         if (tail->dc.right->offset2)
-                            exposed.insert(tail->dc.right->offset2->sp->i);
+                            exposed.setbit(tail->dc.right->offset2->sp->i);
                     }
                 tail = tail->back;
             }
@@ -777,12 +772,12 @@ static void InitClasses(void)
             if (!tempInfo[i]->liveAcrossFunctionCall)
             {
                 tempRegClasses[i] = chosenAssembler->arch->regClasses[abs(tempInfo[i]->size) * 2];
-                tempRegCounts[i] = tempRegClasses[i]->regCount;
+                tempRegCounts[i] = tempRegClasses[i]->regCount[noStackFrame];
             }
             else
             {
                 tempRegClasses[i] = chosenAssembler->arch->regClasses[abs(tempInfo[i]->size) * 2 + 1];
-                tempRegCounts[i] = tempRegClasses[i]->regCount;
+                tempRegCounts[i] = tempRegClasses[i]->regCount[noStackFrame];
             }
         }
         if (!tempRegClasses[i])
@@ -794,7 +789,7 @@ static void CountInstructions(bool first)
     QUAD* head = intermed_head;
     int i;
     doGlobals.clear();
-    doGlobals.resize(tempCount + 4000);
+    doGlobals.resize(tempCount + 200);
     instructionCount = 0;
     while (head)
     {
@@ -856,34 +851,28 @@ static void CountInstructions(bool first)
     for (i = 0; i < tempCount; i++)
         tempInfo[i]->inUse = doGlobals[i];
 
-    spillCosts.clear();
     workingMoves.clear();
     spilledVars.clear();
     spilling.clear();
     spillTemp.clear();
     activeMoves.clear();
     coalescedMoves.clear();
-    constrainedMoves.clear();
-    frozenMoves.clear();
     tempMoves[0].clear();
     tempMoves[1].clear();
     hiMoves.clear();
     tempWorkingMoves.clear();
 
     instructionList.clear();
-    tempRegClasses.clear();
-    tempRegCounts.clear();
     squeezes.clear();
-    rawSqueezes.clear();
     degrees.clear();
     spillCosts.clear();
 
     instructionList.resize(instructionCount);
-    tempRegClasses.resize(tempCount + 4000);
-    tempRegCounts.resize(tempCount + 4000);
-    squeezes.resize(tempCount + 4000);
-    rawSqueezes.resize(tempCount + 4000);
-    degrees.resize(tempCount + 4000);
+    tempRegClasses.resize(tempCount + 200);
+    tempRegCounts.resize(tempCount + 200);
+    squeezes.resize(tempCount + 200);
+    rawSqueezes.resize(tempCount + 200);
+    degrees.resize(tempCount + 200);
     head = intermed_head;
     while (head)
     {
@@ -920,7 +909,7 @@ static bool BriggsCoalesceInit(int u, int v, int n)
         if (squeezes[t] >= tempRegCounts[t])
             k++;
     }
-    auto K = imin(tempRegClasses[u]->regCount, tempRegClasses[v]->regCount);
+    auto K = imin(tempRegClasses[u]->regCount[noStackFrame], tempRegClasses[v]->regCount[noStackFrame]);
     if (k >= K)
     {
         hiMoves[n] = k - (K - 1);
@@ -965,7 +954,7 @@ static int tiny(QUAD* head, IMODE* compare)
     else
         return false;
 }
-/* we are doing the conflict graph (interference graph)
+/* we are doing kthe conflict graph (interference graph)
  * according to Morgan instead of the way it is done in George & Appel
  * accordingly, this function just gets a list of moves
  */
@@ -1031,18 +1020,18 @@ static void Build(Block* b)
         {
             if (head->ans->offset)
             {
-                spillCosts[head->ans->offset->sp->i] += head->block->spillCost;
+                spillCosts[head->ans->offset->sp->i] += 10 * head->block->spillCost;
             }
             if (head->ans->offset2)
             {
-                spillCosts[head->ans->offset2->sp->i] += head->block->spillCost;
+                spillCosts[head->ans->offset2->sp->i] += 10 * head->block->spillCost;
             }
         }
         if (head->temps & TEMP_LEFT)
         {
             if (head->dc.left->offset)
             {
-                spillCosts[head->dc.left->offset->sp->i] += head->block->spillCost;
+                spillCosts[head->dc.left->offset->sp->i] += 10 * head->block->spillCost;
                 if (!tiny(head, head->dc.left))
                     tempInfo[head->dc.left->offset->sp->i]->temp = 1;
             }
@@ -1056,13 +1045,13 @@ static void Build(Block* b)
         {
             if (head->dc.right->offset)
             {
-                spillCosts[head->dc.right->offset->sp->i] += head->block->spillCost;
+                spillCosts[head->dc.right->offset->sp->i] += 10 * head->block->spillCost;
                 if (!tiny(head, head->dc.right))
                     tempInfo[head->dc.right->offset->sp->i]->temp = 1;
             }
             if (head->dc.right->offset2)
             {
-                spillCosts[head->dc.right->offset2->sp->i] += head->block->spillCost;
+                spillCosts[head->dc.right->offset2->sp->i] += 10 * head->block->spillCost;
                 tempInfo[head->dc.right->offset2->sp->i]->temp = 1;
             }
         }
@@ -1089,7 +1078,6 @@ static void Adjacent(int n)
 static void Adjacent1(int n)
 {
     adjacent1.clear();
-    // this is the same as adjacent, needs to be looked at sometime...
     EvaluateConflicts(n, [](int i) {
         if (stackedTemps.find(i) == stackedTemps.end() && coalescedNodes.find(i) == coalescedNodes.end())
         {
@@ -1121,6 +1109,7 @@ static bool MoveRelated(int n, int index)
     std::set<int>& data = NodeMoves(n, index);
     return !data.empty();
 }
+int print;
 static void MkWorkList(void)
 {
     int i;
@@ -1134,14 +1123,18 @@ static void MkWorkList(void)
             t->ircinitial = false;
             if (squeezes[i] >= tempRegCounts[i])
             {
-                spillWorkList.push_front(i);
+                if (print)
+                    printf(":%d %d %d", i, squeezes[i], tempRegCounts[i]);
+                spillWorkList.push_back(i);
             }
             else if (MoveRelated(i, 0))
             {
-                freezeWorkList.insert(i);
+                freezeWorkList.push_back(i);
             }
             else
             {
+                if (print)
+                    printf("$%d", i);
                 simplifyWorkList.push_back(i);
             }
         }
@@ -1171,8 +1164,8 @@ static void DecrementDegree(int m, int n)
     if (!precolored[m])
     {
         int cur = squeezes[m];
-        squeezes[m] +=
-            SqueezeChange(m, tempRegClasses[n]->vertex, -(int)worstCase[tempRegClasses[m]->index][tempRegClasses[n]->index]);
+        squeezes[m] += SqueezeChange(m, tempRegClasses[n]->vertex,
+                                     -(int)worstCase[noStackFrame][tempRegClasses[m]->index][tempRegClasses[n]->index]);
         degrees[m]--;
         if (cur == tempRegCounts[m] && squeezes[m] < tempRegCounts[m])
         {
@@ -1181,7 +1174,7 @@ static void DecrementDegree(int m, int n)
             spillWorkList.remove(m);
             if (MoveRelated(m, 1))
             {
-                freezeWorkList.insert(m);
+                freezeWorkList.push_back(m);
             }
             else
             {
@@ -1199,7 +1192,7 @@ static void Simplify(void)
     {
         PUSH(n);
         Adjacent1(n);
-        freezeWorkList.erase(n);  // DAL I added this because it seemed needed
+        freezeWorkList.remove(n);  // DAL I added this because it seemed needed
         if (squeezes[n] >= tempRegCounts[n])
             EnableMoves(adjacent1, 0);
         for (auto t : adjacent1)
@@ -1210,15 +1203,24 @@ static void AddWorkList(int u)
 {
     if (!precolored[u] && !MoveRelated(u, 1) && squeezes[u] < tempRegCounts[u])
     {
-        freezeWorkList.erase(u);
+        freezeWorkList.remove(u);
         simplifyWorkList.push_back(u);
     }
 }
 static int Combine(int u, int v)
 {
-    if (freezeWorkList.find(v) != freezeWorkList.end())
+    bool found = false;
+    for (auto n : freezeWorkList)
     {
-        freezeWorkList.erase(v);
+        if (n == v)
+        {
+            found = true;
+            break;
+        }
+    }
+    if (found)
+    {
+        freezeWorkList.remove(v);
     }
     else
     {
@@ -1278,14 +1280,14 @@ static int Combine(int u, int v)
                 insertConflict(t, u);
                 if (!precolored[u])
                 {
-                    squeezes[u] +=
-                        SqueezeChange(u, tempRegClasses[t]->vertex, +worstCase[tempRegClasses[u]->index][tempRegClasses[t]->index]);
+                    squeezes[u] += SqueezeChange(u, tempRegClasses[t]->vertex,
+                                                 +worstCase[noStackFrame][tempRegClasses[u]->index][tempRegClasses[t]->index]);
                     degrees[u]++;
                 }
                 if (!precolored[t])
                 {
-                    squeezes[t] +=
-                        SqueezeChange(t, tempRegClasses[u]->vertex, +worstCase[tempRegClasses[t]->index][tempRegClasses[u]->index]);
+                    squeezes[t] += SqueezeChange(t, tempRegClasses[u]->vertex,
+                                                 +worstCase[noStackFrame][tempRegClasses[t]->index][tempRegClasses[u]->index]);
                     degrees[t]++;
                 }
             }
@@ -1295,10 +1297,19 @@ static int Combine(int u, int v)
 
     if (squeezes[u] >= tempRegCounts[u])
     {
-        if (freezeWorkList.find(u) != freezeWorkList.end())
+        bool found = false;
+        for (auto n : freezeWorkList)
         {
-            freezeWorkList.erase(u);
-            spillWorkList.push_front(u);
+            if (n == u)
+            {
+                found = true;
+                break;
+            }
+        }
+        if (found)
+        {
+            freezeWorkList.remove(u);
+            spillWorkList.push_back(u);
         }
     }
     if (losingHiDegreeNode)
@@ -1334,7 +1345,7 @@ static bool Conservative(int u, int v)
             ++k;
     }
     adjacent = std::move(working);
-    return k < tempRegClasses[u]->regCount && k < tempRegClasses[v]->regCount;
+    return k < tempRegClasses[u]->regCount[noStackFrame] && k < tempRegClasses[v]->regCount[noStackFrame];
 }
 static bool conflictsWithSameColor(int u, int v)
 {
@@ -1392,7 +1403,7 @@ static bool Coalesce(void)
         else if (precolored[v] || isConflicting(u, v) || conflictsWithSameColor(u, v) || !inBothRegClasses(u, v))
         {
             /* both precolored or otherwise in conflict, can't do anything with it */
-            constrainedMoves.insert(sel);
+            // constrainedMoves.insert(sel);
             AddWorkList(u);
             AddWorkList(v);
         }
@@ -1450,10 +1461,10 @@ static void FreezeMoves(int u)
                 tempWorkingMoves[v].erase(j);
                 tempWorkingMoves[u].erase(j);
             }
-            frozenMoves.insert(j);
+            // frozenMoves.insert(j);
             if (squeezes[v] < tempRegCounts[v] && !MoveRelated(v, 1))
             {
-                freezeWorkList.erase(v);
+                freezeWorkList.remove(v);
                 simplifyWorkList.push_back(v);
             }
         }
@@ -1462,7 +1473,7 @@ static void FreezeMoves(int u)
 static void Freeze(void)
 {
     int u = *freezeWorkList.begin();
-    freezeWorkList.erase(u);
+    freezeWorkList.remove(u);
     simplifyWorkList.push_back(u);
     FreezeMoves(u);
 }
@@ -1549,14 +1560,14 @@ static void AssignColors(void)
                 }
             }
         });
-        for (i = 0; i < cls->regCount; i++)
+        for (i = 0; i < cls->regCount[noStackFrame]; i++)
             if (regs.find(cls->regs[i]) == regs.end())
             {
                 colors[m] = cls->regs[i];
                 tempInfo[m]->enode->sp->regmode = 2;
                 break;
             }
-        if (i == cls->regCount)
+        if (i == cls->regCount[noStackFrame])
         {
             spilledNodes.insert(m);
         }
@@ -1846,7 +1857,7 @@ static void SpillCoalesce(std::unordered_set<int>& C, std::unordered_set<int>& S
         moves.erase(mv);
     }
 }
-static void InsertCandidates(int W, std::unordered_set<int>& L)
+static void InsertCandidates(std::unordered_set<int>& spillProcessed, int W, std::unordered_set<int>& L)
 {
     std::set<int>& moves = tempWorkingMoves[W];
     int i;
@@ -1957,13 +1968,13 @@ static unsigned SpillPropagateSavings(int w, std::unordered_set<int>& S)
     }
     return savings;
 }
-static void SpillPropagate(std::unordered_set<int>& P, std::unordered_set<int>& S, std::unordered_set<int>& L,
-                           std::unordered_set<int>& NP)
+static void SpillPropagate(std::unordered_set<int>& spillProcessed, std::unordered_set<int>& P, std::unordered_set<int>& S,
+                           std::unordered_set<int>& L, std::unordered_set<int>& NP)
 {
     L.clear();
     NP.clear();
     for (auto i : P)
-        InsertCandidates(i, L);
+        InsertCandidates(spillProcessed, i, L);
     while (!L.empty())
     {
         int w = *L.begin();
@@ -1972,7 +1983,7 @@ static void SpillPropagate(std::unordered_set<int>& P, std::unordered_set<int>& 
         {
             S.insert(w);
             NP.insert(w);
-            InsertCandidates(w, L);
+            InsertCandidates(spillProcessed, w, L);
         }
     }
     P = NP;
@@ -1983,12 +1994,12 @@ static void SpillPropagateAndCoalesce(void)
     std::unordered_set<int> np;
     std::unordered_set<int> L;
     int i;
-    spillProcessed.clear();
+    std::unordered_set<int> spillProcessed;
     P = spilledNodes;
     do
     {
         SpillCoalesce(P, spilledNodes);
-        SpillPropagate(P, spilledNodes, L, np);
+        SpillPropagate(spillProcessed, P, spilledNodes, L, np);
     } while (!P.empty());
 }
 /* this routine and its callees don't bother to update
@@ -2001,10 +2012,6 @@ static void RewriteProgram(void)
     SpillPropagateAndCoalesce();
     SpillColor();
     spilling.clear();
-    for (i = 0; i < tempCount; i++)
-    {
-        tempInfo[i]->iuTemp = tempInfo[i]->inUse;
-    }
     for (auto n : spilledNodes)
     {
         spilling[n] = true;
@@ -2021,7 +2028,7 @@ static void RewriteProgram(void)
 static IMODE* copyImode(IMODE* in)
 {
     SimpleExpression *offset = nullptr, *offset2 = nullptr;
-    if (in->offset)
+    if (in->offset && in->offset->type == se_tempref)
     {
         int tnum = in->offset->sp->i;
         if (coalescedNodes.find(tnum) != coalescedNodes.end())
@@ -2029,7 +2036,7 @@ static IMODE* copyImode(IMODE* in)
             offset = tempInfo[findPartition(tnum)]->enode;
         }
     }
-    if (in->offset2)
+    if (in->offset2 && in->offset2->type == se_tempref)
     {
         int tnum = in->offset2->sp->i;
         if (coalescedNodes.find(tnum) != coalescedNodes.end())
@@ -2041,8 +2048,10 @@ static IMODE* copyImode(IMODE* in)
     {
         IMODE* im = Allocate<IMODE>();
         *im = *in;
-        im->offset = offset;
-        im->offset2 = offset2;
+        if (offset)
+            im->offset = offset;
+        if (offset2)
+            im->offset2 = offset2;
         return im;
     }
     return in;
@@ -2133,6 +2142,12 @@ void Precolor(bool optimized)
 }
 void RearrangePrecolors(void)
 {
+    InstructionDefinesSsa.clear();
+    InstructionDefinesSsa.resize(tempCount + 200);
+    InstructionUsesSsa.clear();
+    InstructionUsesSsa.resize(tempCount + 200);
+    BlockDefinesSsa.clear();
+    BlockDefinesSsa.resize(tempCount + 200);
     QUAD* head = intermed_head;
     int i;
     for (i = 0; i < tempCount; i++)
@@ -2331,10 +2346,12 @@ void AllocateRegisters(QUAD* head)
     Prealloc(3);
     CalculateNesting();
     Precolor(cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size);
-    static int count3;
+    tempRegClasses.clear();
+    rawSqueezes.clear();
+    tempRegCounts.clear();
+    static int temp3 = tempCount;
     while (true)
     {
-
         int i;
         passes++;
         if (passes >= 100)
@@ -2351,8 +2368,8 @@ void AllocateRegisters(QUAD* head)
             }
             tempInfo[i]->partition = i;
         }
-        tempWorkingMoves.clear();
         CountInstructions(first);
+        tempWorkingMoves.clear();
         simplifyWorkList.clear();
         freezeWorkList.clear();
         spillWorkList.clear();
@@ -2374,8 +2391,11 @@ void AllocateRegisters(QUAD* head)
         MkWorkList();
         for (i = 0; i < tempCount; i++)
         {
+            spillCosts[i] *= 10;
             if (degrees[i])
                 spillCosts[i] = spillCosts[i] / degrees[i];
+            //            else
+            //                spillCosts[i] = UINT_MAX - 1;  // no degrees = don't spill unless we absolutely have to.
         }
         first = false;
         while (true)

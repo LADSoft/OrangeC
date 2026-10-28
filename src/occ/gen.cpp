@@ -363,7 +363,7 @@ AMODE* make_offset(Optimizer::SimpleExpression* node)
     }
     if (isauto(node))
     {
-        ap->preg = usingEsp ? ESP : EBP;
+        ap->preg = Optimizer::noStackFrame ? ESP : EBP;
         ap->mode = am_indisp;
     }
     else
@@ -758,7 +758,7 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
                         mode = am_indisp;
                     else
                         mode = am_indispscale;
-                    if (usingEsp)
+                    if (Optimizer::noStackFrame)
                     {
                         (*apl)->preg = ESP;
                     }
@@ -770,7 +770,7 @@ void getAmodes(Optimizer::QUAD* q, enum e_opcode* op, Optimizer::IMODE* im, AMOD
                 else if ((*apl)->sreg == -1)
                 {
                     mode = am_indispscale;
-                    if (usingEsp)
+                    if (Optimizer::noStackFrame)
                     {
                         (*apl)->sreg = (*apl)->preg;
                         (*apl)->preg = ESP;
@@ -2410,7 +2410,7 @@ void asm_passthrough(Optimizer::QUAD* q) /* reserved */
     if (val->oper1 && val->oper1->mode == am_indisp && val->oper1->preg == EBP)
     {
         Optimizer::SimpleSymbol* sp = varsp(val->oper1->offset);
-        if (usingEsp)
+        if (Optimizer::noStackFrame)
             val->oper1->preg = ESP;
         if (sp && sp->regmode == 2)
         {
@@ -2428,7 +2428,7 @@ void asm_passthrough(Optimizer::QUAD* q) /* reserved */
     if (val->oper2 && val->oper2->mode == am_indisp && val->oper2->preg == EBP)
     {
         Optimizer::SimpleSymbol* sp = varsp(val->oper2->offset);
-        if (usingEsp)
+        if (Optimizer::noStackFrame)
             val->oper2->preg = ESP;
         if (sp && sp->regmode == 2)
         {
@@ -2700,7 +2700,7 @@ void asm_parmblock(Optimizer::QUAD* q) /* push a block of memory */
         op = op_lea;
         if (ofs->type == Optimizer::se_auto)
         {
-            if (usingEsp)
+            if (Optimizer::noStackFrame)
             {
                 apl->preg = ESP;
             }
@@ -2798,7 +2798,7 @@ static bool bltin_gosub(Optimizer::QUAD* q)
         if (!strcmp(sp->name, "__va_start__"))
         {
             auto ap = Allocate<AMODE>();
-            ap->preg = usingEsp ? ESP : EBP;
+            ap->preg = Optimizer::noStackFrame ? ESP : EBP;
             ap->mode = am_indisp;
             ap->offset = Allocate<Optimizer::SimpleExpression>();
             ap->offset->type = Optimizer::se_i;
@@ -4621,7 +4621,7 @@ void asm_assnblock(Optimizer::QUAD* q) /* copy block of memory*/
         op = op_lea;
         if (ofs->type == Optimizer::se_auto)
         {
-            if (usingEsp)
+            if (Optimizer::noStackFrame)
             {
                 apl->preg = ESP;
             }
@@ -4639,7 +4639,7 @@ void asm_assnblock(Optimizer::QUAD* q) /* copy block of memory*/
         opa = op_lea;
         if (ofsa->type == Optimizer::se_auto)
         {
-            if (usingEsp)
+            if (Optimizer::noStackFrame)
             {
                 apal->preg = ESP;
             }
@@ -4807,7 +4807,7 @@ void asm_clrblock(Optimizer::QUAD* q) /* clear block of memory */
         op = op_lea;
         if (ofs->type == Optimizer::se_auto)
         {
-            if (usingEsp)
+            if (Optimizer::noStackFrame)
             {
                 apl->preg = ESP;
             }
@@ -4899,7 +4899,7 @@ void asm_cmpblock(Optimizer::QUAD* q)
         op = op_lea;
         if (ofs->type == Optimizer::se_auto)
         {
-            if (usingEsp)
+            if (Optimizer::noStackFrame)
             {
                 apl->preg = ESP;
             }
@@ -4917,7 +4917,7 @@ void asm_cmpblock(Optimizer::QUAD* q)
         opa = op_lea;
         if (ofsa->type == Optimizer::se_auto)
         {
-            if (usingEsp)
+            if (Optimizer::noStackFrame)
             {
                 apal->preg = ESP;
             }
@@ -5123,7 +5123,7 @@ void asm_prologue(Optimizer::QUAD* q) /* function prologue */
             n += cnt;
         }
         /* enter is *really* inefficient so we will not use it */
-        if (!usingEsp)
+        if (!Optimizer::noStackFrame)
         {
             gen_codes(op_push, ISZ_UINT, makedreg(EBP), 0);
             gen_code(op_mov, makedreg(EBP), makedreg(ESP));
@@ -5181,7 +5181,7 @@ void asm_prologue(Optimizer::QUAD* q) /* function prologue */
  */
 void asm_epilogue(Optimizer::QUAD* q) /* function epilogue */
 {
-    if (pushlevel != 0 && usingEsp)
+    if (pushlevel != 0 && Optimizer::noStackFrame)
         diag("asm_epilogue: pushlevel not aligned");
     if (beGetIcon(q->dc.left) != 0)
     {
@@ -5202,7 +5202,7 @@ void asm_epilogue(Optimizer::QUAD* q) /* function epilogue */
     }
     if (inframe)
     {
-        if (usingEsp)
+        if (Optimizer::noStackFrame)
         {
             gen_code(op_add, makedreg(ESP), aimmed(funcstackheight));
         }
@@ -5352,7 +5352,7 @@ void asm_tryblock(Optimizer::QUAD* q) /* try/catch */
 {
     AMODE* ap1 = localAllocate<AMODE>();
     ap1->mode = am_indisp;
-    if (usingEsp)
+    if (Optimizer::noStackFrame)
     {
         ap1->preg = ESP;
         ap1->offset = Optimizer::simpleIntNode(Optimizer::se_i, q->dc.v.label + funcstackheight);  // ESP

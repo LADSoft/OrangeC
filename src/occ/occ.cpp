@@ -60,7 +60,6 @@
 #    define CONSOLE_DEVICE "/dev/tty"
 #endif
 
-int usingEsp;
 Optimizer::SimpleSymbol* currentFunction;
 
 void diag(const char*, ...) {}
@@ -76,6 +75,7 @@ bool IsCompiler() { return true; }
 }  // namespace Parser
 namespace Optimizer
 {
+int noStackFrame;
 unsigned termCount;
 void SymbolManager::clear() { globalSymbols.clear(); }
 };  // namespace Optimizer
@@ -304,7 +304,7 @@ bool ProcessData(const char* name)
             Optimizer::fastcallAlias = v->funcData->fastcallAlias;
             currentFunction = v->funcData->name;
             currentFunction->ellipsePos = v->funcData->ellipsePos;
-            Optimizer::SetUsesESP(currentFunction->usesEsp);
+            Optimizer::noStackFrame = currentFunction->noStackFrame;
             generate_instructions(Optimizer::intermed_head);
             flush_peep(currentFunction, nullptr);
         }

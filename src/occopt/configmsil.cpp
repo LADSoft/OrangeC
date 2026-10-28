@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -241,21 +241,21 @@ static ARCH_CHARACTERISTICS architecture_characteristics = {
     8,             /* default packing level */
     8,             /* alignment of malloc() out of RTL */
     /* floating point characteristics not fully implemented */
-    &aflt,                                                                        /* characteristics of 'float' keyword */
-    &adbl,                                                                        /* characteristics of 'double' keyword */
-    &aldbl,                                                                       /* characteristics of 'long double' keyword */
-    0,                                                                            /* future floating type */
-    REG_MAX,                                                                      /* register count */
-    &regNames[0],                                                                 /* defines registers */
-    1,                                                                            /* register trees count */
-    &regRoot, (ARCH_REGCLASS**)regClasses, &regCosts, allocOrder, nullptr, peeps, /* defines peephole information */
-    0,                                                                            /* Max number of regs considered for fastcall */
-    0,                                                                            /* register list for regs used in fastcall */
+    &aflt,        /* characteristics of 'float' keyword */
+    &adbl,        /* characteristics of 'double' keyword */
+    &aldbl,       /* characteristics of 'long double' keyword */
+    0,            /* future floating type */
+    REG_MAX,      /* register count */
+    &regNames[0], /* defines registers */
+    1,            /* register trees count */
+    &regRoot, (ARCH_REGCLASS**)regClassDefaults, &regCosts, allocOrder, nullptr, peeps, /* defines peephole information */
+    0, /* Max number of regs considered for fastcall */
+    0, /* register list for regs used in fastcall */
 
     OPT_REVERSESTORE | OPT_REVERSEPARAM | OPT_ARGSTRUCTREF | OPT_EXPANDSWITCH | OPT_THUNKRETVAL, /* preferred optimizations */
     DO_NOGCSE | DO_NOLCSE | DO_NOREGALLOC | DO_NOADDRESSINIT | DO_NOPARMADJSIZE | DO_NOLOADSTACK | DO_NOENTRYIF | DO_NOALIAS |
-        DO_NOCONST | DO_NOOPTCONVERSION | DO_NOINLINE | DO_UNIQUEIND | DO_NOFASTDIV | DO_NODEADPUSHTOTEMP | DO_MIDDLEBITS |
-        DO_NOBRANCHTOBRANCH | DO_NOMULTOSHIFT,
+        DO_NOCONST | DO_NOINLINE | DO_UNIQUEIND | DO_NOFASTDIV | DO_NODEADPUSHTOTEMP | DO_MIDDLEBITS | DO_NOBRANCHTOBRANCH |
+        DO_NOMULTOSHIFT,
     /* optimizations we don't want */
     EO_RETURNASERR,    /* error options */
     false,             /* true if has floating point regs */

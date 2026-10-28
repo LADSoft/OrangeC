@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -764,7 +764,7 @@ static void XCStmt(std::list<Statement*>* block, std::list<XCENTRY*>& lst)
                     XCStmt(stmt->lower, lst);
                     XCStmt(stmt->blockTail, lst);
                     break;
-                case StatementNode::passthrough_:
+                case StatementNode::inlineasm_:
                 case StatementNode::nop_:
                     break;
                 case StatementNode::datapassthrough_:

@@ -145,7 +145,7 @@ static Optimizer::ARCH_REGCLASS allFloatRegs = {&allDoubleRegs, {32, 33, 34, 35,
 static Optimizer::ARCH_REGCLASS allFDoubleRegs = {&allFloatRegs, {48, 49, 50, 51, 52, 53, 54, 55}};
 static Optimizer::ARCH_REGCLASS allDoubleFloatRegs = {&allFDoubleRegs, {40, 41, 42, 43, 44, 45, 46, 47}};
 static Optimizer::ARCH_REGCLASS allDoubleDoubleRegs = {&allDoubleFloatRegs, {56, 57, 58, 59, 60, 61, 62, 63}};
-static Optimizer::ARCH_REGCLASS* regClasses[27][2] = {
+static Optimizer::ARCH_REGCLASS* regClassDefaults[27][2] = {
     {nullptr, nullptr},
     {nullptr, nullptr},
     {&allByteRegs, &pushedByteRegs},

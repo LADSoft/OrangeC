@@ -58,7 +58,7 @@
 
 #define FULLVERSION
 
-extern void adjustUsesESP();
+extern void adjustnoStackFrame();
 namespace occx86
 {
 

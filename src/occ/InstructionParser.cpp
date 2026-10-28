@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -409,7 +409,7 @@ int resolveoffset(Optimizer::SimpleExpression* n, int* resolved)
             case Optimizer::se_auto: {
                 int m = n->sp->offset;
 
-                if (!usingEsp && m > 0)
+                if (!Optimizer::noStackFrame && m > 0)
                     m += 4;
 
                 if (n->sp->storage_class == Optimizer::scc_parameter && Optimizer::fastcallAlias)

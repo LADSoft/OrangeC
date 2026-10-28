@@ -144,9 +144,9 @@ static void fixlen(AMODE* ap)
             else
                 ap->length = ISZ_NONE;
         }
-        if (Optimizer::cparams.prm_useesp && (ap->mode == am_indisp || ap->mode == am_indispscale) && ap->offset)
+        if (Optimizer::cparams.prm_nostackframe && (ap->mode == am_indisp || ap->mode == am_indispscale) && ap->offset)
         {
-            if (usingEsp)
+            if (Optimizer::noStackFrame)
             {
                 // this is to adjust the stack level to the current depth
                 if (ap->preg == ESP && !ap->keepesp)

@@ -520,7 +520,7 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
     rv->xc = !!sym->sb->xc;
     rv->canThrow = sym->sb->canThrow;
     rv->hasInlineFunc = sym->sb->inlineFunc.stmt != nullptr;
-    rv->usesEsp = cparams.prm_useesp;
+    rv->noStackFrame = cparams.prm_nostackframe;
 
     rv->outputName = beDecorateSymName(sym);
     rv->stackProtectExplicit = sym->sb->attribs.uninheritable.stackProtect;

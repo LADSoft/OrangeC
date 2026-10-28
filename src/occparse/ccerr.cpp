@@ -944,7 +944,7 @@ static bool hasGoto(std::list<Statement*>* statements)
             case StatementNode::notselect_:
             case StatementNode::label_:
             case StatementNode::line_:
-            case StatementNode::passthrough_:
+            case StatementNode::inlineasm_:
             case StatementNode::datapassthrough_:
             case StatementNode::asmcond_:
             case StatementNode::varstart_:
@@ -989,7 +989,7 @@ static bool hasDeclarations(std::list<Statement*>* statements)
             case StatementNode::notselect_:
             case StatementNode::label_:
             case StatementNode::line_:
-            case StatementNode::passthrough_:
+            case StatementNode::inlineasm_:
             case StatementNode::datapassthrough_:
             case StatementNode::asmcond_:
             case StatementNode::varstart_:
@@ -1038,7 +1038,7 @@ static void labelIndexes(std::list<Statement*>* statements, int* min, int* max)
                 break;
             case StatementNode::return_:
             case StatementNode::line_:
-            case StatementNode::passthrough_:
+            case StatementNode::inlineasm_:
             case StatementNode::datapassthrough_:
             case StatementNode::asmcond_:
             case StatementNode::varstart_:
@@ -1157,7 +1157,7 @@ static std::list<VLASHIM*> getVLAList(std::list<Statement*>* statements, VLASHIM
                 nextParent = last;
                 break;
             case StatementNode::line_:
-            case StatementNode::passthrough_:
+            case StatementNode::inlineasm_:
             case StatementNode::datapassthrough_:
             case StatementNode::asmcond_:
             case StatementNode::varstart_:

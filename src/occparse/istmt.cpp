@@ -946,7 +946,7 @@ Optimizer::IMODE* genstmt(std::list<Statement*>* stmts, SYMBOL* funcsp, int flag
                 case StatementNode::genword_:
                     gen_genword(stmt, funcsp);
                     break;
-                case StatementNode::passthrough_:
+                case StatementNode::inlineasm_:
                     gen_asm(stmt);
                     break;
                 case StatementNode::datapassthrough_:

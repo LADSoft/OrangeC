@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -813,7 +813,7 @@ std::list<Statement*>* inlinestmt(std::list<Statement*>* blocks)
                     block->lower = inlinestmt(block->lower);
                     block->blockTail = inlinestmt(block->blockTail);
                     break;
-                case StatementNode::passthrough_:
+                case StatementNode::inlineasm_:
 #ifndef ORANGE_NO_INASM
                     if (block->lower)
                         inlineAsmStmt(block->lower);
@@ -902,7 +902,7 @@ static void reduceReturns(std::list<Statement*>* blocks, Type* rettp, EXPRESSION
                     reduceReturns(block->lower, rettp, retnode);
                     /* skipping block tail as it will have no returns  */
                     break;
-                case StatementNode::passthrough_:
+                case StatementNode::inlineasm_:
                 case StatementNode::datapassthrough_:
                     break;
                 case StatementNode::nop_:
@@ -964,7 +964,7 @@ static EXPRESSION* scanReturn(std::list<Statement*>* blocks, Type* rettp)
                     rv = scanReturn(block->lower, rettp);
                     /* skipping block tail as it will have no returns  */
                     break;
-                case StatementNode::passthrough_:
+                case StatementNode::inlineasm_:
                 case StatementNode::datapassthrough_:
                     break;
                 case StatementNode::nop_:
@@ -1377,7 +1377,7 @@ static bool IsEmptyBlocks(std::list<Statement*>* blocks)
                 case StatementNode::select_:
                 case StatementNode::notselect_:
                 case StatementNode::switch_:
-                case StatementNode::passthrough_:
+                case StatementNode::inlineasm_:
                 case StatementNode::datapassthrough_:
                     rv = false;
                     break;

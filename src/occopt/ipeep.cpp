@@ -395,52 +395,9 @@ static int PeepAssn(std::unordered_set<int>& occursInAbnormal, Block* b, QUAD* h
         }
     }
 
-    if (0)
-    {
-        if (head->ans->mode == i_ind && head->ans->offset && !head->ans->offset2 && !head->ans->offset3)
-        {
-            int temp = head->ans->offset->sp->i;
-            auto ins = InstructionDefinesSsa[temp];
-            if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) &&
-                ins->dc.left->mode == i_direct)
-            {
-                if (ins->ans->size == ins->dc.left->size)
-                    head->ans = loadVarInd(ins->dc.left, head->ans->size);
-            }
-        }
-        if (head->dc.left->mode == i_ind && head->dc.left->offset && !head->dc.left->offset2 && !head->dc.left->offset3)
-        {
-            int temp = head->ans->offset->sp->i;
-            auto ins = InstructionDefinesSsa[temp];
-            if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) &&
-                ins->dc.left->mode == i_direct)
-            {
-                if (ins->ans->size == ins->dc.left->size)
-                    head->dc.left = loadVarInd(ins->dc.left, head->dc.left->size);
-            }
-        }
-    }
-    if (!(chosenAssembler->arch->denyopts & DO_NOOPTCONVERSION))
-    {
-        if (head->temps == (TEMP_LEFT | TEMP_ANS) && head->dc.left->size != head->ans->size)
-        {
-            if (head->back->dc.opcode == i_assn)
-            {
-                if (head->back->ans->size == head->back->dc.left->size && head->back->ans == head->dc.left)
-                    if (head->back->dc.left->mode != i_immed && !head->back->dc.left->bits)
-                    {
-                        if (!head->back->dc.left->retval)
-                        {
-                            head->dc.left = head->back->dc.left;
-                            if ((!head->dc.left->offset || head->dc.left->offset->type != se_tempref) &&
-                                (!head->dc.left->offset2 || head->dc.left->offset2->type != se_tempref))
-                                head->temps &= ~TEMP_LEFT;
-                            return -1;
-                        }
-                    }
-            }
-        }
-    }
+    // so originally we had optimized size conversions as well
+    // but it was a little buggy and really there was no point anyway since the IRC and SSA routines will remove copies if
+    // possible...
     return 0;
 }
 bool matchesTempRef(SimpleExpression* e, QUAD* q)
@@ -688,7 +645,7 @@ static void PeepCompare(Block* b, QUAD* head)
     if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
     {
         int temp = head->dc.left->offset->sp->i;
-        if (liveOutTemps[b->blocknum].find(temp) == liveOutTemps[b->blocknum].end())
+        if (!liveOutTemps[b->blocknum].isset(temp))
         {
             auto ins = InstructionDefinesSsa[temp];
             if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) &&
@@ -702,7 +659,7 @@ static void PeepCompare(Block* b, QUAD* head)
     if ((head->temps & TEMP_RIGHT) && head->dc.right->mode == i_direct)
     {
         int temp = head->dc.right->offset->sp->i;
-        if (liveOutTemps[b->blocknum].find(temp) == liveOutTemps[b->blocknum].end())
+        if (!liveOutTemps[b->blocknum].isset(temp))
         {
             auto ins = InstructionDefinesSsa[temp];
             if (ins && head->block == ins->block && ins->dc.opcode == i_assn && (ins->temps & TEMP_LEFT) &&

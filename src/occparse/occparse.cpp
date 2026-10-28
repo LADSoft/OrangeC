@@ -96,7 +96,7 @@ NetCore* netCoreInstance;
 #endif
 
 void regInit() {}
-int usingEsp;
+int noStackTrace;
 #ifdef HAVE_UNISTD_H
 #    include <unistd.h>
 #endif
@@ -128,8 +128,9 @@ class PELib;
 }
 namespace Optimizer
 {
+int noStackFrame;
 unsigned termCount;
-};
+};  // namespace Optimizer
 namespace CompletionCompiler
 {
 void ccDumpSymbols(void);
@@ -242,7 +243,7 @@ Optimizer::COMPILER_PARAMS cparams_default = {
     (asmTypes)0, /* char prm_assembler;*/
     false,       /* char prm_flat;*/
     false,       /* char prm_nodos;*/
-    true,        /* char prm_useesp;*/
+    true,        /* char prm_nostackframe;*/
     false,       /* char managed_library;*/
     false,       /* char no_default_libs;*/
     false,       /*char replacePInvoke;*/
@@ -254,7 +255,7 @@ Optimizer::COMPILER_PARAMS cparams_default = {
     false        /* compile via assembly */
 };  // namespace Parser
 
-int usingEsp;
+int noStackTrace;
 
 bool IsCompiler()
 {

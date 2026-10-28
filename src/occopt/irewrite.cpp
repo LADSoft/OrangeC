@@ -40,9 +40,10 @@ void Prealloc(int pass)
     int tempCountIn = tempCount;
     int i;
     bool done = false;
-    std::set<int> eobGlobals;
+    SimpleBitSet eobGlobals(tempCount + 200);
     liveVariables();
     globalVars.clear();
+    globalVars.resize(tempCount + 200);
     for (; pass < 11 && !done; pass++)
     {
         for (i = 0; i < blockCount; i++)
@@ -51,40 +52,37 @@ void Prealloc(int pass)
             {
                 QUAD* tail = blockArray[i]->tail;
                 int j, k;
-                globalVars.clear();
-                eobGlobals.clear();
-                for (auto i : liveOutTemps[i])
-                {
-                    globalVars.insert(i);
-                    eobGlobals.insert(i);
-                }
+                globalVars = liveOutTemps[i];
+                eobGlobals = liveOutTemps[i];
+                globalVars.resize(tempCount + 200);
+                eobGlobals.resize(tempCount + 200);
                 while (tail != blockArray[i]->head)
                 {
                     if ((tail->temps & TEMP_ANS) && (tail->ans->mode == i_direct))
                     {
-                        globalVars.erase(tail->ans->offset->sp->i);
+                        globalVars.clrbit(tail->ans->offset->sp->i);
                     }
                     PreRegAlloc(tail, globalVars, eobGlobals, pass);
                     if ((tail->temps & TEMP_ANS) && (tail->ans->mode == i_ind))
                     {
                         if (tail->ans->offset)
-                            globalVars.insert(tail->ans->offset->sp->i);
+                            globalVars.setbit(tail->ans->offset->sp->i);
                         if (tail->ans->offset2)
-                            globalVars.insert(tail->ans->offset2->sp->i);
+                            globalVars.setbit(tail->ans->offset2->sp->i);
                     }
                     if (tail->temps & TEMP_LEFT)
                     {
                         if (tail->dc.left->offset)
-                            globalVars.insert(tail->dc.left->offset->sp->i);
+                            globalVars.setbit(tail->dc.left->offset->sp->i);
                         if (tail->dc.left->offset2)
-                            globalVars.insert(tail->dc.left->offset2->sp->i);
+                            globalVars.setbit(tail->dc.left->offset2->sp->i);
                     }
                     if (tail->temps & TEMP_RIGHT)
                     {
                         if (tail->dc.right->offset)
-                            globalVars.insert(tail->dc.right->offset->sp->i);
+                            globalVars.setbit(tail->dc.right->offset->sp->i);
                         if (tail->dc.right->offset2)
-                            globalVars.insert(tail->dc.right->offset2->sp->i);
+                            globalVars.setbit(tail->dc.right->offset2->sp->i);
                     }
                     tail = tail->back;
                 }
@@ -105,11 +103,14 @@ void CalculateBackendLives(void)
             unsigned long long liveRegs = 0;
             int j, t;
             int gosubcolor = -1;
-            for (auto j : liveOutTemps[i])
+            for (int j = 0; j < liveOutTemps[i].size(); j++)
             {
-                liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[colors[j]].regs[0];
-                if (chosenAssembler->arch->regNames[colors[j]].regs[1] >= 0)
-                    liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[colors[j]].regs[1];
+                if (liveOutTemps[i].isset(j) && chosenAssembler->arch->regNames[colors[j]].regs.size())
+                {
+                    liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[colors[j]].regs[0];
+                    if (chosenAssembler->arch->regNames[colors[j]].regs[1] >= 0)
+                        liveRegs |= ((unsigned long long)1) << chosenAssembler->arch->regNames[colors[j]].regs[1];
+                }
             }
             while (tail != head)
             {

@@ -44,12 +44,12 @@ extern CmdSwitchCombineString output;
 extern const char* usageText;
 extern const char* helpText;
 
-extern int usingEsp;
+extern int noStackTrace;
 
 void InternalConflict(QUAD* head);
 void PreColor(QUAD* head);
 void FastcallColor(QUAD* head);
 void examine_icode(QUAD* head);
-int PreRegAlloc(QUAD* tail, std::set<int>& globalVars, std::set<int>& eobGlobals, int pass);
+int PreRegAlloc(QUAD* tail, SimpleBitSet& globalVars, SimpleBitSet& eobGlobals, int pass);
 void Optimize(SimpleSymbol* funcsp);
 }  // namespace Optimizer

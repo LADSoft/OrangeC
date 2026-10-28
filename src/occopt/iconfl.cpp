@@ -42,7 +42,7 @@
 #include <ilive.h>
 namespace Optimizer
 {
-static std::unordered_map<int, std::set<int>> conflicts;
+static std::unordered_map<int, std::unordered_set<int>> conflicts;
 
 void conflictini(void) { ResetConflict(); }
 void EvaluateConflicts(int n, std::function<void(int)> func) { std::for_each(conflicts[n].begin(), conflicts[n].end(), func); }
@@ -84,8 +84,11 @@ void insertConflict(int i, int j)
 void CalculateConflictGraph(std::unordered_set<int>& nodes, bool optimize)
 {
     int i;
-    std::unordered_set<int> live;
+    SimpleBitSet live(tempCount);
+    SimpleBitSet nodes1(tempCount);
     ResetConflict();
+    for (auto j : nodes)
+        nodes1.setbit(j);
     for (i = 0; i < blockCount; i++)
     {
 
@@ -95,11 +98,9 @@ void CalculateConflictGraph(std::unordered_set<int>& nodes, bool optimize)
             QUAD* head = blockArray[i]->head;
             int k;
             live.clear();
-            for (auto j : liveOutTemps[i])
-            {
-                if (nodes.empty() || nodes.find(j) != nodes.end())
-                    live.insert(j);
-            }
+            live = liveOutTemps[i];
+            if (!nodes.empty())
+                live.dointersect(nodes1, live);
             do
             {
                 InternalConflict(tail);
@@ -107,23 +108,24 @@ void CalculateConflictGraph(std::unordered_set<int>& nodes, bool optimize)
                 {
                     PHIDATA* pd = tail->dc.v.phi;
                     struct _phiblock* pb = pd->temps;
-                    if (nodes.empty() || nodes.find(pd->T0) != nodes.end())
+                    if (nodes.empty() || nodes1.isset(pd->T0))
                     {
-                        for (auto i : live)
+                        for (int i = 0; i < live.size(); i++)
                         {
-                            insertConflict(i, pd->T0);
+                            if (live.isset(i))
+                                insertConflict(i, pd->T0);
                         }
                     }
                     while (pb)
                     {
-                        if (nodes.empty() || nodes.find(pb->Tn) != nodes.end())
+                        if (nodes.empty() || nodes1.isset(pb->Tn))
                         {
                             struct _phiblock* pb2 = pd->temps;
                             while (pb2)
                             {
-                                if (nodes.empty() || nodes.find(pb2->Tn) != nodes.end())
+                                if (nodes.empty() || nodes1.isset(pb2->Tn))
                                 {
-                                    if (live.find(pb->Tn) != live.end() || live.find(pb2->Tn) != live.end())
+                                    if (live.isset(pb->Tn) || live.isset(pb2->Tn))
                                         insertConflict(pb->Tn, pb2->Tn);
                                 }
                                 pb2 = pb2->next;
@@ -134,9 +136,9 @@ void CalculateConflictGraph(std::unordered_set<int>& nodes, bool optimize)
                     pb = pd->temps;
                     while (pb)
                     {
-                        if (nodes.empty() || nodes.find(pb->Tn) != nodes.end())
+                        if (nodes.empty() || nodes1.isset(pb->Tn))
                         {
-                            live.insert(pb->Tn);
+                            live.setbit(pb->Tn);
                         }
                         pb = pb->next;
                     }
@@ -157,7 +159,7 @@ void CalculateConflictGraph(std::unordered_set<int>& nodes, bool optimize)
                         {
                             if (x->fastcall > 0)
                             {
-                                live.insert(x->dc.left->offset->sp->i);
+                                live.setbit(x->dc.left->offset->sp->i);
                             }
                             x = x->back;
                         }
@@ -170,16 +172,17 @@ void CalculateConflictGraph(std::unordered_set<int>& nodes, bool optimize)
                         // dest reg
                         if (tail->assemblyRegs[0] != 255)
                         {
-                            live.erase(tail->assemblyTempRegStart);
-                            for (auto i : live)
+                            live.clrbit(tail->assemblyTempRegStart);
+                            for (int i = 0; i < live.size(); i++)
                             {
-                                insertConflict(i, tail->assemblyTempRegStart);
+                                if (live.isset(i))
+                                    insertConflict(i, tail->assemblyTempRegStart);
                             }
                         }
                         // src regs
                         for (int i = 1; i < tail->assemblyRegCount; i++)
                             if (tail->assemblyRegs[i] != 255)
-                                live.insert(tail->assemblyTempRegStart + i);
+                                live.setbit(tail->assemblyTempRegStart + i);
                     }
                 }
                 else if (tail->temps & TEMP_ANS)
@@ -188,7 +191,7 @@ void CalculateConflictGraph(std::unordered_set<int>& nodes, bool optimize)
                     {
                         int tnum = tail->ans->offset->sp->i;
                         int k = -1;
-                        if (nodes.empty() || nodes.find(tnum) != nodes.end())
+                        if (nodes.empty() || nodes1.isset(tnum))
                         {
                             if (optimize)
                             {
@@ -211,7 +214,7 @@ void CalculateConflictGraph(std::unordered_set<int>& nodes, bool optimize)
                                     }
                                 }
                             }
-                            live.erase(tnum);
+                            live.clrbit(tnum);
                             // processor dependent
                             if (tail->atomic && (tail->temps & TEMP_RIGHT) && tail->ans->size >= ISZ_FLOAT &&
                                 tail->ans->size != ISZ_BITINT)
@@ -237,10 +240,9 @@ void CalculateConflictGraph(std::unordered_set<int>& nodes, bool optimize)
                                         insertConflict(tnum, tail->dc.right->offset2->sp->i);
                                 }
                             }
-
-                            for (auto i : live)
+                            for (int i = 0; i < live.size(); i++)
                             {
-                                if (i != k)
+                                if (i != k && live.isset(i))
                                     insertConflict(i, tnum);
                             }
                         }
@@ -250,17 +252,17 @@ void CalculateConflictGraph(std::unordered_set<int>& nodes, bool optimize)
                         if (tail->ans->offset)
                         {
                             int tnum = tail->ans->offset->sp->i;
-                            if (nodes.empty() || nodes.find(tnum) != nodes.end())
+                            if (nodes.empty() || nodes1.isset(tnum))
                             {
-                                live.insert(tnum);
+                                live.setbit(tnum);
                             }
                         }
                         if (tail->ans->offset2)
                         {
                             int tnum = tail->ans->offset2->sp->i;
-                            if (nodes.empty() || nodes.find(tnum) != nodes.end())
+                            if (nodes.empty() || nodes1.isset(tnum))
                             {
-                                live.insert(tnum);
+                                live.setbit(tnum);
                             }
                         }
                     }
@@ -270,17 +272,17 @@ void CalculateConflictGraph(std::unordered_set<int>& nodes, bool optimize)
                     if (tail->dc.left->offset)
                     {
                         int tnum = tail->dc.left->offset->sp->i;
-                        if (nodes.empty() || nodes.find(tnum) != nodes.end())
+                        if (nodes.empty() || nodes1.isset(tnum))
                         {
-                            live.insert(tnum);
+                            live.setbit(tnum);
                         }
                     }
                     if (tail->dc.left->offset2)
                     {
                         int tnum = tail->dc.left->offset2->sp->i;
-                        if (nodes.empty() || nodes.find(tnum) != nodes.end())
+                        if (nodes.empty() || nodes1.isset(tnum))
                         {
-                            live.insert(tnum);
+                            live.setbit(tnum);
                         }
                     }
                 }
@@ -289,17 +291,17 @@ void CalculateConflictGraph(std::unordered_set<int>& nodes, bool optimize)
                     if (tail->dc.right->offset)
                     {
                         int tnum = tail->dc.right->offset->sp->i;
-                        if (nodes.empty() || nodes.find(tnum) != nodes.end())
+                        if (nodes.empty() || nodes1.isset(tnum))
                         {
-                            live.insert(tnum);
+                            live.setbit(tnum);
                         }
                     }
                     if (tail->dc.right->offset2)
                     {
                         int tnum = tail->dc.right->offset2->sp->i;
-                        if (nodes.empty() || nodes.find(tnum) != nodes.end())
+                        if (nodes.empty() || nodes1.isset(tnum))
                         {
-                            live.insert(tnum);
+                            live.setbit(tnum);
                         }
                     }
                 }

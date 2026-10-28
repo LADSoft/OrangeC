@@ -741,7 +741,7 @@ static void ParamTransfer(const char* name)
     }
     if (Optimizer::cparams.prm_debug || Optimizer::cparams.prm_stackalign || !Optimizer::cparams.prm_optimize_for_speed)
     {
-        Optimizer::cparams.prm_useesp = false;
+        Optimizer::cparams.prm_nostackframe = false;
     }
     if (StackProtectorBasic.GetValue())
         Optimizer::cparams.prm_stackprotect |= STACK_PROTECT_BASIC;

@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -1355,7 +1355,7 @@ static EXPRESSION* EvaluateStatements(EXPRESSION* node, std::list<Statement*>* s
                 case StatementNode::asmgoto_:
                 case StatementNode::asmcond_:
                 case StatementNode::genword_:
-                case StatementNode::passthrough_:
+                case StatementNode::inlineasm_:
                 case StatementNode::datapassthrough_:
                     return nullptr;
                 case StatementNode::select_:

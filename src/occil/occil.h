@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -43,7 +43,7 @@ extern char infile[260];
 extern char outFile[260];
 
 extern int dbgblocknum;
-extern int usingEsp;
+extern int noStackTrace;
 void flush_peep(void);
 void ResolveMSILExterns(void);
 void outputfile(char* buf, int len, const char* name, const char* ext);

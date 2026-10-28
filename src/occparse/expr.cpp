@@ -2733,7 +2733,7 @@ bool cloneTempStmt(std::list<Statement*>** blocks, SYMBOL** found, SYMBOL** repl
                 rv |= cloneTempStmt(&block->lower, found, replace);
                 rv |= cloneTempStmt(&block->blockTail, found, replace);
                 break;
-            case StatementNode::passthrough_:
+            case StatementNode::inlineasm_:
                 break;
             case StatementNode::datapassthrough_:
                 break;

@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -26,10 +26,13 @@
 #pragma once
 
 void diag(const char*, ...);
-extern int usingEsp;
 extern Optimizer::SimpleSymbol* currentFunction;
 void regInit(void);
 
+namespace Optimizer
+{
+extern int noStackFrame;
+}
 namespace Parser
 {
 extern char outFile[260];

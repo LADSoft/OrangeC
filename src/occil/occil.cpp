@@ -51,7 +51,7 @@
 #include "ilunstream.h"
 
 Optimizer::SimpleSymbol* currentFunction;
-int usingEsp;
+int noStackTrace;
 void regInit() {}
 void diag(const char* fmt, ...) {}
 void Import() {}
@@ -323,7 +323,6 @@ bool ProcessData(const char* name)
             Optimizer::fltexp = v->funcData->fltexp;
             Optimizer::fastcallAlias = v->funcData->fastcallAlias;
             currentFunction = v->funcData->name;
-            // Optimizer::SetUsesESP(currentFunction->usesEsp);
             generate_instructions(Optimizer::intermed_head);
             msil_flush_peep(currentFunction, nullptr);
             currentFunction = nullptr;

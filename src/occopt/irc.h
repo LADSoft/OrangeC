@@ -30,6 +30,7 @@ namespace Optimizer
 {
 extern int maxAddr;
 extern int lc_maxauto;
+extern int noStackFrame;
 extern std::vector<char> colors;
 extern std::vector<bool> precolored;
 

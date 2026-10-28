@@ -1713,7 +1713,7 @@ static std::list<Statement*>* unshimstmt(std::list<Statement*>* block_in, EXPRES
                     block->lower = unshimstmt(block->lower, ths);
                     block->blockTail = unshimstmt(block->blockTail, ths);
                     break;
-                case StatementNode::passthrough_:
+                case StatementNode::inlineasm_:
                     break;
                 case StatementNode::datapassthrough_:
                     break;

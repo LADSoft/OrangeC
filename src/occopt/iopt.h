@@ -240,7 +240,6 @@ struct TempInfo
     unsigned liveAcrossBlock : 1;
     unsigned inductionInitVar : 1;
     unsigned inUse : 1;
-    unsigned iuTemp : 1;
     unsigned termClear : 1;
     unsigned degreed : 1;
     unsigned ircinitial : 1;

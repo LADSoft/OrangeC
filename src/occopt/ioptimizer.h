@@ -216,7 +216,7 @@ struct SimpleSymbol
             unsigned anyTry : 1;
             unsigned xc : 1;
             unsigned canThrow : 1;
-            unsigned usesEsp : 1;
+            unsigned noStackFrame : 1;
             unsigned addressTaken : 1;
             unsigned generated : 1;
             unsigned msilObjectArray : 1;

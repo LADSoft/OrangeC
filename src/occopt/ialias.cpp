@@ -80,7 +80,13 @@ typedef struct _aliasAddress
     int offset;
 } ALIASADDRESS;
 
-typedef std::set<ALIASADDRESS*> ALIASLIST;
+struct AliasListLess
+{
+    bool operator()(const ALIASADDRESS* left, const ALIASADDRESS* right) const { return left->name->im < right->name->im; }
+};
+// the aliaslists are sorted by imode; the original algorithm did not have addresses with duplcate imodes in the list.
+// this also allows us to do a union to discard new ones.
+typedef std::set<ALIASADDRESS*, AliasListLess> ALIASLIST;
 
 #pragma pack(1)
 struct ptrint
@@ -293,36 +299,17 @@ static ALIASNAME* LookupMem(IMODE* im)
     it->second.push_back(p);
     return p;
 }
+
+// so the next couple of functions have the requirement that
+// when something matches in both sets, the left hand set item be chosen.
+// std::set_union does this by spec so we can do this...
 static void AliasUnion(ALIASLIST& dest, ALIASLIST& src)
 {
-    std::unordered_set<IMODE*> matches;
-    for (auto&& d : dest)
-        matches.insert(d->name->im);
-    for (auto s : src)
-    {
-        if (matches.find(s->name->im) == matches.end())
-        {
-            matches.insert(s->name->im);
-            dest.insert(s);
-            changed = true;
-        }
-    }
+    ALIASLIST result;
+    std::set_union(dest.begin(), dest.end(), src.begin(), src.end(), std::inserter(result, result.begin()), AliasListLess());
+    dest = std::move(result);
 }
-static void AliasUnionParm(ALIASLIST& dest, ALIASLIST& src)
-{
-    std::unordered_set<ALIASNAME*> matches;
-    for (auto&& d : dest)
-        matches.insert(d->name);
-    for (auto s : src)
-    {
-        if (matches.find(s->name) == matches.end())
-        {
-            matches.insert(s->name);
-            dest.insert(s);
-            changed = true;
-        }
-    }
-}
+static void AliasUnionParm(ALIASLIST& dest, ALIASLIST& src) { AliasUnion(dest, src); }
 static ALIASNAME* LookupAliasName(ALIASNAME* name, int offset)
 {
     ptrint str;

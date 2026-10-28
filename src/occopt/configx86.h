@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -31,5 +31,4 @@ extern ARCH_ASM x86AssemblerInterface[];
 
 void WinmodeSetup(const char* string);
 int parse_codegen(char mode, const char* string);
-void SetUsesESP(bool yes);
 }  // namespace Optimizer

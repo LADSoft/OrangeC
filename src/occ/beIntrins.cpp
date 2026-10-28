@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -226,8 +226,8 @@ bool handleVASTART()
 {
     AMODE* apcx = makedreg(ECX);
     apcx->mode = am_indisp;
-    AMODE* ap = aimmed(currentFunction->ellipsePos + (usingEsp ? 0 : 4));
-    ap->preg = usingEsp ? ESP : EBP;
+    AMODE* ap = aimmed(currentFunction->ellipsePos + (Optimizer::noStackFrame ? 0 : 4));
+    ap->preg = Optimizer::noStackFrame ? ESP : EBP;
     ap->mode = am_indisp;
     gen_code(op_lea, makedreg(EAX), ap);
     gen_code(op_mov, apcx, makedreg(EAX));

@@ -49,7 +49,7 @@ extern char realOutFile[260];
 #ifndef ORANGE_NO_INASM
 extern InstructionParser* instructionParser;
 #endif
-extern int usingEsp;
+extern int noStackTrace;
 extern SharedMemory* parserMem;
 
 extern Optimizer::COMPILER_PARAMS cparams_default;

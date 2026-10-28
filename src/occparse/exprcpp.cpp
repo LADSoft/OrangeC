@@ -1754,7 +1754,7 @@ static bool noexceptStmt(std::list<Statement*>* blocks)
                 rv &= noexceptStmt(block->lower);
                 rv &= noexceptStmt(block->blockTail);
                 break;
-            case StatementNode::passthrough_:
+            case StatementNode::inlineasm_:
                 break;
             case StatementNode::datapassthrough_:
                 break;

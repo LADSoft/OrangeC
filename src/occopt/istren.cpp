@@ -553,7 +553,7 @@ static bool ReduceStrengthAdd(std::vector<std::list<std::shared_ptr<UsesStrength
     return false;
 }
 static int HandlePhiInitVar(std::vector<std::list<std::shared_ptr<UsesStrength>>>& sl, QUAD* insin,
-                            std::list<std::shared_ptr<UsesStrength>>& strengthList, int tnum)
+                            std::shared_ptr<UsesStrength>& strengthList, int tnum)
 {
     IMODE* rv;
     QUAD* head = InstructionDefinesSsa[tnum];
@@ -563,7 +563,7 @@ static int HandlePhiInitVar(std::vector<std::list<std::shared_ptr<UsesStrength>>
         rv = tempInfo[head->dc.v.phi->T0]->enode->sp->imvalue;
     else
         rv = head->ans;
-    rv = StrengthConstant(head, rv, strengthList.front()->multiplier, tempInfo[tnum]->size);
+    rv = StrengthConstant(head, rv, strengthList->multiplier, tempInfo[tnum]->size);
     if (rv->mode == i_immed)
     {
         QUAD* ins = Allocate<QUAD>();
@@ -573,12 +573,13 @@ static int HandlePhiInitVar(std::vector<std::list<std::shared_ptr<UsesStrength>>
         ins->dc.opcode = i_assn;
         InsertInstruction(head->back, ins);
         n = ins->ans->offset->sp->i;
-        sl[n] = strengthList;
+        sl[n].clear();
+        sl[n].push_back(strengthList);
         tempInfo[n]->inductionLoop = insin->block->loopParent->loopnum;
         tempInfo[n]->inductionInitVar = 1;
         tempInfo[tnum]->strengthRename = n;
         tempInfo[n]->enode->sp->pushedtotemp = true;
-        loadTemps[n] = loadTemps[strengthList.front()->strengthName];
+        loadTemps[n] = loadTemps[strengthList->strengthName];
         return ins->ans->offset->sp->i;
     }
     return rv->offset->sp->i;
@@ -602,21 +603,19 @@ static void ReduceStrengthPhi(std::vector<std::list<std::shared_ptr<UsesStrength
             bool pushedtotemp = tempInfo[sl0->strengthName]->enode->sp->pushedtotemp;
             while (pb)
             {
-                auto&& sl1 = sl[pb->Tn];
+                auto it = sl[pb->Tn].begin();
                 int i;
                 *newpb = Allocate<_phiblock>();
                 (*newpb)->block = pb->block;
-                if (c < sl1.size())
+                for (int i = 0; it != sl[pb->Tn].end() && i < c; ++i, ++it)
+                    ;
+                if (it != sl[pb->Tn].end())
                 {
-                    auto it = sl1.begin();
-                    auto i = c;
-                    for (; it != sl1.end() && i != 0; ++it, i--)
-                        ;
                     (*newpb)->Tn = (*it)->strengthName;
                 }
                 else
                 {
-                    (*newpb)->Tn = HandlePhiInitVar(sl, head, sl[pd->T0], pb->Tn);
+                    (*newpb)->Tn = HandlePhiInitVar(sl, head, sl0, pb->Tn);
                     tempInfo[(*newpb)->Tn]->inductionLoop = -1;  // no invariant code motion
                 }
                 if (pushedtotemp)
@@ -642,8 +641,7 @@ static void Sort(Block* b, QUAD* head, QUAD* tail)
     prev->fwd = next;
     next->back = prev;
 
-    FastList<QUAD*> ordered;
-    ordered.init();
+    SimpleList<QUAD*> ordered;
     while (head != tail->fwd)
     {
         FastList<QUAD*>::iterator it;
@@ -745,15 +743,11 @@ static void ReduceStrength(std::vector<std::list<std::shared_ptr<UsesStrength>>>
 }
 void ReduceLoopStrength(void)
 {
-    int i = 0;
-    auto head = intermed_head;
-    for (auto head = intermed_head; head; head = head->fwd)
-        i++;
-    std::vector<std::list<std::shared_ptr<UsesStrength>>> sl(i + 4000);
+    std::vector<std::list<std::shared_ptr<UsesStrength>>> sl(tempCount + 4000);
     hash.clear();
     CalculateInduction();
     ScanStrength(sl);
-    for (i = 0; i < blockCount; i++)
+    for (int i = 0; i < blockCount; i++)
     {
         Block* b = blockArray[i];
         if (b)
@@ -787,7 +781,7 @@ void ReduceLoopStrength(void)
             }
         }
     }
-    for (i = 0; i < blockCount; i++)
+    for (int i = 0; i < blockCount; i++)
     {
         Block* b = blockArray[i];
         if (b)

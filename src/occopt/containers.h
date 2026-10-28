@@ -24,11 +24,294 @@
  */
 #pragma once
 
+#include <set>
+#include <climits>
+inline std::set<void*> aa;
 #include <type_traits>
-inline int count1, count2;
+
+// sadly we have to have a bitset to speed up the live algorithm.  This should be a 20-25% speedup so we can't just ignore it....
+// std::vector<std::bool> doesn't suffice because there are no guarantees on the implementation
+class FastBitSet
+{
+  public:
+    typedef unsigned StoreType;
+    static const int BitIntSize = sizeof(StoreType) * CHAR_BIT;
+
+    void init()
+    {
+        data = nullptr;
+        capacity = 8;
+        elems = 0;
+    }
+    void destroy() { delete[] data; }
+    FastBitSet& operator=(const FastBitSet& other)
+    {
+        resize(other.elems);
+
+        std::copy(other.data, other.data + (other.elems + BitIntSize - 1) / BitIntSize, data);
+        elems = other.elems;
+        return *this;
+    }
+    FastBitSet& operator=(FastBitSet&& other)
+    {
+        delete[] data;
+        elems = other.elems;
+        capacity = other.capacity;
+        data = other.data;
+        other.data = nullptr;
+        other.capacity = 8;
+        other.elems = 0;
+        return *this;
+    }
+    inline void setbit(int n)
+    {
+        auto index = n / BitIntSize;
+        auto mask = 1 << (n % BitIntSize);
+        data[index] |= mask;
+    }
+    inline void clrbit(int n)
+    {
+        auto index = n / BitIntSize;
+        auto mask = 1 << (n % BitIntSize);
+        data[index] &= ~mask;
+    }
+    inline bool isset(int n)
+    {
+        if (!data)
+            return false;
+        auto index = n / BitIntSize;
+        auto mask = 1 << (n % BitIntSize);
+        return !!(data[index] & mask);
+    }
+    void union_from(const FastBitSet& added)
+    {
+        int bitints = elems;
+        if (added.elems < elems)
+            bitints = added.elems;
+        bitints += BitIntSize - 1;
+        bitints /= BitIntSize;
+        for (StoreType *dest = data, *src = added.data; bitints--; dest++, src++)
+            *dest |= *src;
+    }
+    FastBitSet& dounion(const FastBitSet& added, FastBitSet& dest)
+    {
+        int bitints = elems;
+        if (added.elems < elems)
+            bitints = added.elems;
+        dest.resize(bitints);
+        bitints += BitIntSize - 1;
+        bitints /= BitIntSize;
+        for (StoreType *d = dest.data, *s1 = added.data, *s2 = data; bitints--; d++, s1++, s2++)
+            *d = *s1 | *s2;
+        return dest;
+    }
+    FastBitSet& dointersect(const FastBitSet& added, FastBitSet& dest)
+    {
+        int bitints = elems;
+        if (added.elems < elems)
+            bitints = added.elems;
+        dest.resize(bitints);
+        bitints += BitIntSize - 1;
+        bitints /= BitIntSize;
+        for (StoreType *d = dest.data, *s1 = added.data, *s2 = data; bitints--; d++, s1++, s2++)
+            *d = *s1 & *s2;
+        return dest;
+    }
+    FastBitSet& doinvert(FastBitSet& dest)
+    {
+        int bitints = elems;
+        dest.resize(bitints);
+        bitints += BitIntSize - 1;
+        bitints /= BitIntSize;
+        for (StoreType *d = dest.data, *s1 = data; bitints--; d++, s1++)
+            *d = ~*s1;
+        return dest;
+    }
+    void clear() { clear(0, elems); }
+    void resize(int n)
+    {
+        if (n == 0)
+            n = 1;
+        int requested = n;
+        n = (n + BitIntSize - 1) / BitIntSize * BitIntSize;
+        if (n <= capacity && data != nullptr)
+        {
+            clear(requested, elems);
+            elems = requested;
+        }
+        else
+        {
+            int oldCapacity = capacity;
+            capacity = n;
+            elems = requested;
+            StoreType* newData = new StoreType[n / BitIntSize];
+            std::fill(newData, newData + capacity / BitIntSize, 0);
+            if (data)
+            {
+                std::copy(data, data + oldCapacity / BitIntSize, newData);
+                delete[] data;
+            }
+            data = newData;
+        }
+    }
+    bool operator==(const FastBitSet& other)
+    {
+        if (elems != other.elems)
+            return false;
+        int bitints = elems / BitIntSize;
+        for (int i = 0; i < bitints; i++)
+            if (data[i] != other.data[i])
+                return false;
+        int last = elems % BitIntSize;
+        if (last)
+        {
+            StoreType mask = static_cast<StoreType>(-1ll) >> (BitIntSize - last);
+            return (data[bitints] & mask) == (other.data[bitints] & mask);
+        }
+        return true;
+    }
+    bool operator!=(const FastBitSet& other) { return !operator==(other); }
+    class BitIterator
+    {
+        FastBitSet* store;
+        int pos;
+        BitIterator(FastBitSet* data, int index) : store(data), pos(index)
+        {
+            if (store->data)
+            {
+                if (index == -1)
+                    next();
+            }
+            else
+            {
+                pos = store->elems;
+            }
+        }
+
+      public:
+        BitIterator() : store(nullptr), pos(-1) {}
+        BitIterator& operator++()
+        {
+            next();
+            return *this;
+        }
+        bool operator!=(const BitIterator& right) const { return pos != right.pos || store != right.store; }
+        bool operator==(const BitIterator& right) const { return !operator!=(right); }
+        int& operator*() { return pos; }
+
+      protected:
+        void next(StoreType n, int index)
+        {
+            while (index < BitIntSize && pos < store->elems && !(n & 1))
+            {
+                ++pos;
+                ++index;
+                n >>= 1;
+            }
+        }
+        void next()
+        {
+            if (pos == -1 || pos < store->elems)
+            {
+                ++pos;
+                int shft = pos % BitIntSize;
+                int index = pos / BitIntSize;
+                StoreType n = store->data[index] >> shft;
+                if (n)
+                {
+                    next(n, index);
+                    return;
+                }
+                else
+                {
+                    pos += 32 - shft;
+                }
+                if (pos >= store->elems)
+                {
+                    pos = store->elems;
+                    return;
+                }
+                for (int i = index + 1; i < store->elems / BitIntSize; i++, pos += 32)
+                {
+                    n = store->data[i];
+                    if (n)
+                    {
+                        next(n, 0);
+                        return;
+                    }
+                }
+                n = store->data[store->elems / BitIntSize];
+                if (n)
+                {
+                    next(n, 0);
+                }
+                else
+                {
+                    pos = store->elems;
+                }
+            }
+        }
+        friend class FastBitSet;
+    };
+
+    inline size_t size() const { return elems; }
+    typedef BitIterator iterator;
+    auto begin() { return BitIterator(this, -1); }
+    auto end() { return BitIterator(this, elems); }
+
+  protected:
+    void clear(int first, int second)
+    {
+        if (first < second)
+        {
+            int startindex = first / BitIntSize;
+            int startbit = first % BitIntSize;
+            int stopindex = second / BitIntSize;
+            int stopbit = second % BitIntSize;
+            StoreType startmask = static_cast<StoreType>(-1ll) >> (BitIntSize - startbit);
+            StoreType endmask = static_cast<StoreType>(-1ll) << stopbit;
+            int fillstartindex = (first + BitIntSize - 1) / BitIntSize;
+            int fillendindex = second / BitIntSize;
+            if (startbit != 0)
+                data[fillstartindex - 1] &= startmask;
+            if (stopbit != 0)
+                data[fillendindex] &= endmask;
+            if (fillendindex > fillstartindex)
+                std::fill(data + fillstartindex, data + fillendindex, 0);
+        }
+    }
+
+  private:
+    StoreType* data;
+    size_t capacity;
+    size_t elems;
+};
+
+class SimpleBitSet : public FastBitSet
+{
+  public:
+    SimpleBitSet() { init(); }
+    SimpleBitSet(int n)
+    {
+        init();
+        resize(n);
+    }
+    SimpleBitSet& operator=(const SimpleBitSet& other)
+    {
+        FastBitSet::operator=(other);
+        return *this;
+    }
+    SimpleBitSet(SimpleBitSet&& other)
+    {
+        init();
+        FastBitSet::operator=(other);
+    }
+    ~SimpleBitSet() { destroy(); }
+};
+
 // this is meant for scalars right now...
 // this whole thing is because instantiation a vector of lists with the stl is very slow
-// and since the vector is usually sparse anyway a speedup is helpful...
+// and since the vectors in question  are usually sparse anyway a speedup is helpful...
 template <class T>
 class FastList
 {
@@ -68,7 +351,6 @@ class FastList
     }
     void push_front(T val)
     {
-        count1++;
         if (data == nullptr)
         {
             data = new T[capacity];
@@ -83,7 +365,6 @@ class FastList
     }
     void pop_front()
     {
-        count2++;
         if (elems)
         {
             std::copy(begin() + 1, end(), begin());
@@ -125,7 +406,11 @@ class FastList
     }
     inline iterator begin() { return data; }
     inline iterator end() { return data + elems; }
-    inline void clear() { destroy(); }
+    inline void clear()
+    {
+        destroy();
+        init();
+    }
     inline size_t size() const { return elems; }
     inline bool empty() const { return elems == 0; }
 
@@ -139,6 +424,13 @@ class FastList
         data = newData;
         capacity = newSize;
     }
+};
+template <typename T>
+class SimpleList : public FastList<T>
+{
+  public:
+    SimpleList() { FastList<T>::init(); }
+    ~SimpleList() { FastList<T>::destroy(); }
 };
 template <typename T>
 class SimpleVector

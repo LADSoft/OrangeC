@@ -277,7 +277,7 @@ typedef struct
         line_, nop_, expr_, declare_, goto_, indgoto_, asmgoto_, asmcond_,
         loopgoto_, select_, notselect_, varstart_, dbgblock_,
         switch_, return_, block_, throw_, try_, catch_,
-        genword_, passthrough_, datapassthrough_, abs_, label_,
+        genword_, inlineasm_, datapassthrough_, abs_, label_,
         seh_try_, seh_catch_, seh_finally_, seh_fault_,
     };
 // clang-format on

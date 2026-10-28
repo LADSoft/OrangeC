@@ -777,7 +777,7 @@ static AMODE* inasm_mem(std::vector<int>& srcRegs)
         inasm_err(ERR_INVALID_INDEX_MODE);
         return 0;
     }
-    rv = localAllocate<AMODE>();
+    rv = globalAllocate<AMODE>();
     if (node)
     {
         rv->offset = Optimizer::SymbolManager::Get(node);
@@ -818,7 +818,7 @@ static AMODE* inasm_mem(std::vector<int>& srcRegs)
 
 static AMODE* inasm_amode(int nosegreg, std::vector<int>& srcRegs, std::vector<int>& destRegs)
 {
-    AMODE* rv = localAllocate<AMODE>();
+    AMODE* rv = globalAllocate<AMODE>();
     int sz = 0, seg = 0;
     bool done = false;
     lastsym = 0;
@@ -1190,7 +1190,7 @@ static void AssembleInstruction(OCODE* ins)
 }
 static void LoadPreludeInstruction(std::list<FunctionBlock*>& parent, Optimizer::SimpleExpression* exp, int reg)
 {
-    Statement* rv = Statement::MakeStatement(parent, StatementNode::passthrough_);
+    Statement* rv = Statement::MakeStatement(parent, StatementNode::inlineasm_);
     OCODE* ins = Allocate<OCODE>();
     rv->select = (EXPRESSION*)ins;
     ins->opcode = op_mov;
@@ -1230,7 +1230,7 @@ Statement* AssembleInstruction(OCODE* ins, std::list<FunctionBlock*>& parent, st
         srcRegs.push_back(EDX);
     }
 
-    Statement* rv = Statement::MakeStatement(parent, StatementNode::passthrough_);
+    Statement* rv = Statement::MakeStatement(parent, StatementNode::inlineasm_);
     rv->select = (EXPRESSION*)ins;
     switch (ins->opcode)
     {
@@ -1279,7 +1279,7 @@ void inlineAsm(std::list<FunctionBlock*>& parent)
             {
                 inasm_getsym();
                 op = op_int;
-                rv = localAllocate<OCODE>();
+                rv = globalAllocate<OCODE>();
                 rv->oper1 = inasm_amode(true, srcRegs, destRegs);
                 goto join;
             }
@@ -1289,14 +1289,14 @@ void inlineAsm(std::list<FunctionBlock*>& parent)
             if (MATCHKW(Keyword::semicolon_))
                 inasm_getsym();
 
-            auto snp = Statement::MakeStatement(parent, StatementNode::passthrough_);
+            auto snp = Statement::MakeStatement(parent, StatementNode::inlineasm_);
             snp->type = StatementNode::label_;
             snp->label = node->v.i;
             return;
         }
         if (insdata->atype == op_reserved)
         {
-            auto snp = Statement::MakeStatement(parent, StatementNode::passthrough_);
+            auto snp = Statement::MakeStatement(parent, StatementNode::inlineasm_);
             getData(snp);
             return;
         }
@@ -1308,7 +1308,7 @@ void inlineAsm(std::list<FunctionBlock*>& parent)
             return;
         }
         {
-            rv = localAllocate<OCODE>();
+            rv = globalAllocate<OCODE>();
             if (!(op == op_rep || op == op_repnz || op == op_repz || op == op_repe || op == op_repne || op == op_lock))
             {
                 if (!atend && !MATCHKW(Keyword::semicolon_))
@@ -1421,7 +1421,7 @@ void adjustcodelab(void* select, int offset)
 }
 void* inlineAsmStmt(void* param)
 {
-    OCODE* rv = localAllocate<OCODE>();
+    OCODE* rv = globalAllocate<OCODE>();
     memcpy(rv, param, sizeof(*rv));
     if ((e_op)rv->opcode != op_label && (e_op)rv->opcode != op_line)
     {

@@ -137,7 +137,7 @@ static void insertPhiNodes(void)
 
     for (i = 0; i < max; i++)
     {
-        if (globalVars.find(i) != globalVars.end())
+        if (globalVars.isset(i))
         {
             int j;
             std::unordered_set<int> bset;
@@ -152,7 +152,7 @@ static void insertPhiNodes(void)
                 Block* b = blockArray[j];
                 if (b)
                 {
-                    if (liveInTemps[b->blocknum].find(i) != liveInTemps[b->blocknum].end())
+                    if (liveInTemps[b->blocknum].isset(i))
                     {
                         /* avoid phi ops which are essentially assigns */
                         if (b->pred && b->pred->next)
@@ -480,7 +480,7 @@ void TranslateToSSA()
     InstructionUsesSsa.clear();
     InstructionUsesSsa.resize(tempCount + 20000);
     BlockDefinesSsa.clear();
-    BlockDefinesSsa.resize(tempCount + 4000);
+    BlockDefinesSsa.resize(tempCount + 20000);
     for (i = 0; i < tempCount; i++)
     {
         tempInfo[i]->preSSATemp = -1;
@@ -830,14 +830,8 @@ static void copyInstruction(Block* blk, int dest, int src, bool all)
 }
 struct SsaElimData
 {
-    SsaElimData(int count) { resize(count); }
-    SimpleVector<FastList<int>> predecessors;
-    SimpleVector<FastList<int>> successors;
-    void resize(int n)
-    {
-        predecessors.resize(n);
-        successors.resize(n);
-    }
+    std::map<int, std::list<int>> predecessors;
+    std::map<int, std::list<int>> successors;
 };
 static void BuildAuxGraph(SsaElimData& elimData, Block* b, int which, std::unordered_set<int>& nodes)
 {
@@ -1049,7 +1043,7 @@ void TranslateFromSSA(bool all)
             /* insert copy operations for phi nodes */
             bl = blockArray[i]->pred;
             j = 0;
-            SsaElimData elimData(tempCount);
+            SsaElimData elimData;
             while (bl)
             {
                 EliminatePredecessors(elimData, nodes, bl->block, blockArray[i], j, all);

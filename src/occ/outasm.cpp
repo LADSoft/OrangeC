@@ -243,7 +243,7 @@ void oa_putconst(int op, int sz, Optimizer::SimpleExpression* offset, bool doSig
         int m;
         case Optimizer::se_auto:
             m = offset->sp->offset;
-            if (!usingEsp && m > 0)
+            if (!Optimizer::noStackFrame && m > 0)
                 m += 4;
             if (offset->sp->storage_class == Optimizer::scc_parameter && Optimizer::fastcallAlias)
             {

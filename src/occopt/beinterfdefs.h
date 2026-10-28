@@ -108,7 +108,7 @@ typedef struct
     enum asmTypes prm_assembler; /* via assembly*/
     bool prm_flat;               /* flat mode*/
     bool prm_nodos;              /* no dos support */
-    bool prm_useesp;             /* use ESP global selection (may be overridden)*/
+    bool prm_nostackframe;       /* use ESP global selection (may be overridden)*/
     bool managed_library;        /* occil: use managed library */
     bool no_default_libs;        /* occil: don't load default assemlies and libraries*/
     bool replacePInvoke;         /* occil */
@@ -179,15 +179,16 @@ struct ARCH_REGCLASS
 {
     ARCH_REGCLASS(ARCH_REGCLASS* Next, std::initializer_list<int> Regs, int adjust = 0) : next(Next), regs(Regs)
     {
-        regCount = Regs.size() + adjust;
+        regCount[0] = Regs.size() + adjust;
+        regCount[1] = Regs.size();
     }
     ARCH_REGCLASS* next;
     std::vector<int> regs;
-    std::set<int> aliasRegs;
-    int regCount;
+    std::set<int> aliasRegs[2];
     int vertex;
+    int regCount[2];
     int index;
-    std::vector<int> saturationBound;
+    std::vector<int> saturationBound[2];
 };
 
 struct ARCH_REGVERTEX
@@ -195,7 +196,7 @@ struct ARCH_REGVERTEX
     ARCH_REGCLASS* cls;
     struct ARCH_REGVERTEX *left, *right;
     struct ARCH_REGVERTEX* parent;
-    std::set<int> aliasRegs;
+    std::set<int> aliasRegs[2];
     int index;
 };
 
@@ -252,16 +253,15 @@ typedef struct
 #define DO_NOPARMADJSIZE 16
 #define DO_NOLOADSTACK 32
 #define DO_NOENTRYIF 64
-#define DO_NOOPTCONVERSION 128
-#define DO_NOINLINE 256
-#define DO_UNIQUEIND 512
-#define DO_NOFASTDIV 1024
-#define DO_NODEADPUSHTOTEMP 2048
-#define DO_MIDDLEBITS 4096
-#define DO_NOBRANCHTOBRANCH 8192
-#define DO_NOMULTOSHIFT 16384
-#define DO_NOALIAS 32768
-#define DO_NOCONST 0x10000
+#define DO_NOINLINE 128
+#define DO_UNIQUEIND 256
+#define DO_NOFASTDIV 512
+#define DO_NODEADPUSHTOTEMP 1024
+#define DO_MIDDLEBITS 2040
+#define DO_NOBRANCHTOBRANCH 4096
+#define DO_NOMULTOSHIFT 8192
+#define DO_NOALIAS 16384
+#define DO_NOCONST 32768
 
     int erropts; /* error options */
 #define EO_RETURNASERR 1

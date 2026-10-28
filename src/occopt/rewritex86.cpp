@@ -640,13 +640,13 @@ static bool twomem(IMODE* left, IMODE* right)
             return true;
     return false;
 }
-static void HandleAssn(QUAD* ins, std::set<int>& globalVars)
+static void HandleAssn(QUAD* ins, SimpleBitSet& globalVars)
 {
     if ((ins->temps & (TEMP_LEFT | TEMP_RIGHT)) && ins->ans->size < ISZ_ULONGLONG && ins->ans->size > -ISZ_ULONGLONG)
     {
         if (ins->ans->mode == i_ind || !(ins->temps & TEMP_ANS))
         {
-            if (globalVars.find(ins->dc.left->offset->sp->i) == globalVars.end())
+            if (globalVars.isset(ins->dc.left->offset->sp->i))
             {
                 if (ins->back->ans == ins->dc.left)
                 {
@@ -665,8 +665,8 @@ static void HandleAssn(QUAD* ins, std::set<int>& globalVars)
                                         if (ins->back->dc.left == ins->back->back->ans)
                                             if (MatchesMem(ins->ans, ins->back->back->dc.left))
                                             {
-                                                if (globalVars.find(ins->back->ans->offset->sp->i) == globalVars.end() &&
-                                                    globalVars.find(ins->back->back->ans->offset->sp->i) == globalVars.end())
+                                                if (!globalVars.isset(ins->back->ans->offset->sp->i) &&
+                                                    !globalVars.isset(ins->back->back->ans->offset->sp->i))
                                                 {
                                                     if (!twomem(ins->ans, ins->back->dc.right))
                                                     {
@@ -698,8 +698,8 @@ static void HandleAssn(QUAD* ins, std::set<int>& globalVars)
                                         if (ins->back->dc.left == ins->back->back->ans)
                                             if (MatchesMem(ins->ans, ins->back->back->dc.left))
                                             {
-                                                if (globalVars.find(ins->back->ans->offset->sp->i) == globalVars.end() &&
-                                                    globalVars.find(ins->back->back->ans->offset->sp->i) == globalVars.end())
+                                                if (!globalVars.isset(ins->back->ans->offset->sp->i) &&
+                                                    !globalVars.isset(ins->back->back->ans->offset->sp->i))
                                                 {
                                                     if (!twomem(ins->ans, ins->back->dc.right))
                                                     {
@@ -727,8 +727,8 @@ static void HandleAssn(QUAD* ins, std::set<int>& globalVars)
                                         if (ins->back->dc.right == ins->back->back->ans)
                                             if (MatchesMem(ins->ans, ins->back->back->dc.left))
                                             {
-                                                if (globalVars.find(ins->back->ans->offset->sp->i) == globalVars.end() &&
-                                                    globalVars.find(ins->back->back->ans->offset->sp->i) == globalVars.end())
+                                                if (!globalVars.isset(ins->back->ans->offset->sp->i) &&
+                                                    !globalVars.isset(ins->back->back->ans->offset->sp->i))
                                                 {
                                                     if (!twomem(ins->ans, ins->back->dc.left))
                                                     {
@@ -780,7 +780,7 @@ static void HandleAssn(QUAD* ins, std::set<int>& globalVars)
     }
     */
 }
-int x86PreRegAlloc(QUAD* ins, std::set<int>& globalVars, std::set<int>& eobGlobals, int pass)
+int x86PreRegAlloc(QUAD* ins, SimpleBitSet& globalVars, SimpleBitSet& eobGlobals, int pass)
 {
     IMODE* ind = nullptr;
     if (pass == 1)
@@ -2281,10 +2281,10 @@ int x86_examine_icode(QUAD* head)
         }
         head = head->fwd;
     }
-    if (cparams.prm_useesp)
+    if (cparams.prm_nostackframe)
     {
-        currentFunction->usesEsp &= !uses_substack && !currentFunction->xc && !currentFunction->canThrow;
-        SetUsesESP(currentFunction->usesEsp);
+        currentFunction->noStackFrame &= !uses_substack && !currentFunction->xc && !currentFunction->canThrow;
+        noStackFrame = currentFunction->noStackFrame;
     }
     int floatretsize = 0;
     head = hold;
@@ -2326,7 +2326,7 @@ int x86_examine_icode(QUAD* head)
     }
     return changed;
 }
-static void IterateConflict(int ans, int t)
+static void IterateConflict(int ans, int t, std::set<int>& contains)
 {
     QUAD* head = InstructionDefinesSsa[t];
     if (head)
@@ -2334,16 +2334,32 @@ static void IterateConflict(int ans, int t)
         if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
         {
             if (head->dc.left->offset->sp->pushedtotemp)
+            {
                 insertConflict(ans, head->dc.left->offset->sp->i);
+            }
             else
-                IterateConflict(ans, head->dc.left->offset->sp->i);
+            {
+                if (contains.find(t) == contains.end())
+                {
+                    contains.insert(t);
+                    IterateConflict(ans, head->dc.left->offset->sp->i, contains);
+                }
+            }
         }
         if ((head->temps & TEMP_RIGHT) && head->dc.right->mode == i_direct)
         {
             if (head->dc.right->offset->sp->pushedtotemp)
+            {
                 insertConflict(ans, head->dc.right->offset->sp->i);
+            }
             else
-                IterateConflict(ans, head->dc.right->offset->sp->i);
+            {
+                if (contains.find(t) == contains.end())
+                {
+                    contains.insert(t);
+                    IterateConflict(ans, head->dc.right->offset->sp->i, contains);
+                }
+            }
         }
     }
 }
@@ -2364,7 +2380,8 @@ void x86InternalConflict(QUAD* head)
                 head->dc.left->offset->type == se_tempref)
             {
                 int t1 = head->ans->offset->sp->i;
-                IterateConflict(t1, head->dc.left->offset->sp->i);
+                std::set<int> contains;
+                IterateConflict(t1, head->dc.left->offset->sp->i, contains);
             }
             /* make sure that when regs are allocated, the right- hand argument is in a different
              * reg than the result.  For shifts this is the count value, for divs this is the denominator

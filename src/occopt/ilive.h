@@ -28,9 +28,9 @@
 #include <unordered_map>
 namespace Optimizer
 {
-extern std::set<int> globalVars;
-extern std::unordered_map<int, std::set<int>> liveInTemps;
-extern std::unordered_map<int, std::set<int>> liveOutTemps;
+extern SimpleBitSet globalVars;
+extern std::vector<SimpleBitSet> liveInTemps;
+extern std::vector<SimpleBitSet> liveOutTemps;
 
 QUAD* beforeJmp(QUAD* I, bool before);
 void removeDead(Block* b);

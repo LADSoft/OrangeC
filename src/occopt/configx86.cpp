@@ -38,7 +38,7 @@
 #include "irc.h"
 #include "optmodules.h"
 
-extern int usingEsp;
+extern int noStackFrame;
 namespace Optimizer
 {
 
@@ -171,7 +171,7 @@ static void chkdos(void)
         if (a && *a)
         {
             WinmodeSetup("a");  // DOS32A
-            cparams.prm_useesp = false;
+            cparams.prm_nostackframe = false;
             cparams.compile_under_dos = true;
         }
         else
@@ -352,24 +352,24 @@ static ARCH_CHARACTERISTICS architecture_characteristics = {
     8,           /* default packing level */
     8,           /* alignment of malloc() out of RTL */
     /* floating point characteristics not fully implemented */
-    &aflt,                                                                       /* characteristics of 'float' keyword */
-    &adbl,                                                                       /* characteristics of 'double' keyword */
-    &aldbl,                                                                      /* characteristics of 'long double' keyword */
-    0,                                                                           /* future floating type */
-    REG_MAX,                                                                     /* register count */
-    &regNames[0],                                                                /* defines registers */
-    1,                                                                           /* register trees count */
-    &regRoot, (ARCH_REGCLASS**)regClasses, &regCosts, allocOrder, regmap, peeps, /* defines peephole information */
-    sizeof(fastcallRegs) / sizeof(fastcallRegs[0]),                              /* Max number of regs considered for fastcall */
-    fastcallRegs,                                                                /* register list for regs used in fastcall */
-    OPT_BYTECOMPARE,                                                             /* preferred optimizations */
-    0,                                                                           /* optimizations we don't want */
-    0,                                                                           /* error options */
-    true,                                                                        /* true if has floating point regs */
-    0,                                                                           /* floating point modes, not honored currently */
-    ABM_USESIZE,                                                                 /* bool is determined by sizing above */
-    ARM_FUNCTIONSCOPE,                                                           /* register allocation across entire function */
-    8,            /* number of bits in a MAU.  values other than 8 not supported */
+    &aflt,        /* characteristics of 'float' keyword */
+    &adbl,        /* characteristics of 'double' keyword */
+    &aldbl,       /* characteristics of 'long double' keyword */
+    0,            /* future floating type */
+    REG_MAX,      /* register count */
+    &regNames[0], /* defines registers */
+    1,            /* register trees count */
+    &regRoot, (ARCH_REGCLASS**)regClassDefaults, &regCosts, allocOrder, regmap, peeps, /* defines peephole information */
+    sizeof(fastcallRegs) / sizeof(fastcallRegs[0]), /* Max number of regs considered for fastcall */
+    fastcallRegs,                                   /* register list for regs used in fastcall */
+    OPT_BYTECOMPARE,                                /* preferred optimizations */
+    0,                                              /* optimizations we don't want */
+    0,                                              /* error options */
+    true,                                           /* true if has floating point regs */
+    0,                                              /* floating point modes, not honored currently */
+    ABM_USESIZE,                                    /* bool is determined by sizing above */
+    ARM_FUNCTIONSCOPE,                              /* register allocation across entire function */
+    8,                                              /* number of bits in a MAU.  values other than 8 not supported */
     4,            /* natural size for this architecture, e.g. 4 for 32 bit arches and 8 for 64 bits */
     false,        /* little endian */
     false,        /* normal bit allocation*/
@@ -927,7 +927,7 @@ int parse_codegen(char mode, const char* string)
             cparams.prm_farkeyword = mode;
             break;
         case 'E':
-            cparams.prm_useesp = mode;
+            cparams.prm_nostackframe = mode;
             break;
         case '?':
             cparams.prm_browse = mode;
@@ -938,28 +938,4 @@ int parse_codegen(char mode, const char* string)
     return 1; /* eat one char */
 }
 
-void SetUsesESP(bool yes)
-{
-    int whichway = 0;
-    if (yes && !usingEsp)
-    {
-        whichway = 1;
-        usingEsp = true;
-    }
-    else if (!yes && usingEsp)
-    {
-        whichway = -1;
-        usingEsp = false;
-    }
-    if (whichway)
-    {
-        pushedDoubleRegs.regCount += 2 * whichway;
-        pushedDwordRegs.regCount += whichway;
-        pushedWordRegs.regCount += whichway;
-        allDoubleRegs.regCount += 2 * whichway;
-        allDwordRegs.regCount += whichway;
-        allWordRegs.regCount += whichway;
-        regInit();
-    }
-}
 }  // namespace Optimizer

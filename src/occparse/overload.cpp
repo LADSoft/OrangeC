@@ -3919,7 +3919,7 @@ static bool getFuncConversions(SYMBOL* sym, CallSite* f, Type* atp, SYMBOL* pare
                                 ++it;
                         }
                     }
-                    else if ((*ita)->initializer_list)
+                    else if ((*ita)->initializer_list && (*ita)->tp && (*ita)->exp)
                     {
                         int n1 = m;
                         getSingleConversion(initializerListType, ita != itae ? (*ita)->tp : (*itt)->tp,

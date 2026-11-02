@@ -136,7 +136,6 @@ static SYMBOL* CreateBackingSetter(SYMBOL* sym, SYMBOL* backing)
     EXPRESSION* left = MakeExpression(ExpressionNode::global_, backing);
     EXPRESSION* right = MakeExpression(ExpressionNode::global_, (SYMBOL*)p->tp->syms->front());
     p->tp->type = BasicType::ifunc_;
-    memset(&b, 0, sizeof(b));
     Dereference(sym->tp, &left);
     Dereference(sym->tp, &right);
     st = Statement::MakeStatement(b, StatementNode::expr_);
@@ -154,7 +153,6 @@ static SYMBOL* CreateBackingGetter(SYMBOL* sym, SYMBOL* backing)
     FunctionBlock bd = {};
     std::list<FunctionBlock*> b{&bd};
     p->tp->type = BasicType::ifunc_;
-    memset(&b, 0, sizeof(b));
     st = Statement::MakeStatement(b, StatementNode::return_);
     st->select = MakeExpression(ExpressionNode::global_, backing);
     Dereference(sym->tp, &st->select);

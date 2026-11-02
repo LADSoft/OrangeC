@@ -671,10 +671,21 @@ void my_sprintf(char* dest, int len, const char* fmt, ...)
                 unsigned val1;
                 char* str;
                 case 'l':
-                    while (*fmt == 'd' || *fmt == 'l')
+                    fmt++;
+                    if (*fmt == 'l')
+                    {
+                        // long long
                         fmt++;
-                    val = va_arg(aa, unsigned long long);
-                    write_llong(dest, len, val);
+                        if (*fmt == 'd' || *fmt == 'u')
+                            fmt++;
+                        val = va_arg(aa, unsigned long long);
+                        write_llong(dest, len, val);
+                        break;
+                    }
+                    if (*fmt == 'd' || *fmt == 'u')
+                        fmt++;
+                    val1 = va_arg(aa, unsigned);
+                    write_int(dest, len, val1);
                     break;
                 case 'd':
                 case 'u':

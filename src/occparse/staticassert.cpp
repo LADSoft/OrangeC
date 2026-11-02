@@ -49,7 +49,7 @@ void ParseStructureStaticAssert(SYMBOL* sym)
     if (it != structureStaticAsserts.end())
     {
         TemplateNamespaceScope namespaceScope(sym);
-        DeclarationScope(sym);
+        DeclarationScope declarationScope(sym);
         auto hold = it->second;
         for (auto deferred : hold)
         {

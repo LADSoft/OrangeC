@@ -1,5 +1,4 @@
 /* Software License Agreement
-/* Software License Agreement
  *
  *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *

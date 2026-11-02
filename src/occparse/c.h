@@ -116,7 +116,7 @@ class SymbolTable
     int Block() const { return blockLevel_; }
     void Block(int level) { blockLevel_ = level; }
 
-    inline void Add(T* sym);
+    void Add(T* sym);
     inline T* AddOverloadName(T* sym);
     inline void insertOverload(T* in);
     inline void baseInsert(T* sym);

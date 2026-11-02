@@ -60,7 +60,7 @@
 #include "Utils.h"
 #include "exprpacked.h"
 #include "using.h"
-#include "SymbolProperties.h";
+#include "SymbolProperties.h"
 
 namespace Parser
 {

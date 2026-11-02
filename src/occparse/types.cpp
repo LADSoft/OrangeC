@@ -4036,7 +4036,7 @@ Type* TypeGenerator::FunctionParams(SYMBOL* funcsp, SYMBOL** spin, Type* tp, boo
                             first = false;
                             clone->tp->UpdateRootTypes();
                         }
-                        current;
+                        // current;
                         processingTemplateArgs--;
                         PopPackIndex();
                         clonedParams = true;

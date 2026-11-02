@@ -179,6 +179,8 @@ const char* AnonymousTypeName(SYMBOL* sp, SymbolTable<SYMBOL>* table)
             return litlate(buf);
     }
     // never gets here...
+    assert(0);
+    return "???";
 }
 SYMBOL* SymAlloc()
 {

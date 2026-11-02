@@ -10,7 +10,7 @@
 #include <typeinfo>
 #include <array>
 #include <functional>
-#include <strstream>
+#include <sstream>
 #include <algorithm>
 #include <cstdio>
 #include <algorithm>
@@ -161,9 +161,9 @@ EmbedReturnValue embeder::has_embed(embeder_info info, bool throw_error)
     bool found = false;
     std::string fil = includer.FindFile(is_system, file, false, discard, found_system, found);
     bool FoundInvalid = false;
-    std::strstream string_stream;
     if (throw_error)
     {
+        std::stringstream string_stream;
         for (auto&& value : info.mapped_values)
         {
             auto val = std::find(ourKnownValues.begin(), ourKnownValues.end(), value.first);

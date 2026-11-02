@@ -21,7 +21,10 @@
 
 #if defined(_WIN32)
 
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
+
 #include <windows.h>
 
 #define xerr std::wcerr
@@ -29,7 +32,9 @@
 #define DIR_SEPARATOR L'\\'
 #define DIR_SEPARATOR_STR L"\\"
 #define PATH_SEPARATOR L';'
+#ifndef PATH_MAX
 #define PATH_MAX MAX_PATH
+#endif
 #define _X(s) L ## s
 
 #else
@@ -115,7 +120,9 @@ namespace pal
 #define SHARED_API extern "C"
 #endif
 
+#ifndef STDMETHODCALLTYPE
 #define STDMETHODCALLTYPE __stdcall
+#endif
 
     typedef wchar_t char_t;
     typedef std::wstring string_t;

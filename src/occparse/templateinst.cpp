@@ -2314,7 +2314,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                                 openStructs = oldOpenStructs;
                                 structLevel = oldStructLevel;
                             });
-                            start;
+                            //                            start;
                             Type* tp2 = tp1;
                             while (tp2->IsPtr())
                                 tp2 = tp2->BaseType()->btp;

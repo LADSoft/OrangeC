@@ -149,7 +149,7 @@ char* mangleNameSpaces(char (&orig)[n], char* in, SYMBOL* sym)
 }
 char* mangleNameSpaces(char* in, SYMBOL* sym)
 {
-    char(&buf)[4096] = (char(&)[4096])in;
+    char (&buf)[4096] = (char (&)[4096])in;
     return mangleNameSpaces(buf, in, sym);
 }
 
@@ -1083,7 +1083,7 @@ char* mangleType(char (&orig)[n], char* in, Type* tp, bool first)
                             in = mangleType(orig, in, tp1, false);
                             while (tp->array && tp->BaseType()->btp->size)
                             {
-                                sprintf(in, "?%d?", tp->size / tp->BaseType()->btp->size);
+                                Optimizer::my_sprintf(in, MANGLE_SIZE(in), "?%ld?", tp->size / tp->BaseType()->btp->size);
                                 while (*in)
                                     in++;
                                 tp = tp->BaseType()->btp;

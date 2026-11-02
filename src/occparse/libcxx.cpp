@@ -1204,10 +1204,12 @@ static bool is_empty(EXPRESSION* exp)
     if (arguments->size() == 1)
     {
         if (first(arguments)->tp->IsStructured())
+        {
             if (first(arguments)->tp->BaseType()->syms)
                 rv = first(arguments)->tp->BaseType()->syms->size() <= 1;
             else
                 rv = true;
+        }
     }
     return rv;
 }

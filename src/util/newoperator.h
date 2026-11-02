@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -40,6 +40,7 @@ class FixedPoolBase
     static const int sigMask = 0xffff0000;
 
     FixedPoolBase() {}
+    virtual ~FixedPoolBase() {};
     virtual void Clear() = 0;
     virtual void* Alloc() = 0;
     virtual void Release(void* block) = 0;
@@ -49,6 +50,7 @@ template <int allocSize, int bucketSize>
 class FixedPool : public FixedPoolBase
 {
   public:
+    virtual ~FixedPool() {}
     static const int elems = (bucketSize / allocSize);
     static const int blockSize = elems * allocSize;
 
@@ -241,5 +243,6 @@ void ReleaseMemoryPools()
     initted = false;
     delete memPool;
 }
+#        pragma pack()
 #    endif
 #endif

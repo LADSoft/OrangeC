@@ -587,7 +587,10 @@ int OS::Spawn(const std::string command, EnvironmentStrings& environment, std::s
     n++;
     std::unique_ptr<char[]> env = std::make_unique<char[]>(n);
     char* p = env.get();
-    memset(p, 0, sizeof(char) * n);  // !!!
+    int len = sizeof(char) * n;
+    if (len > 2 * 1024 * 1024)  // this is to placate mingw64
+        Utils::Fatal("Array out of bounds");
+    memset(p, 0, len);  // !!!
     for (auto&& env : environment)
     {
         memcpy(p, env.name.c_str(), env.name.size());

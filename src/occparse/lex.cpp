@@ -2096,7 +2096,7 @@ bool CompareLex(LexemeStream* ileft, LexemeStream* iright)
     auto itle = ileft->end();
     auto itr = iright->begin();
     auto itre = iright->end();
-    for (; itl != itle && itr != itre; *++itl, ++itr)
+    for (; itl != itle && itr != itre; ++itl, ++itr)
     {
         auto left = (*itl);
         auto right = (*itr);

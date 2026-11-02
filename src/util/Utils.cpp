@@ -106,7 +106,7 @@ void Utils::SetEnvironmentToPathParent(const char* name)
             {
                 *p = 0;
                 int len = strlen(name) + strlen(buf) + 2;
-                char* buf1 = (char*)calloc(1, len);
+                char* buf1 = (char*)calloc(1, len + 1);
                 StrCpy(buf1, len, name);
                 StrCat(buf1, len, "=");
                 StrCat(buf1, len, buf);

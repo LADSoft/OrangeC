@@ -1627,7 +1627,7 @@ static void RewriteAllSpillNodes(void)
     {
         IMODE* t;
         std::fill(tempSpillVars.begin(), tempSpillVars.end(), -1);
-        std::fill(tempSpillNodes.begin(), tempSpillNodes.end(), nullptr);
+        std::fill(tempSpillNodes.begin(), tempSpillNodes.end(), static_cast<IMODE*>(nullptr));
         if (head->temps & TEMP_ANS)
         {
             if (head->ans->mode == i_direct)

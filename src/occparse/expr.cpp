@@ -3470,7 +3470,7 @@ void AdjustSingleParam(SYMBOL* func, SYMBOL* sym, Argument* p, std::list<Argumen
                         (itpinit == itpinite && !p->tp && !p->exp))  // empty initializer list)
                     {
                         Type* tp;
-                        if (itpinit == itpinite)
+                        if (itpinit == itpinite || (*itl)->initializer_list)
                         {
                             params->arguments->push_back(p);
                             tp = &stdint;

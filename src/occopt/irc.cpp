@@ -2143,11 +2143,11 @@ void Precolor(bool optimized)
 void RearrangePrecolors(void)
 {
     InstructionDefinesSsa.clear();
-    InstructionDefinesSsa.resize(tempCount + 200);
+    InstructionDefinesSsa.resize(tempCount + 2000);
     InstructionUsesSsa.clear();
-    InstructionUsesSsa.resize(tempCount + 200);
+    InstructionUsesSsa.resize(tempCount + 2000);
     BlockDefinesSsa.clear();
-    BlockDefinesSsa.resize(tempCount + 200);
+    BlockDefinesSsa.resize(tempCount + 2000);
     QUAD* head = intermed_head;
     int i;
     for (i = 0; i < tempCount; i++)

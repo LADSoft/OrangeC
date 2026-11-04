@@ -1359,6 +1359,12 @@ void expression_new(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, bool global, in
                     exp1->size = *tp;
                     *exp = *exp ? MakeExpression(ExpressionNode::comma_, exp1, *exp) : exp1;
                 }
+                else if ((*tp)->IsStructured() && (*tp)->sp->sb->trivialCons)
+                {
+                    exp1 = MakeExpression(ExpressionNode::blockclear_, base);
+                    exp1->size = *tp;
+                    *exp = *exp ? MakeExpression(ExpressionNode::comma_, exp1, *exp) : exp1;
+                }
                 else if ((*tp)->IsStructured() && (arrSize || !init->front()->exp))
                 {
                     EXPRESSION* exp1;

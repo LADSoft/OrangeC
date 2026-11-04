@@ -549,6 +549,7 @@ struct Initializer
     EXPRESSION* exp;
     int tag; /* sequence number */
     int noassign : 1;
+    int forceInit : 1;
 };
 
 typedef struct ifunc

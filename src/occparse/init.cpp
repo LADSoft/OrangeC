@@ -478,7 +478,7 @@ static void dumpDynamicInitializers(void)
         codeLabel = INT_MIN;
         for (auto&& init : dynamicInitializers)
         {
-            if (!init.sp->tp->IsStructured() || init.sp->tp->BaseType()->sp->sb->trivialCons ||
+            if (!init.sp->tp->IsStructured() || init.sp->tp->BaseType()->sp->sb->trivialCons || init.init->front()->forceInit ||
                 !isintconst(init.init->front()->exp))
             {
                 EXPRESSION *exp = nullptr, **next = &exp, *exp1;
@@ -1335,6 +1335,7 @@ Initializer* InsertInitializer(std::list<Initializer*>** pos, std::list<Initiali
     pos1->offset = offset;
     pos1->tag = inittag++;
     pos1->noassign = noassign;
+    pos1->forceInit = false;
     (*pos)->insert(it, pos1);
     return pos1;
 }
@@ -4009,6 +4010,83 @@ static void initialize_aggregate_type(SYMBOL* funcsp, SYMBOL* base, int offset, 
     {
         // if we get here, initialize a simple aggregate...
         *init = InitializeSimpleAggregate(itype, needend, offset, funcsp, sc, base, dest, false, deduceTemplate, flags);
+        if (itype->IsStructured() && !itype->BaseType()->sp->sb->trivialCons)
+        {
+            bool changed = false;
+            // if we get here it has no explicit destructors but some elements other than the ones we've initialized may need
+            // constructing
+            for (auto sym : *itype->BaseType()->syms)
+            {
+                if (ismemberdata(sym))
+                {
+                    int elems = -1;
+                    auto ctype = sym->tp;
+                    if (ctype->IsArray())
+                    {
+                        auto size = ctype->size;
+                        while (ctype->IsArray())
+                            ctype = ctype->BaseType()->btp;
+                        elems = size / ctype->size;
+                    }
+                    if (ctype->IsStructured() && !ctype->BaseType()->sp->sb->trivialCons && elems != 0)
+                    {
+                        // ok we have either an array of structures that need construction, or a single structure
+                        // see if this sym is in the initializer list;
+                        bool found = false;
+                        for (auto i : **init)
+                        {
+                            if (i->offset == sym->sb->offset)
+                            {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found)
+                        {
+                            changed = true;
+                            // ok this hasn't been initialized yet.
+                            auto exp = MakeExpression(ExpressionNode::add_, baseexp,
+                                                      MakeIntExpression(ExpressionNode::c_i_, sym->sb->offset));
+                            if (elems > 0)
+                            {
+                                CallConstructor(&ctype, &exp, nullptr, true, MakeIntExpression(ExpressionNode::c_i_, elems), true,
+                                                false, false, false, false, false, true);
+                            }
+                            else
+                            {
+                                callConstructorParam(&ctype, &exp, nullptr, nullptr, true, false, false, false, false);
+                            }
+                            InsertInitializer(init, sym->tp, exp, offset + sym->sb->offset, true);
+                        }
+                    }
+                }
+            }
+            if (changed)
+            {
+                sort_aggregate_initializers(*init);
+                if (sc != StorageClass::auto_ && sc != StorageClass::localstatic_ && sc != StorageClass::parameter_ &&
+                    sc != StorageClass::member_ && sc != StorageClass::mutable_ && !arrayMember && base &&
+                    !base->sb->attribs.inheritable.isInline)
+                {
+                    (*init)->front()->forceInit = true;
+                    insertDynamicInitializer(base, *init);
+                    *init = nullptr;
+                }
+                // now we need a destructor...
+                if (dest)
+                {
+                    auto exp = baseexp;
+                    CallDestructor(itype->BaseType()->sp, nullptr, &exp, nullptr, true, false, false, true);
+                    InsertInitializer(dest, itype, exp, 0, true);
+                    if (*dest && sc != StorageClass::auto_ && sc != StorageClass::parameter_ && sc != StorageClass::member_ &&
+                        sc != StorageClass::mutable_ && !base->sb->attribs.inheritable.isInline)
+                    {
+                        insertDynamicDestructor(base, *dest);
+                        *dest = nullptr;
+                    }
+                }
+            }
+        }
     }
     // have to fill in unused array elements with C++ constructors
     // this doesn't play well with the designator stuff but doesn't matter in C++

@@ -32,7 +32,6 @@
 #include <cstdio>
 #include <malloc.h>
 #include <cstring>
-#include <unordered_set>
 #include "ioptimizer.h"
 #include "beinterfdefs.h"
 #include "config.h"

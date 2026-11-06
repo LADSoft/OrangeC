@@ -833,7 +833,7 @@ struct SsaElimData
     std::map<int, std::list<int>> predecessors;
     std::map<int, std::list<int>> successors;
 };
-static void BuildAuxGraph(SsaElimData& elimData, Block* b, int which, std::unordered_set<int>& nodes)
+static void BuildAuxGraph(SsaElimData& elimData, Block* b, int which, std::set<int>& nodes)
 {
     QUAD* head = b->head;
     bool done = false;
@@ -944,7 +944,7 @@ static void CreateCopy(SsaElimData& elimData, std::unordered_set<int>& visited, 
         }
     }
 }
-static void EliminatePredecessors(SsaElimData& elimData, std::unordered_set<int>& nodes, Block* pred, Block* b, int which, bool all)
+static void EliminatePredecessors(SsaElimData& elimData, std::set<int>& nodes, Block* pred, Block* b, int which, bool all)
 {
     BuildAuxGraph(elimData, b, which, nodes);
     if (!nodes.empty())
@@ -984,7 +984,7 @@ void TranslateFromSSA(bool all)
         return;
     int i;
     QUAD* head;
-    std::unordered_set<int> nodes;
+    std::set<int> nodes;
     for (i = 0; i < tempCount; i++)
     {
         tempInfo[i]->temp = false;

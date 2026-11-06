@@ -97,7 +97,7 @@ static std::set<int> tempMoves[2];
 static std::vector<QUAD*> instructionList;
 static std::list<int> freezeWorkList;
 static std::list<int> spillWorkList;
-static std::unordered_set<int> spilledNodes;
+static std::set<int> spilledNodes;
 static std::unordered_map<int, int> hiMoves;
 std::map<int, std::set<int>> tempWorkingMoves;
 
@@ -1726,7 +1726,7 @@ static void SpillColor(void)
 /* attempt to use the same spill var for any spilled variables
  * which are connected by an uncoalesced move
  */
-static void SpillCoalesce(std::unordered_set<int>& C, std::unordered_set<int>& S)
+static void SpillCoalesce(std::set<int>& C, std::set<int>& S)
 {
     typedef struct _move_
     {
@@ -1857,7 +1857,7 @@ static void SpillCoalesce(std::unordered_set<int>& C, std::unordered_set<int>& S
         moves.erase(mv);
     }
 }
-static void InsertCandidates(std::unordered_set<int>& spillProcessed, int W, std::unordered_set<int>& L)
+static void InsertCandidates(std::unordered_set<int>& spillProcessed, int W, std::set<int>& L)
 {
     std::set<int>& moves = tempWorkingMoves[W];
     int i;
@@ -1937,7 +1937,7 @@ static unsigned lscost(int size)
             return 1;
     }
 }
-static unsigned SpillPropagateSavings(int w, std::unordered_set<int>& S)
+static unsigned SpillPropagateSavings(int w, std::set<int>& S)
 {
     unsigned savings = 0;
     std::set<int>& moves = tempWorkingMoves[w];
@@ -1968,8 +1968,8 @@ static unsigned SpillPropagateSavings(int w, std::unordered_set<int>& S)
     }
     return savings;
 }
-static void SpillPropagate(std::unordered_set<int>& spillProcessed, std::unordered_set<int>& P, std::unordered_set<int>& S,
-                           std::unordered_set<int>& L, std::unordered_set<int>& NP)
+static void SpillPropagate(std::unordered_set<int>& spillProcessed, std::set<int>& P, std::set<int>& S, std::set<int>& L,
+                           std::set<int>& NP)
 {
     L.clear();
     NP.clear();
@@ -1990,9 +1990,9 @@ static void SpillPropagate(std::unordered_set<int>& spillProcessed, std::unorder
 }
 static void SpillPropagateAndCoalesce(void)
 {
-    std::unordered_set<int> P;
-    std::unordered_set<int> np;
-    std::unordered_set<int> L;
+    std::set<int> P;
+    std::set<int> np;
+    std::set<int> L;
     int i;
     std::unordered_set<int> spillProcessed;
     P = spilledNodes;

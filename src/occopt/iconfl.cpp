@@ -42,7 +42,7 @@
 #include <ilive.h>
 namespace Optimizer
 {
-static std::unordered_map<int, std::unordered_set<int>> conflicts;
+static std::unordered_map<int, std::set<int>> conflicts;
 
 void conflictini(void) { ResetConflict(); }
 void EvaluateConflicts(int n, std::function<void(int)> func) { std::for_each(conflicts[n].begin(), conflicts[n].end(), func); }

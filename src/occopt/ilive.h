@@ -24,8 +24,6 @@
  */
 
 #pragma once
-#include <unordered_set>
-#include <unordered_map>
 namespace Optimizer
 {
 extern SimpleBitSet globalVars;

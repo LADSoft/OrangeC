@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -60,13 +60,19 @@ class Instruction
     std::shared_ptr<Label> GetLabel() const { return label; }
     bool IsLabel() { return type == LABEL; }
     int GetType() const { return type; }
-    void Optimize(Section* sect, int pc, bool doErrors);
+    void Optimize(Section* sect, int pc, bool doErrors, bool noadjust);
     void SetOffset(int Offs) { offs = Offs; }
     int GetOffset() const { return offs; }
     void SetFill(int fv) { fill = fv; }
     int GetFill() const { return fill; }
     void SetFillWidth(int fv) { fillWidth = fv; }
     int GetFillWidth() const { return fillWidth; }
+    int GetRawSize() const
+    {
+        if (type == RESERVE)
+            return size * repeat;
+        return size;
+    }
     int const GetSize()
     {
         if (type == ALIGN)

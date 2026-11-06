@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -747,7 +747,7 @@ void Instruction::RepRemoveCancellations(std::shared_ptr<AsmExprNode> exp, bool 
     }
 }
 
-void Instruction::Optimize(Section* sect, int pc, bool last)
+void Instruction::Optimize(Section* sect, int pc, bool last, bool noadust)
 {
     unsigned char* pdata = data.get();
     if (!pdata)
@@ -828,7 +828,7 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
                     if (fixup->IsRel())
                     {
                         o -= size + pc;
-                        if (fixup->IsAdjustable())
+                        if (!noadust && fixup->IsAdjustable())
                         {
                             if (type == CODE)
                             {

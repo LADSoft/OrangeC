@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -85,26 +85,15 @@ void Section::Optimize(std::shared_ptr<Section>& name)
 {
     AsmExpr::SetSection(name);
     bool done = false;
-    int pc = 0;
-    for (int i = 0; i < instructions.size(); i++)
-    {
-        if (instructions[i]->IsLabel())
-        {
-            std::shared_ptr<Label> l = instructions[i]->GetLabel();
-            if (l)
-            {
-                l->SetOffset(pc);
-                labels[l->GetName()] = pc;
-            }
-        }
-        pc += instructions[i]->GetSize();
-    }
+    int pc;
     while (!done)
     {
         done = true;
+        // first set up all the labels
         pc = 0;
         for (int i = 0; i < instructions.size(); i++)
         {
+            instructions[i]->SetOffset(pc);
             if (instructions[i]->IsLabel())
             {
                 std::shared_ptr<Label> l = instructions[i]->GetLabel();
@@ -114,20 +103,73 @@ void Section::Optimize(std::shared_ptr<Section>& name)
                     labels[l->GetName()] = pc;
                 }
             }
+            else if (instructions[i]->GetType() == Instruction::ALIGN)
+            {
+                pc += instructions[i]->GetRawSize() - 1;
+            }
             else
             {
-                int n = instructions[i]->GetSize();
-                instructions[i]->SetOffset(pc);
-                instructions[i]->Optimize(this, pc, false);
+                pc += instructions[i]->GetSize();
+            }
+        }
+        // now optimize every instruction, with ALIGN se being set to their max size
+        for (int i = 0; i < instructions.size(); i++)
+        {
+            int n = instructions[i]->GetSize();
+            instructions[i]->Optimize(this, instructions[i]->GetOffset(), false, false);
+            if (instructions[i]->GetType() != Instruction::ALIGN)
+            {
                 int m = instructions[i]->GetSize();
-                pc += m;
                 if (n != m)
                 {
+                    // something changed we need to recalculate and restart
                     done = false;
                 }
             }
         }
     }
+    //  now see if there are any aligns
+    bool hasalign = false;
+    for (int i = 0; i < instructions.size() && !hasalign; i++)
+    {
+        if (instructions[i]->GetType() == Instruction::ALIGN)
+        {
+            hasalign = true;
+        }
+    }
+    // if there are any aligns we need to make another pass to resolve them...
+    // here we are fixing the instruction size as it is so the aligns won't change later....
+    if (hasalign)
+    {
+        pc = 0;
+        for (int i = 0; i < instructions.size(); i++)
+        {
+            instructions[i]->SetOffset(pc);
+            if (instructions[i]->IsLabel())
+            {
+                std::shared_ptr<Label> l = instructions[i]->GetLabel();
+                if (l)
+                {
+                    l->SetOffset(pc);
+                    labels[l->GetName()] = pc;
+                }
+            }
+            pc += instructions[i]->GetSize();
+        }
+        // now optimize instructions, with the aligns being set correctly
+        // here we don't allow branches to change size since the alignments changing size
+        // could result in an out-of-range branch
+        for (int i = 0; i < instructions.size(); i++)
+        {
+            int n = instructions[i]->GetSize();
+            instructions[i]->SetOffset(pc);
+            instructions[i]->Optimize(this, pc, false, true);
+            pc += n;
+        }
+    }
+    // now finalize the instruction list
+    // run one more pass through optimizer so we can flag any errors.
+    // again we aren't changing the instruction size...
     pc = 0;
     for (int i = 0; i < instructions.size(); i++)
     {
@@ -141,7 +183,7 @@ void Section::Optimize(std::shared_ptr<Section>& name)
             }
         }
         instructions[i]->SetOffset(pc);
-        instructions[i]->Optimize(this, pc, true);
+        instructions[i]->Optimize(this, pc, true, true);
         pc += instructions[i]->GetSize();
     }
 }

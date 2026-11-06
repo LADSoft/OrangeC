@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -156,7 +156,7 @@ const char* Lexer::preDataGas = "";
 
 InstructionParser* InstructionParser::GetInstance() { return static_cast<InstructionParser*>(new x64Parser()); }
 
-void Instruction::Optimize(Section* sect, int pc, bool last)
+void Instruction::Optimize(Section* sect, int pc, bool last, bool noadust)
 {
 
     unsigned char* pdata = data.get();
@@ -224,7 +224,7 @@ void Instruction::Optimize(Section* sect, int pc, bool last)
                     if (fixup->IsRel())
                     {
                         o -= size + pc;
-                        if (fixup->IsAdjustable())
+                        if (!noadust && fixup->IsAdjustable())
                         {
                             if (type == CODE)
                             {

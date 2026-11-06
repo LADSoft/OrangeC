@@ -46,7 +46,6 @@
     <ClCompile Include="iloop.cpp" />
     <ClCompile Include="ilstream.cpp" />
     <ClCompile Include="ilunstream.cpp" />
-    <ClCompile Include="ioptutil.cpp" />
     <ClCompile Include="iout.cpp" />
     <ClCompile Include="ipeep.cpp" />
     <ClCompile Include="ipinning.cpp" />
@@ -92,7 +91,6 @@
     <ClInclude Include="ilunstream.h" />
     <ClInclude Include="iopt.h" />
     <ClInclude Include="ioptimizer.h" />
-    <ClInclude Include="ioptutil.h" />
     <ClInclude Include="iout.h" />
     <ClInclude Include="ipeep.h" />
     <ClInclude Include="ipinning.h" />

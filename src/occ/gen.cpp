@@ -40,7 +40,6 @@
 #include "memory.h"
 #include "symfuncs.h"
 #include "gen.h"
-#include "ioptutil.h"
 #define CONSTS_ONLY
 #include "rtti.h"
 #define MAX_ALIGNS 50

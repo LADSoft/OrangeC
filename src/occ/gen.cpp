@@ -58,7 +58,13 @@ static int inframe;
 static int switch_deflab;
 static long long switch_range, switch_case_count, switch_case_max;
 static Optimizer::IMODE* switch_ip;
-static enum { swm_enumerate, swm_compactstart, swm_compact, swm_tree } switch_mode;
+static enum
+{
+    swm_enumerate,
+    swm_compactstart,
+    swm_compact,
+    swm_tree
+} switch_mode;
 static int switch_lastcase;
 static AMODE *switch_apl, *switch_aph;
 static int switch_live;
@@ -1011,21 +1017,24 @@ void bit_store(AMODE* dest, AMODE* src, int size, int bits, int startbit)
     {
         if (bits != 32)
         {
-            gen_codes(op_and, size, src, aimmed((1 << bits) - 1));
-            gen_codes(op_and, size, dest, aimmed(~(((1 << bits) - 1) << startbit)));
-            bool pushed = false;
+            AMODE* pushed = nullptr;
             if (live(dest->liveRegs, src->preg))
             {
-                int n = getreg(dest, (1 << dest->preg) || (1 << src->preg), pushed);
-                auto temp = makedreg(n);
-                gen_codes(op_mov, src->length, temp, src);
-                src = temp;
+                int n = src->preg;
+                if (abs(src->length) <= ISZ_UCHAR)
+                {
+                    n &= 3;
+                }
+                pushed = makedreg(n);
+                gen_codes(op_push, ISZ_UINT, pushed, nullptr);
             }
+            gen_codes(op_and, size, src, aimmed((1 << bits) - 1));
+            gen_codes(op_and, size, dest, aimmed(~(((1 << bits) - 1) << startbit)));
             if (startbit)
                 gen_codes(op_shl, size, src, aimmed(startbit));
             gen_codes(op_or, size, dest, src);
             if (pushed)
-                gen_codes(op_pop, ISZ_UINT, src, nullptr);
+                gen_codes(op_pop, ISZ_UINT, pushed, nullptr);
         }
         else
             gen_codes(op_mov, size, dest, src);

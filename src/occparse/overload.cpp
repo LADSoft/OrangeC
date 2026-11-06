@@ -190,12 +190,16 @@ bool matchOverload(Type* tnew, Type* told)
                 }
                 while (tpn1->IsPtr() && tps1->IsPtr())
                 {
-                    if (tpn1->IsArray() != tps1->IsArray() || (!tpn1->IsArray() && tpn1->size != tps1->size) ||
-                        (tpn1->IsArray() &&
-                         (tpn1->BaseType()->esize && isintconst(tpn1->BaseType()->esize) != isintconst(tps1->BaseType()->esize))))
+                    if ((!tpn1->IsArray() && !tps1->IsArray()) ||
+                        ((tpn1->IsArray() && tpn1->size) || (tps1->IsArray() && tps1->size)))
                     {
-                        matchOverloadLevel--;
-                        return false;
+                        if (tpn1->IsArray() != tps1->IsArray() || (!tpn1->IsArray() && tpn1->size != tps1->size) ||
+                            (tpn1->IsArray() && (tpn1->BaseType()->esize &&
+                                                 isintconst(tpn1->BaseType()->esize) != isintconst(tps1->BaseType()->esize))))
+                        {
+                            matchOverloadLevel--;
+                            return false;
+                        }
                     }
                     tpn1 = tpn1->BaseType()->btp;
                     tps1 = tps1->BaseType()->btp;
@@ -2643,12 +2647,15 @@ static void getPointerConversion(Type* tpp, Type* tpa, EXPRESSION* exp, int* n, 
             }
             while (t1->IsPtr() && t2->IsPtr())
             {
-                if (t1->IsArray() != t2->IsArray() ||
-                    (t1->BaseType()->esize && isintconst(t1->BaseType()->esize) != isintconst(t2->BaseType()->esize)) ||
-                    (t1->BaseType()->esize && isintconst(t1->BaseType()->esize) &&
-                     t1->BaseType()->esize->v.i != t2->BaseType()->esize->v.i))
+                if ((!t1->IsArray() && !t2->IsArray()) || ((t1->IsArray() && t1->size) || (t2->IsArray() && t2->size)))
                 {
-                    seq[(*n)++] = CV_NONE;
+                    if (t1->IsArray() != t2->IsArray() ||
+                        (t1->BaseType()->esize && isintconst(t1->BaseType()->esize) != isintconst(t2->BaseType()->esize)) ||
+                        (t1->BaseType()->esize && isintconst(t1->BaseType()->esize) &&
+                         t1->BaseType()->esize->v.i != t2->BaseType()->esize->v.i))
+                    {
+                        seq[(*n)++] = CV_NONE;
+                    }
                 }
                 t1 = t1->btp;
                 t2 = t2->btp;

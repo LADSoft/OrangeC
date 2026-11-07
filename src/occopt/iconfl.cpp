@@ -45,7 +45,12 @@ namespace Optimizer
 static std::unordered_map<int, std::set<int>> conflicts;
 
 void conflictini(void) { ResetConflict(); }
-void EvaluateConflicts(int n, std::function<void(int)> func) { std::for_each(conflicts[n].begin(), conflicts[n].end(), func); }
+void EvaluateConflicts(int n, std::function<void(int)> func)
+{
+    for (auto i : conflicts[n])
+        func(i);
+    // std::for_each(conflicts[n].begin(), conflicts[n].end(), func);
+}
 void ResetConflict(void) { conflicts.clear(); }
 int findPartition(int T0)
 {

@@ -87,9 +87,9 @@ static std::deque<int> tempStack;
 static unsigned long long regmask;
 static int localspill, spillcount;
 static std::deque<int> simplifyWorkList;
-static std::unordered_set<int> coalescedNodes;
-static std::unordered_set<int> stackedTemps;
-static std::set<int> adjacent, adjacent1;
+static SimpleBitSet coalescedNodes;
+static SimpleBitSet stackedTemps;
+static SimpleBitSet adjacent, adjacent1;
 static std::set<int> workingMoves;
 static std::unordered_set<int> activeMoves;
 static std::unordered_set<int> coalescedMoves;
@@ -126,7 +126,7 @@ static int accesses;
 inline void PUSH(int t)
 {
     tempStack.push_front(t);
-    stackedTemps.insert(t);
+    stackedTemps.setbit(t);
 }
 inline int POP()
 {
@@ -901,10 +901,8 @@ static bool BriggsCoalesceInit(int u, int v, int n)
     int k = 0;
     Adjacent1(u);
     Adjacent(v);
-    std::set<int> working;
-    std::set_union(adjacent.begin(), adjacent.end(), adjacent1.begin(), adjacent1.end(), std::inserter(working, working.begin()));
-    adjacent = working;
-    for (auto&& t : working)
+    adjacent.union_from(adjacent1);
+    for (auto&& t : adjacent)
     {
         if (squeezes[t] >= tempRegCounts[t])
             k++;
@@ -1067,21 +1065,22 @@ static void Build(Block* b)
 static void Adjacent(int n)
 {
     adjacent.clear();
-
+    adjacent.resize(tempCount);
     EvaluateConflicts(n, [](int i) {
-        if (stackedTemps.find(i) == stackedTemps.end() && coalescedNodes.find(i) == coalescedNodes.end())
+        if (!stackedTemps.isset(i) && !coalescedNodes.isset(i))
         {
-            adjacent.insert(i);
+            adjacent.setbit(i);
         }
     });
 }
 static void Adjacent1(int n)
 {
     adjacent1.clear();
+    adjacent1.resize(tempCount);
     EvaluateConflicts(n, [](int i) {
-        if (stackedTemps.find(i) == stackedTemps.end() && coalescedNodes.find(i) == coalescedNodes.end())
+        if (!stackedTemps.isset(i) && !coalescedNodes.isset(i))
         {
-            adjacent1.insert(i);
+            adjacent1.setbit(i);
         }
     });
 }
@@ -1140,7 +1139,7 @@ static void MkWorkList(void)
         }
     }
 }
-static void EnableMoves(std::set<int>& nodes, int index)
+static void EnableMoves(SimpleBitSet& nodes, int index)
 {
     for (auto t : nodes)
     {
@@ -1226,7 +1225,7 @@ static int Combine(int u, int v)
     {
         spillWorkList.remove(v);
     }
-    coalescedNodes.insert(v);
+    coalescedNodes.setbit(v);
     tempInfo[v]->partition = u;
     // assumes that the more stringent set has less elements
     if (tempInfo[v]->liveAcrossFunctionCall)
@@ -1273,7 +1272,7 @@ static int Combine(int u, int v)
     bool losingHiDegreeNode = squeezes[u] >= tempRegCounts[u] && squeezes[v] >= tempRegCounts[v];
 
     EvaluateConflicts(v, [u, v](int t) {
-        if (coalescedNodes.find(t) == coalescedNodes.end())
+        if (!coalescedNodes.isset(t))
         {
             if (t != u && !isConflicting(t, u))
             {
@@ -1337,14 +1336,12 @@ static bool Conservative(int u, int v)
     int i, t, k = 0;
     Adjacent1(u);
     Adjacent(v);
-    std::set<int> working;
-    std::set_union(adjacent.begin(), adjacent.end(), adjacent1.begin(), adjacent1.end(), std::inserter(working, working.begin()));
-    for (auto&& t : working)
+    adjacent.union_from(adjacent1);
+    for (auto&& t : adjacent)
     {
         if (squeezes[t] >= tempRegCounts[t])
             ++k;
     }
-    adjacent = std::move(working);
     return k < tempRegClasses[u]->regCount[noStackFrame] && k < tempRegClasses[v]->regCount[noStackFrame];
 }
 static bool conflictsWithSameColor(int u, int v)
@@ -2020,7 +2017,7 @@ static void RewriteProgram(void)
     RewriteAllSpillNodes();
     for (i = 0; i < tempCount; i++)
     {
-        if (colors[i] != -1 || coalescedNodes.find(i) != coalescedNodes.end())
+        if (colors[i] != -1 || coalescedNodes.isset(i))
             tempInfo[i]->ircinitial = true;
     }
     // letting restart of the algorithm clear necessary variables
@@ -2031,7 +2028,7 @@ static IMODE* copyImode(IMODE* in)
     if (in->offset && in->offset->type == se_tempref)
     {
         int tnum = in->offset->sp->i;
-        if (coalescedNodes.find(tnum) != coalescedNodes.end())
+        if (coalescedNodes.isset(tnum))
         {
             offset = tempInfo[findPartition(tnum)]->enode;
         }
@@ -2039,7 +2036,7 @@ static IMODE* copyImode(IMODE* in)
     if (in->offset2 && in->offset2->type == se_tempref)
     {
         int tnum = in->offset2->sp->i;
-        if (coalescedNodes.find(tnum) != coalescedNodes.end())
+        if (coalescedNodes.isset(tnum))
         {
             offset2 = tempInfo[findPartition(tnum)]->enode;
         }
@@ -2375,9 +2372,11 @@ void AllocateRegisters(QUAD* head)
         spillWorkList.clear();
         spilledNodes.clear();
         coalescedNodes.clear();
+        coalescedNodes.resize(tempCount + 200);
         adjacent.clear();
         adjacent1.clear();
         stackedTemps.clear();
+        stackedTemps.resize(tempCount + 200);
         tempStack.clear();
         liveVariables();
         CalculateFunctionFlags();

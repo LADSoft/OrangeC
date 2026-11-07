@@ -1912,7 +1912,7 @@ bool eval_binary_assign(SYMBOL* funcsp, Type* atp, Type** resulttp, EXPRESSION**
                             {
                                 if (Optimizer::cparams.prm_cplusplus)
                                 {
-                                    if ((!(*resulttp)->IsVoidPtr() || !righttp->IsPtr()) && !righttp->nullptrType)
+                                    if ((!(*resulttp)->IsVoidPtr() || !righttp->IsPtr()) && !righttp->BaseType()->nullptrType)
                                         if (!(*resulttp)->IsTemplatedPointer())
                                         {
                                             errorConversionOrCast(true, righttp, *resulttp);

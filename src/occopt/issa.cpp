@@ -318,6 +318,13 @@ static void renameToPhi(std::vector<std::stack<int>>& renameStack, Block* b)
                 IMODE* rv = InitTempOpt(tempInfo[tnum]->enode->sp->imvalue->size, tempInfo[tnum]->size);
                 //						tempInfo[n]->enode->right = tempInfo[tnum]->enode->right;
                 int n = rv->offset->sp->i;
+                if (n > renameStack.size() - 50)
+                {
+                    renameStack.resize(n + 2000);
+                    InstructionDefinesSsa.resize(n + 2000);
+                    BlockDefinesSsa.resize(n + 2000);
+                    InstructionUsesSsa.resize(n + 2000);
+                }
                 rv->vol = head->ans->vol;
                 rv->restricted = head->ans->restricted;
                 renameStack[tnum].push(n);
@@ -476,11 +483,11 @@ void TranslateToSSA()
     ins_hash.clear();
     name_hash.clear();
     InstructionDefinesSsa.clear();
-    InstructionDefinesSsa.resize(tempCount + 20000);
+    InstructionDefinesSsa.resize(tempCount + 2000);
     InstructionUsesSsa.clear();
-    InstructionUsesSsa.resize(tempCount + 20000);
+    InstructionUsesSsa.resize(tempCount + 2000);
     BlockDefinesSsa.clear();
-    BlockDefinesSsa.resize(tempCount + 20000);
+    BlockDefinesSsa.resize(tempCount + 2000);
     for (i = 0; i < tempCount; i++)
     {
         tempInfo[i]->preSSATemp = -1;
@@ -504,7 +511,7 @@ void TranslateToSSA()
     for (i = 0; i < blockCount; i++)
         if (blockArray[i])
             blockArray[i]->visiteddfst = false;
-    std::vector<std::stack<int>> renameStack(tempCount);
+    std::vector<std::stack<int>> renameStack(tempCount + 2000);
     renameToPhi(renameStack, blockArray[0]);
     AliasRundown();
 }

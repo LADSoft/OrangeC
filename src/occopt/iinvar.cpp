@@ -728,9 +728,9 @@ void MoveLoopVariables(void)
     if (Optimizer::architecture != ARCHITECTURE_MSIL && !currentFunction->anyTry && !Optimizer::cparams.prm_debug)
     {
         BlockDefinesSsa.clear();
-        BlockDefinesSsa.resize(tempCount + 4000);
+        BlockDefinesSsa.resize(tempCount + 2000);
         InstructionDefinesSsa.clear();
-        InstructionDefinesSsa.resize(tempCount + 4000);
+        InstructionDefinesSsa.resize(tempCount + 2000);
         ScanForVariableMotion();
         // not weeding because we want to keep everything...
     }
@@ -743,7 +743,7 @@ void MoveLoopInvariants(void)
         if (blockArray[i])
             blockArray[i]->preWalk = 0;
     InstructionDefinesSsa.clear();
-    InstructionDefinesSsa.resize(tempCount + 4000);
+    InstructionDefinesSsa.resize(tempCount + 2000);
     current = 1;
     std::list<std::pair<QUAD*, QUAD*>> refs;
     std::unordered_map<Loop*, std::unordered_set<int>> invariantPhiList;

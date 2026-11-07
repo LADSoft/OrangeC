@@ -2953,7 +2953,7 @@ Type* TypeGenerator::UnadornedType(SYMBOL* funcsp, Type* tp, SYMBOL** strSym_out
                 if (foundsigned || foundunsigned || type != BasicType::none_)
                     flagerror = true;
                 declaringInitialType = 0;
-                declenum(funcsp, &tn, storage_class, access, false, defd);
+                declenum(funcsp, &tn, inTemplate, storage_class, access, false, defd);
                 declaringInitialType = oldDeclaringInitialType;
                 goto exit;
             case Keyword::void_:

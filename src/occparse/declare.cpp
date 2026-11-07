@@ -1801,7 +1801,7 @@ static void enumbody(SYMBOL* funcsp, SYMBOL* spi, StorageClass storage_class, Ac
     spi->sb->declaring = false;
     return;
 }
-void declenum(SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLevel access, bool opaque, bool* defd)
+void declenum(SYMBOL* funcsp, Type** tp, bool inTemplate, StorageClass storage_class, AccessLevel access, bool opaque, bool* defd)
 {
     SymbolTable<SYMBOL>* table;
     const char* tagname;
@@ -1819,6 +1819,8 @@ void declenum(SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLevel
     Linkage linkage1 = Linkage::none_, linkage2 = Linkage::none_, linkage3 = Linkage::none_;
     *defd = false;
     getsym();
+    auto oldintype = inTemplateType;
+    inTemplateType = 0;
     auto oldAttribs = basisAttribs;
     basisAttribs = {0};
     ParseAttributeSpecifiers(funcsp, true);
@@ -1832,7 +1834,19 @@ void declenum(SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLevel
         getsym();
         parse_declspec(&linkage1, &linkage2, &linkage3);
     }
-    if (ISID())
+    bool searched = false;
+    sp = nullptr;
+    nsv = nullptr;
+    table = nullptr;
+    if (MATCHKW(Keyword::classsel_))
+    {
+        charindex = -1;
+        tagname = "";
+        nestedSearch(&sp, &strSym, &nsv, nullptr, nullptr, true, storage_class, true, true);
+        getsym();
+        searched = true;
+    }
+    else if (ISID())
     {
         charindex = currentLex->charindex;
         tagname = litlate(currentLex->value.s.a);
@@ -1847,7 +1861,14 @@ void declenum(SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLevel
 
     Utils::StrCpy(newName, tagname);
 
-    tagsearch(newName, sizeof(newName), &sp, &table, &strSym, &nsv, storage_class);
+    if (!searched)
+    {
+        if (inTemplate)
+            inTemplateSpecialization++;
+        tagsearch(newName, sizeof(newName), &sp, &table, &strSym, &nsv, storage_class);
+        if (inTemplate)
+            inTemplateSpecialization--;
+    }
 
     ParseAttributeSpecifiers(funcsp, true);
     if (funcsp && (MATCHKW(Keyword::colon_) || MATCHKW(Keyword::begin_)))
@@ -1966,6 +1987,7 @@ void declenum(SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLevel
         (Optimizer::cparams.prm_cplusplus && !sp->sb->parentClass ? globalNameSpace->front()->tags : table)->Add(sp);
     }
     basisAttribs = oldAttribs;
+    inTemplateType = oldintype;
     return;
 }
 static void getStorageClass(SYMBOL* funcsp, StorageClass* storage_class, Linkage* linkage, Optimizer::ADDRESS* address,

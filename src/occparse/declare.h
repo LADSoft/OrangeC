@@ -128,7 +128,7 @@ void innerDeclStruct(SYMBOL* funcsp, SYMBOL* sp, bool inTemplate, AccessLevel de
                      SymbolTable<SYMBOL>* anonymousTable);
 void declstruct(SYMBOL* funcsp, Type** tp, bool inTemplate, bool asfriend, StorageClass storage_class, Linkage linkage2_in,
                 AccessLevel access, bool* defd, bool constexpression);
-void declenum(SYMBOL* funcsp, Type** tp, StorageClass storage_class, AccessLevel access, bool opaque, bool* defd);
+void declenum(SYMBOL* funcsp, Type** tp, bool inTemplate, StorageClass storage_class, AccessLevel access, bool opaque, bool* defd);
 void sizeQualifiers(Type* tp);
 void parse_declspec(Linkage* linkage, Linkage* linkage2, Linkage* linkage3);
 void getQualifiers(Type** tp, Linkage* linkage, Linkage* linkage2, Linkage* linkage3, bool* asFriend);

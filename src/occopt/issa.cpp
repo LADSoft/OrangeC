@@ -321,9 +321,6 @@ static void renameToPhi(std::vector<std::stack<int>>& renameStack, Block* b)
                 if (n > renameStack.size() - 50)
                 {
                     renameStack.resize(n + 2000);
-                    InstructionDefinesSsa.resize(n + 2000);
-                    BlockDefinesSsa.resize(n + 2000);
-                    InstructionUsesSsa.resize(n + 2000);
                 }
                 rv->vol = head->ans->vol;
                 rv->restricted = head->ans->restricted;

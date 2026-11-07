@@ -358,11 +358,14 @@ static int AllocatempOpt(int size1)
         rv = tempreg(size1, false);
     }
     t = rv->offset->sp->i;
-    if (t >= tempInfo.size())
+    if (tempCount >= tempInfo.size() - 50)
     {
-        tempInfo.resize(t + 1001);
-        colors.resize(t + 1001);
-        precolored.resize(t + 1001);
+        tempInfo.resize(tempCount + 2000);
+        colors.resize(tempCount + 2000);
+        precolored.resize(tempCount + 2000);
+        InstructionDefinesSsa.resize(tempCount + 2000);
+        BlockDefinesSsa.resize(tempCount + 2000);
+        InstructionUsesSsa.resize(tempCount + 2000);
     }
     if (!tempInfo[t])
     {
@@ -405,11 +408,11 @@ static void InitTempInfo(void)
     int i;
     nextTemp = tempBottom = tempCount;
     tempInfo.clear();
-    tempInfo.resize(tempCount + 10000);
+    tempInfo.resize(tempCount + 2000);
     colors.clear();
-    colors.resize(tempCount + 10000);
+    colors.resize(tempCount + 2000);
     precolored.clear();
-    precolored.resize(tempCount + 10000);
+    precolored.resize(tempCount + 2000);
 
     for (i = 0; i < tempCount; i++)
     {

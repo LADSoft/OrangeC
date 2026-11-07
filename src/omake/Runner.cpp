@@ -46,9 +46,20 @@ void Runner::DeleteOne(Depends* depend)
 void Runner::CallRunner(Runner* runner, std::list<std::shared_ptr<RuleList>>* list, Depends* depend, EnvironmentStrings* env,
                         bool keepGoing, std::promise<int> promise)
 {
-    auto retval = runner->RunOne(list, depend, env, keepGoing);
-    promise.set_value(retval);
-    OrangeC::Utils::BasicLogger::debug("CallRunner returning from a runner: ", depend->GetGoal());
+    try
+    {
+        auto retval = runner->RunOne(list, depend, env, keepGoing);
+        promise.set_value(retval);
+        OrangeC::Utils::BasicLogger::debug("CallRunner returning from a runner: ", depend->GetGoal());
+    }
+    catch (std::exception& e)
+    {
+        printf("Runner::CallRunner::thrown exception(%s)\n", e.what());
+    }
+    catch (...)
+    {
+        printf("Runner::CallRunner::thrown exception(...)\n");
+    }
 }
 void Runner::WaitAll(int& rv, bool keepGoing, std::vector<future_holding_struct>& workingList)
 {

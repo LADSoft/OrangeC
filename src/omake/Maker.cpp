@@ -645,18 +645,29 @@ void Maker::GetEnvironment(EnvironmentStrings& env)
 }
 void Maker::CallRunner(Runner&& runner, Depends* depend, EnvironmentStrings* env, bool keepGoing, std::promise<int> promise)
 {
-    std::list<std::shared_ptr<RuleList>> list;
-    promise.set_value(runner.RunOne(&list, depend, env, keepGoing));
-    std::string goal_value = "";
-    if (depend)
+    try
     {
-        goal_value = depend->GetGoal();
+        std::list<std::shared_ptr<RuleList>> list;
+        promise.set_value(runner.RunOne(&list, depend, env, keepGoing));
+        std::string goal_value = "";
+        if (depend)
+        {
+            goal_value = depend->GetGoal();
+        }
+        else
+        {
+            goal_value = "Depend was null'd out";
+        }
+        OrangeC::Utils::BasicLogger::debug("Cleaning a runner: " + goal_value);
     }
-    else
+    catch (std::exception& e)
     {
-        goal_value = "Depend was null'd out";
+        printf("Maker::CallRunner::thrown exception(%s)\n", e.what());
     }
-    OrangeC::Utils::BasicLogger::debug("Cleaning a runner: " + goal_value);
+    catch (...)
+    {
+        printf("Maker::CallRunner::thrown exception(...)\n");
+    }
 }
 int Maker::RunCommands(bool keepGoing)
 {

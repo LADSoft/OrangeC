@@ -39,6 +39,7 @@
 #include "ilocal.h"
 #include "ireshape.h"
 #include "optmain.h"
+#include "config.h"
 #include <algorithm>
 #include <unordered_set>
 /* Basic loop identity and loop gathering
@@ -817,7 +818,7 @@ static void StrongRegiondfs(TestableList<int>& strongStack, std::list<std::list<
                 if (uses->temps & TEMP_ANS)
                 {
                     ux = uses->ans->offset->sp->i;
-                    if (tempInfo[ux]->size >= ISZ_FLOAT)
+                    if (abs(tempInfo[ux]->size) > chosenAssembler->arch->compatibleIntSize)
                         ux = -1;
                 }
                 break;
@@ -880,7 +881,7 @@ static void StrongRegions(TestableList<int>& strongStack, std::unordered_set<int
     while (head != lp->entry->tail->fwd && head->dc.opcode == i_phi)
     {
         PHIDATA* pd = head->dc.v.phi;
-        if (candidates.find(pd->T0) != candidates.end() && tempInfo[pd->T0]->size < ISZ_FLOAT)
+        if (candidates.find(pd->T0) != candidates.end() && abs(tempInfo[pd->T0]->size) <= chosenAssembler->arch->compatibleIntSize)
         {
             StrongRegiondfs(strongStack, strongTemps, pd->T0, max_dfs);
         }

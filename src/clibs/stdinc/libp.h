@@ -1,25 +1,25 @@
 /*  Software License Agreement
- *  
+ *
  *      Copyright(C) 1994-2025 David Lindauer, (LADSoft)
- *  
+ *
  *      This file is part of the Orange C Compiler package.
- *  
+ *
  *      The Orange C Compiler package is free software: you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by
  *      the Free Software Foundation, either version 3 of the License, or
  *      (at your option) any later version.
- *  
+ *
  *      The Orange C Compiler package is distributed in the hope that it will be useful,
  *      but WITHOUT ANY WARRANTY; without even the implied warranty of
  *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *      GNU General Public License for more details.
- *  
+ *
  *      You should have received a copy of the GNU General Public License
  *      along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *  
+ *
  *      contact information:
  *          email: TouchStone222@runbox.com <David Lindauer>
- *  
+ *
  */
 
 /* The prototypes in this file which start with __ll are OS dependent
@@ -37,7 +37,7 @@
 
 #pragma pack(1)
 
-#    include <stddef.h>
+#include <stddef.h>
 
 #include <signal.h>
 #ifdef __cplusplus
@@ -77,7 +77,7 @@ extern "C"
     /* File positioning */
     size_t __ll_getpos(int __fd);
     int __ll_seek(int __fd, size_t __pos, int __origin);
-    long long  __ll_getpos64(int __fd);
+    long long __ll_getpos64(int __fd);
     int __ll_seek64(int __fd, long long __pos, int __origin);
 
     /* File utilities */
@@ -120,7 +120,7 @@ extern "C"
     {
 #    endif
         int __ll_thrdstart(struct ithrd** thr, thrd_start_t* func, void* arglist);
-        void __ll_thrdexit(unsigned retval);
+        _NORETURN void __ll_thrdexit(unsigned retval);
         void __ll_thrdsleep(unsigned ms);
         void _RTL_FUNC _IMPORT __thrdRegisterModule(void* module, void* tlsStart, void* tlsEnd);
         void _RTL_FUNC _IMPORT __thrdUnregisterModule(void* module);
@@ -206,8 +206,8 @@ extern "C"
     long double __fpow(int exp);
 
     // checked arithmetic support
-    void __stdcall ___ckd_set_value(unsigned int buf[CKD_BUF_SIZE/sizeof(int)], const void *val, int typeid_val);
-    int __stdcall ___ckd_get_value(const unsigned int buf[CKD_BUF_SIZE/sizeof(int)], void *result, int typeid_val);
+    void __stdcall ___ckd_set_value(unsigned int buf[CKD_BUF_SIZE / sizeof(int)], const void* val, int typeid_val);
+    int __stdcall ___ckd_get_value(const unsigned int buf[CKD_BUF_SIZE / sizeof(int)], void* result, int typeid_val);
 
 #ifdef __cplusplus
 };
@@ -277,7 +277,7 @@ struct ithrd
     {
         struct itsslst* next;
         void* tss;
-    } * tsslst;
+    }* tsslst;
     char join;
     char detach;
 };

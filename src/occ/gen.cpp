@@ -4782,14 +4782,12 @@ void asm_assnblock(Optimizer::QUAD* q) /* copy block of memory*/
             gen_codes(opa, ISZ_UINT, di, apal);
             gen_codes(op, ISZ_UINT, si, apl);
         }
-        gen_codes(op_mov, ISZ_UINT, cx, aimmed(n / 4));
+        gen_codes(op_mov, ISZ_UINT, cx, aimmed(n));
         gen_code(op_cld, 0, 0);
         gen_code(op_rep, 0, 0);
-        gen_code(op_movsd, 0, 0);
-        if (n & 2)
-            gen_code(op_movsw, 0, 0);
-        if (n & 1)
-            gen_code(op_movsb, 0, 0);
+        // if we're going to rep movsd, we should ensure we're aligned at this point, we can use information from earlier to do
+        // this, but it's annoying....
+        gen_code(op_movsb, 0, 0);
         gen_codes(op_pop, ISZ_UINT, cx, 0);
         gen_codes(op_pop, ISZ_UINT, si, 0);
         gen_codes(op_pop, ISZ_UINT, di, 0);

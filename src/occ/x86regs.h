@@ -30,6 +30,8 @@
 #define R_EDX 2
 #define R_EAXEDX 8
 #define R_EDXECX 10
+#define R_ESIEBX 11
+
 #define R_AL 16
 #define R_CL 17
 #define R_AX 24

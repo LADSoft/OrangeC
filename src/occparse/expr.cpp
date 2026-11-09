@@ -73,7 +73,7 @@
 #include "staticassert.h"
 #include "casts.h"
 #include "attribs.h"
-
+#include "utils.h"
 // there is a bug where the compiler needs constant values for the memory order,
 // but parsed code may not provide it directly.
 // e.g. when an atomic primitive is called from inside a function.
@@ -1253,6 +1253,20 @@ static void variableName(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp,
                 (*tp) = Type::MakeType(BasicType::aggregate_);
                 (*tp)->UpdateRootTypes();
                 (*tp)->sp = sym;
+                sym->sb->parentNameSpace = strSym ? nullptr : nsv ? nsv->front()->name : nullptr;
+                sym->sb->parentClass = strSym;
+                if (sym->sb->parentNameSpace || sym->sb->parentClass)
+                {
+                    char buf[4000];
+                    if (sym->sb->parentNameSpace)
+                        Utils::StrCpy(buf, sym->sb->parentNameSpace->name);
+                    else
+                        Utils::StrCpy(buf, sym->sb->parentClass->name);
+                    Utils::StrCat(buf, "::");
+                    Utils::StrCat(buf, sym->name);
+
+                    error(ERR_UNDEFINED_IDENTIFIER, buf);
+                }
             }
             else
             {
@@ -6634,9 +6648,13 @@ static void expression_primary(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION*
 {
     switch (currentLex ? currentLex->type : LexType::none_)
     {
-        case LexType::l_id_:
+        case LexType::l_id_: {
+            auto oldStaticAssert = inStaticAssert;
+            inStaticAssert = 0;
             variableName(funcsp, atp, tp, exp, ismutable, flags);
-            break;
+            inStaticAssert = oldStaticAssert;
+        }
+        break;
         case LexType::l_kw_:
             switch (KW())
             {
@@ -7917,6 +7935,8 @@ void expression_cast(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, boo
                 }
                 else
                 {
+                    bool oldStaticAssert = inStaticAssert;
+                    inStaticAssert = 0;
                     (*tp)->InstantiateDeferred();
                     (*tp)->used = true;
                     needkw(Keyword::closepa_);
@@ -8083,6 +8103,7 @@ void expression_cast(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp, boo
                             error(ERR_EXPRESSION_SYNTAX);
                         }
                     }
+                    inStaticAssert = oldStaticAssert;
                 }
             }
             else  // expression in parenthesis

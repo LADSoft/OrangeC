@@ -710,9 +710,9 @@ void hashType(TemplateHashContext& context, Type* tp, EXPRESSION* exp, bool firs
                 case BasicType::typedef_:
                 case BasicType::templateparam_:
                     break;
-//                case BasicType::func_:
-//                case BasicType::ifunc_:
-//                    PUTINT(BasicType::func_);
+                    //                case BasicType::func_:
+                    //                case BasicType::ifunc_:
+                    //                    PUTINT(BasicType::func_);
                 default:
                     PUTINT(tp->type);
                     break;
@@ -781,7 +781,9 @@ void hashType(TemplateHashContext& context, Type* tp, EXPRESSION* exp, bool firs
                             else
                             {
                                 PUTCH('A');
+                                PUTINT(tp->size / tp->BaseType()->btp->size);
                             }
+                            hashType(context, tp->btp, nullptr, false);
                         }
                         break;
                     case BasicType::templateparam_:

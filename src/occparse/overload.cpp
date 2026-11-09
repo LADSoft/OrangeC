@@ -2292,91 +2292,110 @@ SYMBOL* getUserConversion(int flags, Type* tpp, Type* tpa, EXPRESSION* expa, int
                             }
                             else
                             {
-                                bool lref = false;
-                                Type* tpn = candidate->tp->BaseType()->btp;
-                                if (tpn->type == BasicType::typedef_)
-                                    tpn = tpn->btp;
-                                if (tpn->IsRef())
+                                bool lrref = true;
+                                bool rrref = false;
+                                if (tpp->IsRef())
                                 {
-                                    if (tpn->BaseType()->type == BasicType::lref_)
-                                        lref = true;
-                                }
-                                Type::MakeType(thistp, BasicType::pointer_, tpa);
-                                getSingleConversion((*candidate->tp->BaseType()->syms->begin())->tp, &thistp, &exp, &n2, seq3,
-                                                    candidate, nullptr, true);
-                                seq3[n2 + n3++] = CV_USER;
-                                inGetUserConversion--;
-                                if (tpc->type == BasicType::auto_)
-                                {
-                                    seq3[n2 + n3++] = CV_USER;
-                                }
-                                else if (tppp->IsFunctionPtr())
-                                {
-                                    int n77 = n3;
-                                    getSingleConversion(tppp, candidate->tp->BaseType()->btp, lref ? nullptr : &exp, &n3, seq3 + n2,
-                                                        candidate, nullptr, true);
-                                    if (n77 != n3 - 1 || seq3[n2 + n77] != CV_IDENTITY)
+                                    if (tpp->BaseType()->type == BasicType::rref_)
                                     {
-                                        SYMBOL* spf = tppp->BaseType()->btp->BaseType()->sp;
-                                        n3 = n77;
-                                        if (spf->sb->templateLevel && spf->sb->storage_class == StorageClass::typedef_ &&
-                                            !spf->sb->instantiated)
+                                        rrref = true;
+                                        lrref = false;
+                                    }
+                                }
+                                if ((candidate->tp->IsLRefQual() && !lrref) || (candidate->tp->IsRRefQual() && !rrref))
+                                {
+                                    seq3[n2++] = CV_NONE;
+                                    seq3[n2 + n3++] = CV_NONE;
+                                }
+                                else
+                                {
+                                    bool lref = false;
+                                    Type* tpn = candidate->tp->BaseType()->btp;
+                                    if (tpn->type == BasicType::typedef_)
+                                        tpn = tpn->btp;
+                                    if (tpn->IsRef())
+                                    {
+                                        if (tpn->BaseType()->type == BasicType::lref_)
+                                            lref = true;
+                                    }
+                                    Type::MakeType(thistp, BasicType::pointer_, tpa);
+                                    getSingleConversion((*candidate->tp->BaseType()->syms->begin())->tp, &thistp, &exp, &n2, seq3,
+                                                        candidate, nullptr, true);
+                                    seq3[n2 + n3++] = CV_USER;
+                                    inGetUserConversion--;
+                                    if (tpc->type == BasicType::auto_)
+                                    {
+                                        seq3[n2 + n3++] = CV_USER;
+                                    }
+                                    else if (tppp->IsFunctionPtr())
+                                    {
+                                        int n77 = n3;
+                                        getSingleConversion(tppp, candidate->tp->BaseType()->btp, lref ? nullptr : &exp, &n3,
+                                                            seq3 + n2, candidate, nullptr, true);
+                                        if (n77 != n3 - 1 || seq3[n2 + n77] != CV_IDENTITY)
                                         {
-                                            auto ita = spf->templateParams->begin();
-                                            ++ita;
-                                            auto itae = spf->templateParams->end();
-                                            spf = spf->sb->mainsym;
-                                            if (spf)
+                                            SYMBOL* spf = tppp->BaseType()->btp->BaseType()->sp;
+                                            n3 = n77;
+                                            if (spf->sb->templateLevel && spf->sb->storage_class == StorageClass::typedef_ &&
+                                                !spf->sb->instantiated)
                                             {
-                                                Type* hold[100];
-                                                int count = 0;
-                                                for (auto it = ita; it != itae; ++it)
+                                                auto ita = spf->templateParams->begin();
+                                                ++ita;
+                                                auto itae = spf->templateParams->end();
+                                                spf = spf->sb->mainsym;
+                                                if (spf)
                                                 {
-                                                    auto&& srch = *it;
-                                                    hold[count++] = srch.second->byClass.dflt;
-                                                    srch.second->byClass.dflt = srch.second->byClass.val;
+                                                    Type* hold[100];
+                                                    int count = 0;
+                                                    for (auto it = ita; it != itae; ++it)
+                                                    {
+                                                        auto&& srch = *it;
+                                                        hold[count++] = srch.second->byClass.dflt;
+                                                        srch.second->byClass.dflt = srch.second->byClass.val;
+                                                    }
+                                                    spf = GetTypeAliasSpecialization(spf, spf->templateParams);
+                                                    spf->tp = SynthesizeType(spf->tp, nullptr, false);
+                                                    getSingleConversion(spf->tp, candidate->tp->BaseType()->btp,
+                                                                        lref ? nullptr : &exp, &n3, seq3 + n2, candidate, nullptr,
+                                                                        true);
+                                                    count = 0;
+                                                    for (auto it = ita; it != itae; ++it)
+                                                    {
+                                                        auto&& srch = *it;
+                                                        srch.second->byClass.val = srch.second->byClass.dflt;
+                                                        srch.second->byClass.dflt = hold[count++];
+                                                    }
                                                 }
-                                                spf = GetTypeAliasSpecialization(spf, spf->templateParams);
-                                                spf->tp = SynthesizeType(spf->tp, nullptr, false);
-                                                getSingleConversion(spf->tp, candidate->tp->BaseType()->btp, lref ? nullptr : &exp,
-                                                                    &n3, seq3 + n2, candidate, nullptr, true);
-                                                count = 0;
-                                                for (auto it = ita; it != itae; ++it)
+                                                else
                                                 {
-                                                    auto&& srch = *it;
-                                                    srch.second->byClass.val = srch.second->byClass.dflt;
-                                                    srch.second->byClass.dflt = hold[count++];
+                                                    seq3[n2 + n3++] = CV_NONE;
                                                 }
                                             }
                                             else
                                             {
-                                                seq3[n2 + n3++] = CV_NONE;
+                                                getSingleConversion(tppp, candidate->tp->BaseType()->btp, lref ? nullptr : &exp,
+                                                                    &n3, seq3 + n2, candidate, nullptr, true);
                                             }
+                                        }
+                                    }
+                                    else if (!candidate->tp->BaseType()->btp->CompatibleType(tpa) &&
+                                             !SameTemplate(candidate->tp->BaseType()->btp, tpa))
+                                    {
+                                        if (tppp->IsVoidPtr())
+                                        {
+                                            if (candidate->tp->BaseType()->btp->IsVoidPtr())
+                                                seq3[n3++ + n2] = CV_IDENTITY;
+                                            else
+                                                seq3[n3++ + n2] = CV_POINTERCONVERSION;
                                         }
                                         else
                                         {
                                             getSingleConversion(tppp, candidate->tp->BaseType()->btp, lref ? nullptr : &exp, &n3,
-                                                                seq3 + n2, candidate, nullptr, true);
+                                                                seq3 + n2, candidate, nullptr, false);
                                         }
                                     }
+                                    inGetUserConversion++;
                                 }
-                                else if (!candidate->tp->BaseType()->btp->CompatibleType(tpa) &&
-                                         !SameTemplate(candidate->tp->BaseType()->btp, tpa))
-                                {
-                                    if (tppp->IsVoidPtr())
-                                    {
-                                        if (candidate->tp->BaseType()->btp->IsVoidPtr())
-                                            seq3[n3++ + n2] = CV_IDENTITY;
-                                        else
-                                            seq3[n3++ + n2] = CV_POINTERCONVERSION;
-                                    }
-                                    else
-                                    {
-                                        getSingleConversion(tppp, candidate->tp->BaseType()->btp, lref ? nullptr : &exp, &n3,
-                                                            seq3 + n2, candidate, nullptr, false);
-                                    }
-                                }
-                                inGetUserConversion++;
                             }
                         }
                         else
@@ -4896,6 +4915,14 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                             if (a.second->byClass.dflt)
                             {
                                 a.second->byClass.dflt->InstantiateDeferred();
+                                if (a.second->byClass.dflt->IsFunction())
+                                {
+                                    if (a.second->byClass.dflt->BaseType()->syms)
+                                        for (auto t : *a.second->byClass.dflt->BaseType()->syms)
+                                        {
+                                            t->tp->InstantiateDeferred();
+                                        }
+                                }
                                 //                                a.second->byClass.dflt = ResolveTemplateSelectors(nullptr,
                                 //                                a.second->byClass.dflt);
                             }
@@ -5122,7 +5149,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                         for (j = i; j < n && found1; j++)
                         {
                             if (spList[j] && found1 != spList[j] && found1->sb->castoperator == spList[j]->sb->castoperator &&
-                                !SameTemplate(found1->tp, spList[j]->tp))
+                                SameTemplate(found1->tp, spList[j]->tp))
                             {
                                 found2 = spList[j];
                             }
@@ -5163,7 +5190,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                             for (j = i; j < n && found1 && !found2; j++)
                             {
                                 if (spList[j] && found1 != spList[j] && found1->sb->castoperator == spList[j]->sb->castoperator &&
-                                    !SameTemplate(found1->tp, spList[j]->tp))
+                                    SameTemplate(found1->tp, spList[j]->tp))
                                 {
                                     found2 = spList[j];
                                 }

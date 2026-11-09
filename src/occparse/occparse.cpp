@@ -515,6 +515,16 @@ int main(int argc, char* argv[]) MAINTRY
         {
             CompletionCompiler::ccNewFile((char*)fileToCompile.c_str(), true);
         }
+        if (Utils::iequal(as, ".c"))
+        {
+            Optimizer::cparams.prm_cplusplus = false;
+        }
+        else
+        {
+            Optimizer::cparams.cpp_dialect = Dialect::cpp17;
+            Optimizer::cparams.prm_cplusplus = true;
+            Optimizer::cparams.c_dialect = Dialect::c89;
+        }
         if (prm_std.GetExists())
         {
             if (prm_std.GetValue() == "c89")
@@ -575,16 +585,6 @@ int main(int argc, char* argv[]) MAINTRY
         else
         {
             Optimizer::cparams.c_dialect = Dialect::c11;
-        }
-        if (Utils::iequal(as, ".c"))
-        {
-            Optimizer::cparams.prm_cplusplus = false;
-        }
-        else
-        {
-            Optimizer::cparams.cpp_dialect = Dialect::cpp17;
-            Optimizer::cparams.prm_cplusplus = true;
-            Optimizer::cparams.c_dialect = Dialect::c89;
         }
         if (Optimizer::cparams.prm_cplusplus && (Optimizer::architecture == ARCHITECTURE_MSIL))
             Utils::Fatal("MSIL compiler does not compile C++ files at this time");

@@ -490,7 +490,10 @@ static void calculateStructOffsets(SYMBOL* sp, bool toerr = true)
                 if (Optimizer::cparams.c_dialect >= Dialect::c99 && tp->type == BasicType::pointer_ && p->tp->array)
                 {
                     auto it1 = it;
-                    if (++it1 == sp->tp->syms->end() || p->sb->init)
+                    ++it1;
+                    while (it1 != sp->tp->syms->end() && !ismemberdata(*it1))
+                        ++it1;
+                    if (it1 == sp->tp->syms->end() || p->sb->init)
                     {
                         offset = nextoffset;
                         nextoffset = tp->btp->size;

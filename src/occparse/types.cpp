@@ -62,6 +62,7 @@
 #include "SymbolProperties.h"
 #include "using.h"
 #include "attribs.h"
+#include "staticassert.h"
 
 namespace Parser
 {
@@ -4449,6 +4450,8 @@ bool TypeGenerator::StartOfType(bool* structured, bool assumeType)
     if (!currentLex)
         return false;
 
+    bool oldStaticAssert = inStaticAssert;
+    inStaticAssert = 0;
     if (currentLex->type == LexType::l_id_)
     {
         auto tparam = TemplateLookupSpecializationParam(currentLex->value.s.a);
@@ -4467,6 +4470,7 @@ bool TypeGenerator::StartOfType(bool* structured, bool assumeType)
             if (!member)
             {
                 lines = old;
+                inStaticAssert = oldStaticAssert;
                 return tparam->second->type == TplType::typename_ || tparam->second->type == TplType::template_;
             }
         }
@@ -4498,6 +4502,7 @@ bool TypeGenerator::StartOfType(bool* structured, bool assumeType)
                 *structured = sym->tp->IsStructured();
             }
         }
+        inStaticAssert = oldStaticAssert;
         return (!sym && isdecltype) || (sym && sym->tp && istype(sym)) ||
                (assumeType && strSym &&
                 (strSym->tp->type == BasicType::templateselector_ || strSym->tp->type == BasicType::templatedecltype_));
@@ -4505,6 +4510,7 @@ bool TypeGenerator::StartOfType(bool* structured, bool assumeType)
     else
     {
         lines = old;
+        inStaticAssert = oldStaticAssert;
         return KWTYPE(TT_POINTERQUAL | TT_LINKAGE | TT_BASETYPE | TT_STORAGE_CLASS | TT_TYPENAME);
     }
 }

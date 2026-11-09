@@ -63,7 +63,7 @@ int noinline;
 std::vector<EXPRESSION*> inlineSymStructPtr;
 std::vector<EXPRESSION*> inlineSymThisPtr;
 #undef MAX_INLINE_NESTING
-#define MAX_INLINE_NESTING 3
+#define MAX_INLINE_NESTING 20
 
 static std::unordered_set<SYMBOL*> inlineSymList;
 static int inlineNesting;
@@ -146,7 +146,7 @@ void CleanupInlineAnonymousVars()
             auto savehead = save.second;
             // pick a register and fix the store to use it
             auto savereg = Optimizer::tempreg(savehead->ans->size, 0);
-            Optimizer ::temporarySymbols.push_back(savereg->offset->sp);
+            Optimizer::temporarySymbols.push_back(savereg->offset->sp);
             savehead->ans = savereg;
 
             int sz = range1.first->second->ans->size;

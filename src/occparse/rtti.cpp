@@ -53,6 +53,7 @@
 #include "overload.h"
 #include "Utils.h"
 #include "SymbolProperties.h"
+#include "iblock.h"
 namespace Parser
 {
 SymbolTable<SYMBOL>* rttiSyms;
@@ -911,8 +912,58 @@ static bool throughThis(EXPRESSION* exp)
             return false;
     }
 }
+static void ScanForVar(std::set<Optimizer::SimpleSymbol*>& usedSymbols, Optimizer::SimpleExpression* exp)
+{
+    if (exp)
+    {
+        if (exp->type == Optimizer::se_auto)
+        {
+            usedSymbols.insert(exp->sp);
+        }
+        else if (exp->type != Optimizer::se_tempref)
+        {
+            ScanForVar(usedSymbols, exp->left);
+            ScanForVar(usedSymbols, exp->right);
+        }
+    }
+}
+static void ScanForAnonymousVars(std::set<Optimizer::SimpleSymbol*>& usedSymbols)
+{
+    static Optimizer::QUAD* head;
+    head = Optimizer::intermed_head;
+    while (head)
+    {
+        if (head->dc.opcode != Optimizer::i_block && head->dc.opcode != Optimizer::i_blockend &&
+            head->dc.opcode != Optimizer::i_dbgblock && head->dc.opcode != Optimizer::i_dbgblockend &&
+            head->dc.opcode != Optimizer::i_var && head->dc.opcode != Optimizer::i_label && head->dc.opcode != Optimizer::i_line &&
+            head->dc.opcode != Optimizer::i_inlineasm)
+        {
+            if (head->ans)
+            {
+                ScanForVar(usedSymbols, head->ans->offset);
+                ScanForVar(usedSymbols, head->ans->offset2);
+                ScanForVar(usedSymbols, head->ans->offset3);
+            }
+            if (head->dc.left)
+            {
+                ScanForVar(usedSymbols, head->dc.left->offset);
+                ScanForVar(usedSymbols, head->dc.left->offset2);
+                ScanForVar(usedSymbols, head->dc.left->offset3);
+            }
+            if (head->dc.right)
+            {
+                ScanForVar(usedSymbols, head->dc.right->offset);
+                ScanForVar(usedSymbols, head->dc.right->offset2);
+                ScanForVar(usedSymbols, head->dc.right->offset3);
+            }
+        }
+        head = head->fwd;
+    }
+}
 void XTDumpTab(SYMBOL* funcsp)
 {
+    std::set<Optimizer::SimpleSymbol*> usedSymbols;
+    ScanForAnonymousVars(usedSymbols);
     if (funcsp->sb->xc && funcsp->sb->xc->xctab && Optimizer::cparams.prm_xcept)
     {
         std::list<XCENTRY*> list;
@@ -986,7 +1037,7 @@ void XTDumpTab(SYMBOL* funcsp)
                         }
                     }
                     auto thsym = evalsp(p->exp->v.t.thisptr);
-                    if (thsym && thsym->generated)
+                    if (thsym && usedSymbols.find(thsym) != usedSymbols.end())
                     {
                         Optimizer::genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS : 0));
                         Optimizer::genref(Optimizer::SymbolManager::Get(p->xtSym), 0);
@@ -1004,7 +1055,7 @@ void XTDumpTab(SYMBOL* funcsp)
             {
                 p->used = true;
                 auto thsym = evalsp(p->exp->v.t.thisptr);
-                if (thsym && thsym->generated)
+                if (thsym && usedSymbols.find(thsym) != usedSymbols.end())
                 {
                     Optimizer::genint(XD_CL_PRIMARY | (throughThis(p->exp) ? XD_THIS : 0));
                     Optimizer::genref(Optimizer::SymbolManager::Get(p->xtSym), 0);

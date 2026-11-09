@@ -718,23 +718,58 @@ static void pushStruct(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<SYMBOL*,
             argmap[arg] = exp;
         }
     }
-    else if (exp->type == ExpressionNode::comma_ ||
-             (exp->type == ExpressionNode::stackblock_ && arg->tp->IsStructured() && arg->tp->BaseType()->sp->sb->initializer_list))
+    else if (exp->type == ExpressionNode::comma_ || (exp->type == ExpressionNode::stackblock_ && arg->tp->IsStructured()))
     {
         if (arg->tp->IsStructured() || (arg->tp->IsRef() && arg->tp->BaseType()->btp->IsStructured()))
         {
             EXPRESSION** target;
             if (exp->type == ExpressionNode::stackblock_)
             {
-                // initializer list
-                // get the size out of the initializer list backing stream....
-                auto backing = exp->left->left->right->left->right;
-                auto size = exp->left->left->right->right->right;
-                argmap[arg] = MakeVarPtr(false, arg->tp->size, 1, arg, nullptr);
-                argmap[arg]->v.constexprData.data[0] = MakeVarPtr(false, backing->v.sp->tp->size, 1, arg, nullptr);
-                argmap[arg]->v.constexprData.data[getSize(BasicType::pointer_)] = size;
-                target = argmap[arg]->v.constexprData.data[0]->v.constexprData.data;
-                exp = exp->left->left->left;
+                if (arg->tp->BaseType()->sp->sb->initializer_list)
+                {
+                    // initializer list
+                    if (!exp->left->left && exp->left->type == ExpressionNode::auto_)
+                    {
+                        // check for assignment
+                        auto exp1 = LookupStruct(exp->left);
+                        if (exp1)
+                        {
+                            argmap[arg] = exp1;
+                        }
+                        else
+                        {
+                            // assignment didn't work s omake an empty list...
+                            argmap[arg] = MakeVarPtr(false, arg->tp->size, 1, arg, nullptr);
+                            argmap[arg]->v.constexprData.data[0] =
+                                MakeVarPtr(false, getSize(BasicType::pointer_) * 2, 1, arg, nullptr);
+                            argmap[arg]->v.constexprData.data[getSize(BasicType::pointer_)] = 0;
+                        }
+                        return;
+                    }
+                    // get the size out of the initializer list backing stream....
+                    auto backing = exp->left->left->right->left->right;
+                    auto size = exp->left->left->right->right->right;
+                    argmap[arg] = MakeVarPtr(false, arg->tp->size, 1, arg, nullptr);
+                    argmap[arg]->v.constexprData.data[0] = MakeVarPtr(false, backing->v.sp->tp->size, 1, arg, nullptr);
+                    argmap[arg]->v.constexprData.data[getSize(BasicType::pointer_)] = size;
+                    target = argmap[arg]->v.constexprData.data[0]->v.constexprData.data;
+                    exp = exp->left->left->left;
+                }
+                else
+                {
+                    auto exp1 = exp->left;
+                    argmap[arg] = MakeVarPtr(false, arg->tp->size, 1, arg, nullptr);
+                    if (exp1->type == ExpressionNode::comma_ && exp1->right->type == ExpressionNode::thisref_)
+                    {
+                        exp1 = EvaluateExpression(exp1->right, nullptr, nullptr, false);
+                        if (exp1->type == ExpressionNode::thisref_ && exp1->left->type == ExpressionNode::cvarpointer_)
+                        {
+                            argmap[arg]->v.constexprData.data = exp1->left->v.constexprData.data;
+                            return;
+                        }
+                    }
+                    target = argmap[arg]->v.constexprData.data;
+                }
             }
             else if (arg->tp->IsRef())
             {

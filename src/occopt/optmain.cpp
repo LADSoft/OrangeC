@@ -245,6 +245,9 @@ void Optimize(SimpleSymbol* funcsp)
 
     flows_and_doms();
     gatherLocalInfo(functionVariables);
+    InstructionDefinesSsa.resize(tempCount + 200);
+    BlockDefinesSsa.resize(tempCount + 200);
+    InstructionUsesSsa.resize(tempCount + 200);
     RunOptimizerModules();
     if ((cparams.prm_optimize_for_speed || cparams.prm_optimize_for_size) && !dontOptimizeFunction)
     {

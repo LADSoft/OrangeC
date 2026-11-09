@@ -383,6 +383,7 @@ bool constructedInt(SYMBOL* funcsp)
     placeHolder.Backup();
     return rv;
 }
+int count3;
 void GetTemplateArguments(SYMBOL* funcsp, SYMBOL* templ, std::list<TEMPLATEPARAMPAIR>** lst)
 {
     std::list<TEMPLATEPARAMPAIR>** start = lst;

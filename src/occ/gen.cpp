@@ -2001,46 +2001,24 @@ static void llongatomicmath(e_opcode low, e_opcode high, Optimizer::QUAD* q)
     getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
     getAmodes(q, &opl, q->dc.left, &apll, &aplh);
     getAmodes(q, &opa, q->ans, &apal, &apah);
-    int regflagsa = makeregflags(apal);
     int regflagsl = makeregflags(apll);
-    int regflagsr = makeregflags(aprl);
-    int regflags = regflagsa | regflagsl | regflagsr;
-    bool pushreg1 = false, pushreg2 = false, pushreg3 = false;
-    int reg1 = 0, reg2 = 0, reg3 = 0;
     int used_mask = (1 << EAX) | (1 << EBX) | (1 << ECX) | (1 << EDX);
+    int reg2 = 0;
+    bool pushreg2 = false;
     gen_codes(op_push, ISZ_UINT, makedreg(ECX), nullptr);
-    gen_codes(op_push, ISZ_UINT, makedreg(EBX), nullptr);
-    pushlevel += 8;
-    if (regflagsa & used_mask)
+    pushlevel += 4;
+    if (aprh->mode == am_immed)
     {
-        if (apal->mode != am_dreg)
-        {
-            apal = atomic_lea(apll, apal, regflags | used_mask, reg1, pushreg1);
-            apah = nullptr;
-            used_mask |= 1 << reg1;
-        }
+        gen_codes(op_push, ISZ_UINT, makedreg(EBX), nullptr);
+        pushlevel += 4;
     }
     if (regflagsl & used_mask)
     {
         if (apll->mode != am_dreg)
         {
-            apll = atomic_lea(apll, apll, regflags | used_mask, reg2, pushreg2);
+            apll = atomic_lea(apll, apll, used_mask | (1 >> EBP) | (1 << ESP), reg2, pushreg2);
             aplh = nullptr;
             used_mask |= 1 << reg2;
-        }
-    }
-    if (regflagsr & used_mask)
-    {
-        if (aprl->mode != am_dreg)
-        {
-            aprl = atomic_lea(apll, aprl, regflags | used_mask, reg3, pushreg3);
-            aprh = nullptr;
-            if (!pushreg3)
-            {
-                pushreg3 = true;
-                gen_codes(op_push, ISZ_UINT, makedreg(EBP), nullptr);
-                pushlevel += 4;
-            }
         }
     }
     // out of regs after this
@@ -2107,8 +2085,6 @@ static void llongatomicmath(e_opcode low, e_opcode high, Optimizer::QUAD* q)
         {
             gen_codes(low, ISZ_UINT, makedreg(EAX), make_stack(-8));
             gen_codes(high, ISZ_UINT, makedreg(EDX), make_stack(-12));
-            gen_codes(op_mov, ISZ_UINT, apal, makedreg(EAX));
-            gen_codes(op_mov, ISZ_UINT, apah, makedreg(EDX));
         }
         gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(8));
         pushlevel -= 8;
@@ -2118,55 +2094,46 @@ static void llongatomicmath(e_opcode low, e_opcode high, Optimizer::QUAD* q)
         gen_code_sse(op_movsd, apal, make_stack(0));
         gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(8));
         pushlevel -= 8;
+        gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(8));
+        pushlevel -= 8;
     }
     else
     {
-        gen_codes(op_pop, ISZ_UINT, apal, nullptr);
+        gen_codes(op_pop, ISZ_UINT, makedreg(EAX), nullptr);
         pushlevel -= 4;
-        gen_codes(op_pop, ISZ_UINT, apah, nullptr);
+        gen_codes(op_pop, ISZ_UINT, makedreg(EDX), nullptr);
         pushlevel -= 4;
+        if (aprl->mode == am_dreg)
+        {
+            gen_codes(op_pop, ISZ_UINT, aprl, nullptr);
+            pushlevel -= 4;
+            gen_codes(op_pop, ISZ_UINT, aprh, nullptr);
+            pushlevel -= 4;
+        }
+        else
+        {
+            gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(8));
+            pushlevel -= 8;
+        }
     }
 
-    gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(8));
-    pushlevel -= 8;
     if (q->ans->size == ISZ_DOUBLE)
     {
         gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(8));
         pushlevel -= 8;
     }
-    if (pushreg3)
-    {
-        if (equal_address(apal, makedreg(reg3)) || apah && equal_address(apah, makedreg(reg3)))
-            gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(4));
-        else
-            gen_codes(op_pop, ISZ_UINT, makedreg(reg3), nullptr);
-        pushlevel -= 4;
-    }
     if (pushreg2)
     {
-        if (equal_address(apal, makedreg(reg2)) || apah && equal_address(apah, makedreg(reg2)))
-            gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(4));
-        else
-            gen_codes(op_pop, ISZ_UINT, makedreg(reg2), nullptr);
+        gen_codes(op_pop, ISZ_UINT, makedreg(reg2), nullptr);
         pushlevel -= 4;
     }
-    if (pushreg1)
+    if (aprh->mode == am_immed)
     {
-        if (equal_address(apal, makedreg(reg1)) || apah && equal_address(apah, makedreg(reg1)))
-            gen_codes(op_add, ISZ_UINT, makedreg(ESP), aimmed(4));
-        else
-            gen_codes(op_pop, ISZ_UINT, makedreg(reg1), nullptr);
+        gen_codes(op_pop, ISZ_UINT, makedreg(EBX), nullptr);
         pushlevel -= 4;
     }
-    if (apal->preg != EBX && (!apah || apah->preg != EBX))
-        gen_codes(op_pop, ISZ_UINT, makedreg(EBX), nullptr);
-    else
-        gen_code(op_add, makedreg(ESP), aimmed(4));
-    if (apal->preg != ECX && (!apah || apah->preg != ECX))
-        gen_codes(op_pop, ISZ_UINT, makedreg(ECX), nullptr);
-    else
-        gen_code(op_add, makedreg(ESP), aimmed(4));
-    pushlevel -= 8;
+    gen_codes(op_pop, ISZ_UINT, makedreg(ECX), nullptr);
+    pushlevel -= 4;
 }
 static void logicatomic(e_opcode op, Optimizer::QUAD* q);
 
@@ -2187,16 +2154,8 @@ static void addsubatomic(e_opcode op, Optimizer::QUAD* q)
             int regflags = makeregflags(apll);
             regflags |= makeregflags(apal);
             regflags |= makeregflags(aprl);
-            if (q->ans->size < 0)
-            {
-                if (-q->ans->size < ISZ_USHORT)
-                    regflags |= (1 << ESI) | (1 << EDI);
-            }
-            else
-            {
-                if (q->ans->size < ISZ_USHORT)
-                    regflags |= (1 << ESI) | (1 << EDI);
-            }
+            if (abs(q->ans->size) < ISZ_USHORT)
+                regflags |= (1 << ESI) | (1 << EDI);
             bool pushed = false;
             int reg = getreg(apll, regflags, pushed);
             gen_codes(op_mov, q->ans->size, makedreg(reg), aprl);
@@ -2262,40 +2221,21 @@ static void logicatomic(e_opcode op, Optimizer::QUAD* q)
             int regflagsa = makeregflags(apal);
             int regflagsr = makeregflags(aprl);
             int regflagsl = makeregflags(apll);
-            int reg1 = 0, reg2 = 0, reg3 = 0;
-            bool pushreg1 = false, pushreg2 = false, pushreg3 = false;
-            if (regflagsr & (1 << EAX))
+            int reg2 = 0, reg3 = 0;
+            bool pushreg2 = false, pushreg3 = false;
+            if (apal->liveRegs & (1 << EAX))
             {
-                if (q->ans->size < 0)
-                {
-                    if (-q->ans->size < ISZ_USHORT)
-                        regflagsr |= (1 << ESI) | (1 << EDI);
-                }
-                else
-                {
-                    if (q->ans->size < ISZ_USHORT)
-                        regflagsr |= (1 << ESI) | (1 << EDI);
-                }
-                if (aprl->mode == am_dreg)
-                {
-                    reg1 = getreg(apll, regflagsl | regflagsr, pushreg1);
-                    gen_codes(op_mov, q->ans->size, makedreg(reg1), aprl);
-                    aprl = makedreg(reg1);
-                }
-                else
-                {
-                    aprl = atomic_lea(apll, aprl, regflagsl | regflagsr, reg1, pushreg1);
-                }
-                aprh = nullptr;
-                regflagsr |= 1 << reg1;
+                gen_codes(op_push, ISZ_UINT, makedreg(EAX), nullptr);
+                pushlevel += 4;
             }
             if (regflagsl & (1 << EAX))
             {
-                apll = atomic_lea(apll, apll, regflagsl | regflagsr, reg2, pushreg2);
+                if (abs(q->ans->size < ISZ_USHORT))
+                    regflagsl |= (1 << ESI) | (1 << EDI);
+                apll = atomic_lea(apll, apll, regflagsa | regflagsl | regflagsr, reg2, pushreg2);
                 aplh = nullptr;
                 regflagsl |= 1 << reg2;
             }
-            reg3 = getreg(apal, regflagsl | regflagsr | (1 << EAX), pushreg3);
             gen_codes(op_mov, q->ans->size == ISZ_FLOAT ? ISZ_UINT : q->ans->size, makedreg(EAX), apll);
             if (!q->atomicpostfetch)
             {
@@ -2307,15 +2247,14 @@ static void logicatomic(e_opcode op, Optimizer::QUAD* q)
             {
                 gen_code(op_movd, apal, makedreg(EAX));
                 gen_code(op == op_add ? op_addss : op_subss, apal, aprl);
-                gen_code(op_movd, makedreg(reg3), apal);
             }
             else
             {
-                gen_codes(op_mov, q->ans->size, makedreg(reg3), makedreg(EAX));
-                gen_codes(op, q->ans->size, makedreg(reg3), aprl);
+                gen_codes(op_mov, q->ans->size, apal, makedreg(EAX));
+                gen_codes(op, q->ans->size, apal, aprl);
             }
             apll->length = q->ans->size == ISZ_FLOAT ? ISZ_UINT : q->ans->size;
-            gen_codes(op_cmpxchg, q->ans->size == ISZ_FLOAT ? ISZ_UINT : q->ans->size, apll, makedreg(reg3));
+            gen_codes(op_cmpxchg, q->ans->size == ISZ_FLOAT ? ISZ_UINT : q->ans->size, apll, apal);
             gen_code(op_jne, make_label(lab), NULL);
             if (q->atomicpostfetch)
             {
@@ -2343,19 +2282,14 @@ static void logicatomic(e_opcode op, Optimizer::QUAD* q)
                 }
                 pushlevel -= 4;
             }
-            if (pushreg3)
-            {
-                gen_codes(op_pop, ISZ_UINT, makedreg(reg3), nullptr);
-                pushlevel -= 4;
-            }
             if (pushreg2)
             {
                 gen_codes(op_pop, ISZ_UINT, makedreg(reg2), nullptr);
                 pushlevel -= 4;
             }
-            if (pushreg1)
+            if (apal->liveRegs & (1 << EAX))
             {
-                gen_codes(op_pop, ISZ_UINT, makedreg(reg1), nullptr);
+                gen_codes(op_pop, ISZ_UINT, makedreg(EAX), nullptr);
                 pushlevel -= 4;
             }
         }
@@ -2718,8 +2652,15 @@ void asm_parmblock(Optimizer::QUAD* q) /* push a block of memory */
             }
             apl->mode = am_indisp;
         }
+        else if (ofs->type == Optimizer::se_i || ofs->type == Optimizer::se_ui)
+        {
+            ofs = nullptr;
+            apl->mode == am_immed;
+        }
         else
+        {
             apl->mode = am_direct;
+        }
     }
     if (n <= 24 && (q->dc.left->mode == Optimizer::i_immed ||
                     (q->dc.left->mode == Optimizer::i_direct && q->dc.left->offset->type == Optimizer::se_tempref)))

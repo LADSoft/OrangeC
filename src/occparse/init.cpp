@@ -3608,7 +3608,7 @@ static void initialize_aggregate_type(SYMBOL* funcsp, SYMBOL* base, int offset, 
                                 ++its;
                             if (its != itype->BaseType()->syms->end())
                             {
-                                int ofs = exp1->left->left->left->right->v.i;
+                                int ofs = exp1->left->left->left->right->v.i + offset;
                                 auto exp2 = exp1->left->right;
                                 InsertInitializer(&it, (*its)->tp, exp2, ofs, false);
                                 written = true;

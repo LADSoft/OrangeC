@@ -2803,7 +2803,7 @@ void StatementGenerator::ParseReturn(std::list<FunctionBlock*>& parent)
                         else
                         {
                             // handles pointers as well...
-                            if (!castToArithmeticInternal(false, &tp1, &returnexp, Keyword::plus_, tpx, false))
+                            if (!castToArithmeticInternal(false, &tp1, &returnexp, Keyword::plus_, tpx, true))
                                 err = true;
                         }
                     }

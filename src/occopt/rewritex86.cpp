@@ -310,6 +310,46 @@ void x86PreColor(QUAD* head) /* precolor an instruction */
         colors[ta] = R_EAXEDX;
         head->precolored |= TEMP_ANS;
     }
+    else if (head->atomic && head->ans && abs(head->ans->size) < ISZ_ULONGLONG)
+    {
+        switch (head->dc.opcode)
+        {
+            case i_and:
+            case i_or:
+            case i_eor: {
+                int ta = head->ans->offset->sp->i;
+                precolored[ta] = true;
+                tempInfo[ta]->enode->sp->regmode = 2;
+                colors[ta] = R_ECX;
+                head->precolored |= TEMP_ANS;
+                if (head->dc.right->offset->type == se_tempref)
+                {
+                    int tr = head->dc.right->offset->sp->i;
+                    precolored[tr] = true;
+                    tempInfo[tr]->enode->sp->regmode = 2;
+                    colors[tr] = R_EDX;
+                    head->precolored |= TEMP_RIGHT;
+                }
+                break;
+            }
+        }
+    }
+    else if (head->atomic && head->ans && head->dc.right && abs(head->ans->size) == ISZ_ULONGLONG)
+    {
+        int ta = head->ans->offset->sp->i;
+        precolored[ta] = true;
+        tempInfo[ta]->enode->sp->regmode = 2;
+        colors[ta] = R_EAXEDX;
+        head->precolored |= TEMP_ANS;
+        if (head->dc.right->offset->type == se_tempref)
+        {
+            int tr = head->dc.right->offset->sp->i;
+            precolored[tr] = true;
+            tempInfo[tr]->enode->sp->regmode = 2;
+            colors[tr] = R_ESIEBX;
+            head->precolored |= TEMP_RIGHT;
+        }
+    }
     if (head->dc.opcode != i_inlineasm)
     {
         if (head->ans && head->ans->retval)
@@ -2365,77 +2405,114 @@ static void IterateConflict(int ans, int t, std::set<int>& contains)
 }
 void x86InternalConflict(QUAD* head)
 {
-    switch (head->dc.opcode)
+    if (head->atomic)
     {
-        case i_muluh:
-        case i_mulsh:
-        case i_udiv:
-        case i_sdiv:
-        case i_umod:
-        case i_smod:
-            /* for divs we have to make sure the answer node conflicts with anything
-             * that was used to load the numerator...
-             */
-            if (head->ans->offset && head->ans->offset->type == se_tempref && head->dc.left->offset &&
-                head->dc.left->offset->type == se_tempref)
+        if (head->ans && abs(head->ans->size < ISZ_ULONGLONG))
+        {
+            switch (head->dc.opcode)
             {
-                int t1 = head->ans->offset->sp->i;
-                std::set<int> contains;
-                IterateConflict(t1, head->dc.left->offset->sp->i, contains);
+                case i_and:
+                case i_or:
+                case i_eor: {
+                    int ta = head->ans->offset->sp->i;
+                    int tr = head->dc.right->offset->type == se_tempref ? head->dc.right->offset->sp->i : -1;
+                    if (tr != -1)
+                        insertConflict(ta, tr);
+                    if (head->dc.left->mode == i_ind)
+                    {
+                        if (head->dc.left->offset->type == se_tempref)
+                        {
+                            int tl = head->dc.left->offset->sp->i;
+                            insertConflict(ta, tl);
+                            if (tr != -1)
+                                insertConflict(tr, tl);
+                        }
+                        if (head->dc.left->offset2 && head->dc.left->offset2->type == se_tempref)
+                        {
+                            int tl = head->dc.left->offset2->sp->i;
+                            insertConflict(ta, tl);
+                            if (tr != -1)
+                                insertConflict(tr, tl);
+                        }
+                    }
+                }
             }
-            /* make sure that when regs are allocated, the right- hand argument is in a different
-             * reg than the result.  For shifts this is the count value, for divs this is the denominator
-             */
-            if (head->ans->offset && head->ans->offset->type == se_tempref && head->dc.right->offset &&
-                head->dc.right->offset->type == se_tempref)
-            {
-                int t1 = head->ans->offset->sp->i;
-                int t2 = head->dc.right->offset->sp->i;
-                insertConflict(t1, t2);
-            }
-            break;
-        case i_lsl:
-        case i_lsr:
-        case i_asr:
-            /* make sure that when regs are allocated, the right- hand argument is in a different
-             * reg than the result.  For shifts this is the count value, for divs this is the denominator
-             */
-            if (head->ans->offset && head->ans->offset->type == se_tempref && head->dc.right->offset &&
-                head->dc.right->offset->type == se_tempref)
-            {
-                int t1 = head->ans->offset->sp->i;
-                int t2 = head->dc.right->offset->sp->i;
-                insertConflict(t1, t2);
-            }
-            break;
-        case i_sub:
-            if (head->ans->offset && head->ans->offset->type == se_tempref && head->dc.right->offset &&
-                head->dc.right->offset->type == se_tempref)
-            {
-                // can't do it for long longs in registers on this architecture, due to a dearth of registers...
-                // not doing it for ints in general to ease register pressure
-                // need to do it for floats for this architecture...
-                if (head->ans->size >= ISZ_FLOAT && head->ans->size != ISZ_BITINT)
+        }
+    }
+    else
+    {
+        switch (head->dc.opcode)
+        {
+            case i_muluh:
+            case i_mulsh:
+            case i_udiv:
+            case i_sdiv:
+            case i_umod:
+            case i_smod:
+                /* for divs we have to make sure the answer node conflicts with anything
+                 * that was used to load the numerator...
+                 */
+                if (head->ans->offset && head->ans->offset->type == se_tempref && head->dc.left->offset &&
+                    head->dc.left->offset->type == se_tempref)
+                {
+                    int t1 = head->ans->offset->sp->i;
+                    std::set<int> contains;
+                    IterateConflict(t1, head->dc.left->offset->sp->i, contains);
+                }
+                /* make sure that when regs are allocated, the right- hand argument is in a different
+                 * reg than the result.  For shifts this is the count value, for divs this is the denominator
+                 */
+                if (head->ans->offset && head->ans->offset->type == se_tempref && head->dc.right->offset &&
+                    head->dc.right->offset->type == se_tempref)
                 {
                     int t1 = head->ans->offset->sp->i;
                     int t2 = head->dc.right->offset->sp->i;
                     insertConflict(t1, t2);
                 }
-            }
-            break;
-        case i_assn:
-            if (head->genConflict)
-            {
-                if (head->temps == (TEMP_ANS | TEMP_LEFT))
+                break;
+            case i_lsl:
+            case i_lsr:
+            case i_asr:
+                /* make sure that when regs are allocated, the right- hand argument is in a different
+                 * reg than the result.  For shifts this is the count value, for divs this is the denominator
+                 */
+                if (head->ans->offset && head->ans->offset->type == se_tempref && head->dc.right->offset &&
+                    head->dc.right->offset->type == se_tempref)
                 {
                     int t1 = head->ans->offset->sp->i;
-                    int t2 = head->dc.left->offset->sp->i;
+                    int t2 = head->dc.right->offset->sp->i;
                     insertConflict(t1, t2);
                 }
-            }
-            break;
-        default:
-            break;
+                break;
+            case i_sub:
+                if (head->ans->offset && head->ans->offset->type == se_tempref && head->dc.right->offset &&
+                    head->dc.right->offset->type == se_tempref)
+                {
+                    // can't do it for long longs in registers on this architecture, due to a dearth of registers...
+                    // not doing it for ints in general to ease register pressure
+                    // need to do it for floats for this architecture...
+                    if (head->ans->size >= ISZ_FLOAT && head->ans->size != ISZ_BITINT)
+                    {
+                        int t1 = head->ans->offset->sp->i;
+                        int t2 = head->dc.right->offset->sp->i;
+                        insertConflict(t1, t2);
+                    }
+                }
+                break;
+            case i_assn:
+                if (head->genConflict)
+                {
+                    if (head->temps == (TEMP_ANS | TEMP_LEFT))
+                    {
+                        int t1 = head->ans->offset->sp->i;
+                        int t2 = head->dc.left->offset->sp->i;
+                        insertConflict(t1, t2);
+                    }
+                }
+                break;
+            default:
+                break;
+        }
     }
 }
 }  // namespace Optimizer

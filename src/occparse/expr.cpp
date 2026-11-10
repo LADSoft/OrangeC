@@ -1364,7 +1364,8 @@ static void variableName(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp,
             else
             {
                 funcparams = Allocate<CallSite>();
-                funcparams->nameSpace = nsv->front();
+                if (nsv)
+                    funcparams->nameSpace = nsv->front();
                 *exp = MakeExpression(funcparams);
             }
         }
@@ -3982,7 +3983,7 @@ void AdjustSingleParam(SYMBOL* func, SYMBOL* sym, Argument* p, std::list<Argumen
                     }
                     p->tp = sym->tp;
                 }
-                else if (sym->tp->CompatibleType(p->tp ? p->tp : p->nested->front()->tp))
+                else if ((p->tp || p->nested) && sym->tp->CompatibleType(p->tp ? p->tp : p->nested->front()->tp))
                 {
                     Argument* p1;
                     if (p->tp)
@@ -4903,10 +4904,10 @@ void expression_call(SYMBOL* funcsp, Type** tp, EXPRESSION** exp, int flags, boo
                     }
                 }
             }
+            std::list<Argument*> temp1;
+            std::list<Argument*>* temp2 = &temp1;
             if (!(flags & _F_SIZEOF))
             {
-                std::list<Argument*> temp1;
-                std::list<Argument*>* temp2 = &temp1;
                 if (initializerListType)
                 {
                     if (funcparams->sp->sb->constexpression && (argumentNestingLevel == 0 && !inStaticAssert))

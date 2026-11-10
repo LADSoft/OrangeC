@@ -6,13 +6,13 @@
     <Platform Name="Win32" />
     <Platform Name="x64" />
   </Configurations>
-  <Folder Name="/Assembler/">
-    <Project Path="oasm/oasm.vcxproj" Id="3314a225-370e-4a64-b25c-9be9e7ce1db1" />
-  </Folder>
   <Folder Name="/Compiler/" />
   <Folder Name="/Compiler/Backends/">
     <Project Path="occ/occ.vcxproj" Id="fce76643-5237-4199-a752-d95a85bebb39" />
     <Project Path="occil/occil.vcxproj" Id="658e5d2a-cf60-4da7-8cbc-ad91f998822b" />
+  </Folder>
+  <Folder Name="/Compiler/Backends/Assembler/">
+    <Project Path="oasm/oasm.vcxproj" Id="3314a225-370e-4a64-b25c-9be9e7ce1db1" />
   </Folder>
   <Folder Name="/Compiler/Optimizer/">
     <Project Path="occopt/occopt.vcxproj" Id="3c58e290-51e1-4163-9842-e804e3920be5" />

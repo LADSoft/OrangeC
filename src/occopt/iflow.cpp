@@ -327,7 +327,7 @@ static void WalkFlowgraph(Block* b, int fwd, std::function<int(enum e_fgtype typ
             blockArray[i]->preWalk = blockArray[i]->postWalk = 0;
 
     if (func(F_TREE, nullptr, b))
-        FGWalker(func, b, fwd);
+        FGWalker(std::move(func), b, fwd);
 }
 // have to do this to make the rtti happy in the face of infinite blocks
 static void MoveLabelsToExit(Block* b)

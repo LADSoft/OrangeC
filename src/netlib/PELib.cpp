@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -248,7 +248,7 @@ PELib::eFindType PELib::Find(std::string path, void** result, std::deque<Type*>*
             {
                 found.push_back(dc);
             }
-            else if (n == split.size() - 1 && (typeid(*dc) == typeid(Class) || typeid(*dc) == typeid(Enum)))
+            else if (split.size() && n == split.size() - 1 && (typeid(*dc) == typeid(Class) || typeid(*dc) == typeid(Enum)))
             {
                 for (auto field : dc->Fields())
                 {

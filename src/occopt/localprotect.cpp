@@ -311,15 +311,18 @@ void CreateBufferOverflowStubs(QUAD* head, QUAD* tail)
             auto it = tail;
             while (it && it->dc.opcode != i_epilogue)
                 it = it->back;
-            QUAD* ins = Allocate<QUAD>();
-            ins->dc.opcode = i_parm;
-            ins->dc.left = CreateOverflowTable();
-            InsertInstruction(it->back, ins);
-            ins = Allocate<QUAD>();
-            ins->dc.opcode = i_gosub;
-            ins->dc.left = check;
-            InsertInstruction(it->back, ins);
-            insert_nullparmadj(it->back, 0);
+            if (it)
+            {
+                QUAD* ins = Allocate<QUAD>();
+                ins->dc.opcode = i_parm;
+                ins->dc.left = CreateOverflowTable();
+                InsertInstruction(it->back, ins);
+                ins = Allocate<QUAD>();
+                ins->dc.opcode = i_gosub;
+                ins->dc.left = check;
+                InsertInstruction(it->back, ins);
+                insert_nullparmadj(it->back, 0);
+            }
         }
     }
 }

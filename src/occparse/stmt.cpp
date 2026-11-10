@@ -4099,22 +4099,10 @@ void StatementGenerator::Compound(std::list<FunctionBlock*>& parent, bool first)
     }
     if (before->type == Keyword::switch_)
     {
-        if (st != blockstmt->statements->back())
+        if (blockstmt->statements && st != blockstmt->statements->back())
         {
             /* kinda naive other than this one check for msil... */
             bool toErr = false;
-            // this only checked the last block...
-            /*
-            st = blockstmt->tail;
-            while (st)
-            {
-                if (st->select->type != ExpressionNode::initobj_ && st->type != StatementNode::varstart_)
-                {
-                    toErr = true;
-                }
-                st = st->next;
-            }
-            */
             st = blockstmt->statements->back();
             if (st->select->type != ExpressionNode::initobj_ && st->type != StatementNode::varstart_)
             {

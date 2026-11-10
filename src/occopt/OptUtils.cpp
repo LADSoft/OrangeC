@@ -322,7 +322,6 @@ Optimizer::SimpleExpression* tempenode(void)
     Optimizer::SimpleSymbol* sym;
     char buf[256];
     sym = Allocate<Optimizer::SimpleSymbol>();
-
     sym->storage_class = scc_temp;
     my_sprintf(buf, "$$t%d", tempCount);
     sym->name = sym->outputName = litlate(buf);
@@ -712,6 +711,7 @@ void my_sprintf(char* dest, int len, const char* fmt, ...)
             }
         }
     }
+    va_end(aa);
 }
 
 void cacheTempSymbol(Optimizer::SimpleSymbol* sym)

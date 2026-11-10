@@ -71,7 +71,7 @@ struct FileDeleter
         }
     }
 };
-std::tuple<std::vector<embeder_type>, EmbedReturnValue> embeder::EmbedFile(std::string& input, embeder_info info)
+std::tuple<std::vector<embeder_type>, EmbedReturnValue> embeder::EmbedFile(std::string& input, embeder_info& info)
 {
     std::vector<uintmax_t> next_thing = {};
     std::vector<embeder_type> builder = {};
@@ -134,7 +134,7 @@ std::tuple<std::vector<embeder_type>, EmbedReturnValue> embeder::EmbedFile(std::
         {
             embed_elements(builder);
         }
-        return std::tuple<std::vector<embeder_type>, EmbedReturnValue>{builder, has_embed(std::move(info))};
+        return std::tuple<std::vector<embeder_type>, EmbedReturnValue>{builder, has_embed(info)};
     }
     else if (fil != "" && (info.limit == 0 || size == 0))
     {
@@ -147,12 +147,12 @@ std::tuple<std::vector<embeder_type>, EmbedReturnValue> embeder::EmbedFile(std::
         {
             embed_elements(builder);
         }
-        return std::tuple<std::vector<embeder_type>, EmbedReturnValue>{builder, has_embed(std::move(info))};
+        return std::tuple<std::vector<embeder_type>, EmbedReturnValue>{builder, has_embed(info)};
     }
-    return std::tuple<std::vector<embeder_type>, EmbedReturnValue>{builder, has_embed(std::move(info))};
+    return std::tuple<std::vector<embeder_type>, EmbedReturnValue>{builder, has_embed(info)};
 }
 
-EmbedReturnValue embeder::has_embed(embeder_info info, bool throw_error)
+EmbedReturnValue embeder::has_embed(embeder_info& info, bool throw_error)
 {
     int discard;
     bool is_system = info.is_system;
@@ -219,7 +219,7 @@ bool embeder::Check(kw token, std::string& args)
     {
         // comment to check line info
         embeder_info info = GetEmbedFromLine(args);
-        auto return_val = EmbedFile(args, std::move(info));
+        auto return_val = EmbedFile(args, info);
         auto& vec = std::get<0>(return_val);
         auto ret = std::get<1>(return_val);
         if (ret == EmbedReturnValue::EMBED_NOT_FOUND)
@@ -291,6 +291,7 @@ embeder_info embeder::GetEmbedFromLine(const std::string& line)
     bool system_file = false;
     info.suffix = std::vector<embeder_type>();
     info.prefix = std::vector<embeder_type>();
+    info.mapped_values = {};
     std::string int_line = line;
     definer.Process(int_line);
     info.filename = this->includer.ParseName(int_line, info.is_system);

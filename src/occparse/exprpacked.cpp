@@ -869,9 +869,9 @@ void ExpandPackedConstructorInitializers(SYMBOL* cls, SYMBOL* funcsp, std::list<
                     {
                         SYMBOL* sym = makeID(StorageClass::member_, mi->sp->tp, nullptr, mi->sp->name);
                         CallSite shim;
+                        shim.arguments = nullptr;
                         mi->sp = sym;
                         ParseOnStream(mi->initData, [&]() {
-                            shim.arguments = nullptr;
                             GetConstructorInitializers(funcsp, &shim, MATCHKW(Keyword::openpa_) ? Keyword::closepa_ : Keyword::end_,
                                                        false);
                         });
@@ -1204,7 +1204,7 @@ std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPA
         }
         for (i = 0; i < n; i++)
         {
-            Type* tp;
+            Type* tp = nullptr;
             start.Replay([&]() {
                 SetPackIndex(i);
                 tp = TypeGenerator::TypeId(funcsp, StorageClass::parameter_, false, true, false);
@@ -1239,7 +1239,7 @@ std::list<TEMPLATEPARAMPAIR>** ExpandTemplateArguments(std::list<TEMPLATEPARAMPA
     isExpandingParams--;
     PopPackIndex();
     // make it packed again...   we aren't flattening at this point.
-    if (select->front().second->packed)
+    if (select && select->front().second->packed)
     {
         TEMPLATEPARAMPAIR next;
         next.second = Allocate<TEMPLATEPARAM>();
@@ -1342,16 +1342,19 @@ void ExpandTemplateArguments(std::list<TEMPLATEPARAMPAIR>** lst, LexemeStreamPos
                 list->back().second->byNonType.tp = *tp;
             }
         }
-        if (!*lst)
-            *lst = templateParamPairListFactory.CreateList();
-        (*lst)->push_back(TEMPLATEPARAMPAIR{name, Allocate<TEMPLATEPARAM>()});
-        (*lst)->back().second->type = TplType::int_;
-        (*lst)->back().second->packed = true;
-        (*lst)->back().second->byPack.pack = list;
-        (*lst)->back().second->resolved = true;
-        (*lst)->back().second->byNonType.tp = *tp;
-        if (first)
-            (*lst)->back().first = first;
+        if (tp)
+        {
+            if (!*lst)
+                *lst = templateParamPairListFactory.CreateList();
+            (*lst)->push_back(TEMPLATEPARAMPAIR{name, Allocate<TEMPLATEPARAM>()});
+            (*lst)->back().second->type = TplType::int_;
+            (*lst)->back().second->packed = true;
+            (*lst)->back().second->byPack.pack = list;
+            (*lst)->back().second->resolved = true;
+            (*lst)->back().second->byNonType.tp = *tp;
+            if (first)
+                (*lst)->back().first = first;
+        }
     }
     inStaticAssert = oldStaticAssert;
     isExpandingParams--;

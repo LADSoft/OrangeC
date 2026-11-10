@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -854,7 +854,7 @@ void AsmFile::PublicDirective()
         {
             name = UTF8::ToUpper(name);
         }
-        globals.insert(name);
+        globals.insert(std::move(name));
     } while (GetKeyword() == kw::comma);
 }
 void AsmFile::InsertExtern(const std::string& name1)

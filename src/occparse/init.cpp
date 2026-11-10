@@ -2670,7 +2670,7 @@ static void sort_aggregate_initializers(std::list<Initializer*>* data)
     if (!inorder)
         data->sort(ascomp);
     int offset = -1;
-    std::list<Initializer*>::iterator itlast;
+    std::list<Initializer*>::iterator itlast = data->begin();
     /* trim duplicates - highest tag value indicated for a given offset/startbit pair wins */
     for (auto it = data->begin(); it != data->end();)
     {
@@ -4096,7 +4096,7 @@ static void initialize_aggregate_type(SYMBOL* funcsp, SYMBOL* base, int offset, 
         while (btp->IsArray())
             btp = btp->BaseType()->btp;
         btp = btp->BaseType();
-        if (btp->IsStructured() && !btp->sp->sb->trivialCons)
+        if (btp->IsStructured() && !btp->sp->sb->trivialCons && init && *init)
         {
             int s = (btp->size);
             std::list<Initializer*>::iterator test = (*init)->begin();

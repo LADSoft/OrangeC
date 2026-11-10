@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -83,7 +83,7 @@ static void InsertFile(std::list<std::string>& target, const std::string& name, 
             if (p)
                 Utils::StrCpy(outFileName, p + 1);
             Utils::StripExt(outFileName);
-            if (sizeof(outFileName) - 1 - strlen(outFileName) >= strlen(ext))
+            if (sizeof(outFileName) - 1 - strlen(outFileName) >= strlen(ext) + 1)
                 Utils::AddExt(outFileName, ext);
         }
     }

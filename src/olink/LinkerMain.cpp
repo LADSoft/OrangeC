@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -372,9 +372,18 @@ int LinkerMain::Run(int argc, char** argv)
     char* lpath = getenv("LIBRARY_PATH");
     if (lpath)
     {
-        if (!LibPath.GetValue().empty())
-            LibPath += ";";
-        LibPath += lpath;
+        if (strlen(lpath) < 260)
+        {
+            int i;
+            for (i = 0; lpath[i] && lpath[i] > 0; i++)
+                ;
+            if (!lpath[i])
+            {
+                if (!LibPath.GetValue().empty())
+                    LibPath += ";";
+                LibPath += lpath;
+            }
+        }
     }
     LinkManager linker(SpecFileContents(specificationFile), CaseSensitive.GetValue(), outputFile,
                        !RelFile.GetValue() && !TargetConfig.GetRelFile(), TargetConfig.GetDebugPassThrough(), debugFile,

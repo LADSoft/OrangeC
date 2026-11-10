@@ -490,8 +490,10 @@ Optimizer::SimpleSymbol* Optimizer::SymbolManager::Make(struct Parser::sym* sym)
     rv->templateLevel = sym->sb->templateLevel;
     rv->hasParams = sym->sb->paramsize != 0;
     rv->isstructured = sym->tp->IsStructured();
-    rv->anonymous = sym->sb->anonymous;
-    rv->anonymous = sym->sb->compilerDeclared;
+    // the original implementation of these were broken...   when i tried fixing it
+    // all sorts of things went wrong..
+    rv->anonymous = false;         // sym->sb->anonymous;
+    rv->compilerDeclared = false;  // sym->sb->compilerDeclared;
     rv->allocate = sym->sb->allocate;
     rv->thisPtr = sym->sb->thisPtr;
     rv->stackblock = sym->sb->stackblock;

@@ -38,9 +38,9 @@ class embeder
   public:
     using embeder_func = void(std::vector<embeder_type>&);
     embeder(ppInclude& includer, ppDefine& definer) : includer(includer), definer(definer) {}
-    std::tuple<std::vector<embeder_type>, EmbedReturnValue> EmbedFile(std::string& input, embeder_info info);
+    std::tuple<std::vector<embeder_type>, EmbedReturnValue> EmbedFile(std::string& input, embeder_info& info);
     // Deal with the possibility of having more than 1 byte (AKA optoinal extensions) now so that it is easier to deal with later
-    EmbedReturnValue has_embed(embeder_info info, bool throw_error = false);
+    EmbedReturnValue has_embed(embeder_info& info, bool throw_error = false);
     void set_embed_function(std::function<embeder_func> embed_func) { embed_elements = embed_func; }
     bool Check(kw token, std::string& args);
     bool GetLine(std::string& line, int& lineno);

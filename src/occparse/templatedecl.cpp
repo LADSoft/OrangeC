@@ -1534,12 +1534,15 @@ static void TemplateHeader(SYMBOL* funcsp, std::list<TEMPLATEPARAMPAIR>* args)
         {
             if (MATCHKW(Keyword::gt_) || MATCHKW(Keyword::rightshift_))
                 break;
-            args->push_back(TEMPLATEPARAMPAIR{nullptr, Allocate<TEMPLATEPARAM>()});
-            TemplateArg(funcsp, args->back(), &lst, true);
-            if (args && !added)
+            if (args)
             {
-                added = args;
-                enclosingDeclarations.Add(added);
+                args->push_back(TEMPLATEPARAMPAIR{nullptr, Allocate<TEMPLATEPARAM>()});
+                TemplateArg(funcsp, args->back(), &lst, true);
+                if (!added)
+                {
+                    added = args;
+                    enclosingDeclarations.Add(added);
+                }
             }
             if (!MATCHKW(Keyword::comma_))
                 break;

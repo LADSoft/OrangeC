@@ -2296,7 +2296,7 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                     }
                     break;
                     case TplType::int_: {
-                        Type* tp1;
+                        Type* tp1 = nullptr;
                         EXPRESSION* exp1 = nullptr;
                         if (itDest->second->byNonType.txttype)
                         {
@@ -2314,6 +2314,11 @@ bool TemplateParseDefaultArgs(SYMBOL* declareSym, std::list<TEMPLATEPARAMPAIR>* 
                                 openStructs = oldOpenStructs;
                                 structLevel = oldStructLevel;
                             });
+                            if (!tp1)
+                            {
+                                failed = true;
+                                return;
+                            }
                             //                            start;
                             Type* tp2 = tp1;
                             while (tp2->IsPtr())
@@ -3080,7 +3085,7 @@ void TransferClassTemplates(std::list<TEMPLATEPARAMPAIR>* dflt, std::list<TEMPLA
              itval->second->byClass.dflt && itval->second->byClass.val &&
              itval->second->byClass.dflt->type == BasicType::templateparam_)
     {
-        if (!params->front().second->byClass.val && params->front().second->type == TplType::typename_)
+        if (params && !params->front().second->byClass.val && params->front().second->type == TplType::typename_)
             params->front().second->byClass.val = itval->second->byClass.val;
     }
     else if (itval != val->end() && !itval->second->packed && itval->second->type == TplType::int_ &&
@@ -5477,7 +5482,8 @@ static Type* SpecifyArgType(SYMBOL* sym, Type* tp, TEMPLATEPARAM* tpt, std::list
                     {
                         ita->second->byClass.dflt = ita->second->byClass.val;
                     }
-                    ++ita;
+                    if (ita != itea)
+                        ++ita;
                     if (ita == itea && !tas.empty())
                     {
                         itea = tas.top();

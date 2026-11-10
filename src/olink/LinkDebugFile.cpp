@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -724,8 +724,8 @@ bool LinkDebugFile::WriteAutosTable()
                             currentLine = tag->GetLineNo();
                             break;
                         case ObjDebugTag::eVar:
-
-                            currentContext->vars[tag->GetSymbol()] = currentLine;
+                            if (currentContext)
+                                currentContext->vars[tag->GetSymbol()] = currentLine;
                             break;
                         case ObjDebugTag::eVirtualFunctionStart: {
                             ObjSection* func = tag->GetSection();
@@ -747,7 +747,6 @@ bool LinkDebugFile::WriteAutosTable()
                             }
                             // fallthrough
                         case ObjDebugTag::eBlockStart:
-
                             contexts.push_back(std::move(currentContext));
                             currentContext = std::make_unique<context>();
                             currentContext->startLine = currentContext->currentLine = currentLine;
@@ -757,23 +756,26 @@ bool LinkDebugFile::WriteAutosTable()
                         case ObjDebugTag::eFunctionEnd: {
                             // currentLine could be null for example for the dynamic sections that aren't related to normal code
                             // gen...
-                            int end = currentLine ? currentLine->GetLineNumber() : 0;
-                            // this next line is a safety, used to use start line
-                            int fileId = currentLine ? currentLine->GetFile()->GetIndex() : 0;
-                            for (auto obj : currentContext->vars)
+                            if (currentContext)
                             {
-                                ObjSymbol* s = obj.first;
-                                int startLine = obj.second->GetLineNumber();
-                                v.push_back(autoMap[s->GetIndex()]);
-                                v.push_back(GetTypeIndex(s->GetBaseType()));
-                                v.push_back(funcId);
-                                v.push_back(fileId);
-                                v.push_back(s->GetOffset()->EvalNoModify(0));
-                                v.push_back(startLine);
-                                v.push_back(end);
+                                int end = currentLine ? currentLine->GetLineNumber() : 0;
+                                // this next line is a safety, used to use start line
+                                int fileId = currentLine ? currentLine->GetFile()->GetIndex() : 0;
+                                for (auto obj : currentContext->vars)
+                                {
+                                    ObjSymbol* s = obj.first;
+                                    int startLine = obj.second->GetLineNumber();
+                                    v.push_back(autoMap[s->GetIndex()]);
+                                    v.push_back(GetTypeIndex(s->GetBaseType()));
+                                    v.push_back(funcId);
+                                    v.push_back(fileId);
+                                    v.push_back(s->GetOffset()->EvalNoModify(0));
+                                    v.push_back(startLine);
+                                    v.push_back(end);
+                                }
+                                currentContext.reset(contexts.back().release());
+                                contexts.pop_back();
                             }
-                            currentContext.reset(contexts.back().release());
-                            contexts.pop_back();
                             break;
                         }
                         default:

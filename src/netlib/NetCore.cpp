@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -304,7 +304,6 @@ std::string NetCore::LookupDir(std::string path, int version)
     {
         return path + DIR_SEP + char_t_to_string(last.c_str());
     }
-    return "";
 }
 
 bool NetCore::LoadAssembly(AssemblyDef* assembly, std::string assemblyName, int major, int minor, int build, int revision,

@@ -433,6 +433,8 @@ void MakeMain::ShowRule(RuleList* ruleList)
 }
 void MakeMain::ShowDatabase()
 {
+    std::ios oldState(nullptr);
+    oldState.copyfmt(std::cout);
     std::cout << "Variables:" << std::endl;
     for (auto& var : *VariableContainer::Instance())
     {
@@ -453,7 +455,7 @@ void MakeMain::ShowDatabase()
     {
         ShowRule((*it).get());
     }
-    std::cout.clear();
+    std::cout.copyfmt(oldState);
 }
 void MakeMain::SetTreePath(std::string& files)
 {

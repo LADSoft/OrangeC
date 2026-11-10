@@ -556,7 +556,6 @@ void unmarkPreSSA(QUAD* ins)
 {
     if ((ins->temps & TEMP_ANS) && ins->ans->mode == i_direct)
     {
-        InstructionUsesSsa[ins->ans->offset->sp->i];
         tempInfo[ins->ans->offset->sp->i]->preSSATemp = -1;
         for (auto uses : InstructionUsesSsa[ins->ans->offset->sp->i])
         {

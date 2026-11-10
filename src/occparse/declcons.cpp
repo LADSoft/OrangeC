@@ -3094,14 +3094,15 @@ bool CallConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
                     }
                 }
             }
-            if (initializerListType && (!params->arguments->front()->tp || !params->arguments->front()->tp->IsStructured() ||
-                                        !params->arguments->front()->tp->BaseType()->sp->sb->initializer_list))
+            if (initializerListType && params->arguments &&
+                (!params->arguments->front()->tp || !params->arguments->front()->tp->IsStructured() ||
+                 !params->arguments->front()->tp->BaseType()->sp->sb->initializer_list))
             {
                 std::list<Argument*>* old = params->arguments;
                 std::list<Argument*> temp;
                 std::list<Argument*>* temp2 = &temp;
 
-                if (params->arguments && params->arguments->size())
+                if (params->arguments->size())
                 {
                     if (params->arguments->front()->nested && params->arguments->front()->nested->size() &&
                         params->arguments->front()->nested->front()->nested && !params->arguments->front()->initializer_list)
@@ -3109,7 +3110,7 @@ bool CallConstructor(Type** tp, EXPRESSION** exp, CallSite* params, bool checkco
                     else
                         temp = *params->arguments;
                 }
-                if (!params->arguments->front()->initializer_list)
+                if (params->arguments && !params->arguments->front()->initializer_list)
                 {
                     if (params->arguments->front()->nested)
                         temp = *params->arguments->front()->nested;

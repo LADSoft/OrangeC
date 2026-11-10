@@ -4240,9 +4240,12 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                 }
                                 if (lsit != lsite)
                                     sym = (*lsit).str;
-                                if (!sym->sb->friends)
-                                    sym->sb->friends = symListFactory.CreateList();
-                                sym->sb->friends->push_front(sp);
+                                if (sym)
+                                {
+                                    if (!sym->sb->friends)
+                                        sym->sb->friends = symListFactory.CreateList();
+                                    sym->sb->friends->push_front(sp);
+                                }
                             }
                         }
                         if (!ismember(sp) && !sp->sb->constexpression && !istype(sp))

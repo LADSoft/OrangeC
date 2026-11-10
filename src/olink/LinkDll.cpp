@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -133,12 +133,12 @@ std::unique_ptr<LinkLibrary> LinkDll::LoadLibrary(bool isstdcall)
                 {
                     if (!rv->Load())
                     {
-                        rv.release();
+                        rv.reset();
                     }
                 }
                 else
                 {
-                    rv.release();
+                    rv.reset();
                 }
             }
         }

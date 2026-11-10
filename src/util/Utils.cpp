@@ -254,7 +254,7 @@ bool Utils::HasLocalExe(const std::string& exeName)
     else
         p = buf;
     *p = 0;
-    strcat(p, exeName.c_str());
+    StrCat(p, sizeof(buf) - (p - buf), exeName.c_str());
 #ifdef WIN32
     strcat(p, ".exe");
 #endif

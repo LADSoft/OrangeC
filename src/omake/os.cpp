@@ -160,7 +160,7 @@ static std::string TranslateUnixShellForMsys2(Variable* v)
         OrangeC::Utils::BasicLogger::extremedebug("Translated unix shell to ", rv);
         return rv;
     }
-    return v ? v->GetValue() : "";
+    return "";
 }
 std::string OS::LookupShellNames()
 {

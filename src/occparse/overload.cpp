@@ -4459,7 +4459,7 @@ static bool IsMove(SYMBOL* sp)
         auto thisPtr = it != itend ? *it : nullptr;
         if (thisPtr && thisPtr->sb->thisPtr)
             ++it;
-        if (it != itend && thisPtr->sb->thisPtr)
+        if (it != itend && thisPtr && thisPtr->sb->thisPtr)
         {
             if ((*it)->tp->BaseType()->type == BasicType::rref_)
             {
@@ -4953,7 +4953,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
         if (!Optimizer::cparams.prm_cplusplus && ((Optimizer::architecture != ARCHITECTURE_MSIL) ||
                                                   !Optimizer::cparams.msilAllowExtensions || (sp && sp->tp->syms->size() == 1)))
         {
-            if (sp->tp->syms->begin() != sp->tp->syms->end())
+            if (sp && sp->tp->syms->begin() != sp->tp->syms->end())
             {
                 sp = *sp->tp->syms->begin();
                 *exp = MakeExpression(ExpressionNode::pc_, sp);
@@ -5042,7 +5042,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                 *tp = candidate->tp;
                 return candidate;
             }
-            else if (args->arguments)
+            else if (args && args->arguments)
             {
                 for (auto a : *args->arguments)
                     if (a->tp && a->tp->type == BasicType::aggregate_)

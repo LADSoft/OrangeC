@@ -177,7 +177,8 @@ struct ARCH_REGDESC
 
 struct ARCH_REGCLASS
 {
-    ARCH_REGCLASS(ARCH_REGCLASS* Next, std::initializer_list<int> Regs, int adjust = 0) : next(Next), regs(Regs)
+    ARCH_REGCLASS(ARCH_REGCLASS* Next, std::initializer_list<int> Regs, int adjust = 0) :
+        next(Next), regs(Regs), vertex(0), index(0)
     {
         regCount[0] = Regs.size() + adjust;
         regCount[1] = Regs.size();

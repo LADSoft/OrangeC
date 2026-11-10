@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -393,7 +393,7 @@ bool ppMacro::HandleRotate(std::string& line)
         {
             n %= p->args.size();
         }
-        if (n != 0)
+        if (n > 0)
         {
             reverse(p->args, 0, n);
             reverse(p->args, n, p->args.size() - n);

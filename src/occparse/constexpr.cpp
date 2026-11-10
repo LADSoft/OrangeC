@@ -1051,6 +1051,7 @@ static bool HandleAssign(EXPRESSION* exp, EXPRESSION* ths, EXPRESSION* retblk)
 static bool HandleLoad(EXPRESSION* exp, EXPRESSION* ths, EXPRESSION* retblk)
 {
     EXPRESSION* rv = nullptr;
+    EXPRESSION temp, *temp1;
     if (IsLValue(exp))
     {
         auto exp3 = exp;
@@ -1133,7 +1134,8 @@ static bool HandleLoad(EXPRESSION* exp, EXPRESSION* ths, EXPRESSION* retblk)
         else if (exp->type == ExpressionNode::callsite_)
         {
             auto func = Allocate<CallSite>();
-            EXPRESSION temp = *exp, *temp1 = &temp;
+            temp = *exp;
+            temp1 = &temp;
             *func = *exp->v.func;
             temp1->v.func = func;
             std::list<Argument*>* argslst = func->arguments;

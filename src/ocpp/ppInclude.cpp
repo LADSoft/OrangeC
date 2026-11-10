@@ -124,7 +124,7 @@ void ppInclude::EnterGccSystemHeader()
 #ifdef TARGET_OS_WINDOWS
         std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 #endif
-        gccSystemHeaders.insert(name);
+        gccSystemHeaders.insert(std::move(name));
     }
 }
 bool ppInclude::CheckLine(kw token, const std::string& args)

@@ -73,7 +73,7 @@
 #include "staticassert.h"
 #include "casts.h"
 #include "attribs.h"
-#include "utils.h"
+#include "Utils.h"
 // there is a bug where the compiler needs constant values for the memory order,
 // but parsed code may not provide it directly.
 // e.g. when an atomic primitive is called from inside a function.

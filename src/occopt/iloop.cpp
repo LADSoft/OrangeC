@@ -883,7 +883,12 @@ static void StrongRegions(TestableList<int>& strongStack, std::unordered_set<int
         PHIDATA* pd = head->dc.v.phi;
         if (candidates.find(pd->T0) != candidates.end() && abs(tempInfo[pd->T0]->size) <= chosenAssembler->arch->compatibleIntSize)
         {
-            StrongRegiondfs(strongStack, strongTemps, pd->T0, max_dfs);
+            // this intermediate variable strong region shouldn't be there, instead the higher level could should filter on the phi
+            // node anchors. but this is the way the code was originally written and i can't retest right now, so...
+            std::list<std::list<int>> strongRegion;
+            StrongRegiondfs(strongStack, strongRegion, pd->T0, max_dfs);
+            if (strongRegion.size())
+                strongTemps.push_front(strongRegion.front());
         }
         head = head->fwd;
     }

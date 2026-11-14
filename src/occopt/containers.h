@@ -35,12 +35,12 @@ class FastBitSet
 {
   public:
     typedef unsigned StoreType;
-    static const int BitIntSize = sizeof(StoreType) * CHAR_BIT;
+    static const unsigned BitIntSize = sizeof(StoreType) * CHAR_BIT;
 
     void init()
     {
         data = nullptr;
-        capacity = 8;
+        capacity = 0;
         elems = 0;
     }
     void destroy() { delete[] data; }
@@ -63,19 +63,19 @@ class FastBitSet
         other.elems = 0;
         return *this;
     }
-    inline void setbit(int n)
+    inline void setbit(unsigned n)
     {
         auto index = n / BitIntSize;
         auto mask = 1 << (n % BitIntSize);
         data[index] |= mask;
     }
-    inline void clrbit(int n)
+    inline void clrbit(unsigned n)
     {
         auto index = n / BitIntSize;
         auto mask = 1 << (n % BitIntSize);
         data[index] &= ~mask;
     }
-    inline bool isset(int n)
+    inline bool isset(unsigned n)
     {
         if (!data)
             return false;
@@ -85,7 +85,7 @@ class FastBitSet
     }
     void union_from(const FastBitSet& added)
     {
-        int bitints = elems;
+        unsigned bitints = elems;
         if (added.elems < elems)
             bitints = added.elems;
         bitints += BitIntSize - 1;
@@ -95,7 +95,7 @@ class FastBitSet
     }
     FastBitSet& dounion(const FastBitSet& added, FastBitSet& dest)
     {
-        int bitints = elems;
+        unsigned bitints = elems;
         if (added.elems < elems)
             bitints = added.elems;
         dest.resize(bitints);
@@ -107,7 +107,7 @@ class FastBitSet
     }
     FastBitSet& dointersect(const FastBitSet& added, FastBitSet& dest)
     {
-        int bitints = elems;
+        unsigned bitints = elems;
         if (added.elems < elems)
             bitints = added.elems;
         dest.resize(bitints);
@@ -119,7 +119,7 @@ class FastBitSet
     }
     FastBitSet& doinvert(FastBitSet& dest)
     {
-        int bitints = elems;
+        unsigned bitints = elems;
         dest.resize(bitints);
         bitints += BitIntSize - 1;
         bitints /= BitIntSize;
@@ -128,15 +128,13 @@ class FastBitSet
         return dest;
     }
     void clear() { clear(0, elems); }
-    void resize(int n)
+    void resize(unsigned n)
     {
-        if (n == 0)
-            n = 1;
         int requested = n;
         n = (n + BitIntSize - 1) / BitIntSize * BitIntSize;
-        if (n <= capacity && data != nullptr)
+        if (n <= capacity)
         {
-            clear(requested, elems);
+            clear(elems, requested);
             elems = requested;
         }
         else
@@ -158,7 +156,7 @@ class FastBitSet
     {
         if (elems != other.elems)
             return false;
-        int bitints = elems / BitIntSize;
+        unsigned bitints = elems / BitIntSize;
         for (int i = 0; i < bitints; i++)
             if (data[i] != other.data[i])
                 return false;
@@ -291,7 +289,7 @@ class SimpleBitSet : public FastBitSet
 {
   public:
     SimpleBitSet() { init(); }
-    SimpleBitSet(int n)
+    SimpleBitSet(unsigned n)
     {
         init();
         resize(n);

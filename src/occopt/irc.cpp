@@ -2372,7 +2372,7 @@ void AllocateRegisters(QUAD* head)
         spillWorkList.clear();
         spilledNodes.clear();
         coalescedNodes.clear();
-        coalescedNodes.resize(tempCount + 200);
+        coalescedNodes.resize(tempCount + 5000);
         adjacent.clear();
         adjacent1.clear();
         stackedTemps.clear();

@@ -31,7 +31,7 @@ namespace Parser
 extern int argumentNestingLevel;
 extern int assigningRHS;
 
-extern std::list<SYMBOL*> importThunks;
+extern std::vector<SYMBOL*> importThunks;
 extern int adjustingParams;
 extern std::list<StringData*> strtab;
 

@@ -2839,8 +2839,12 @@ void makeArrayConsDest(Type** tp, EXPRESSION** exp, SYMBOL* cons, SYMBOL* dest, 
     params->arguments->push_back(arg4);
 
     if (econs)
+    {
         thunkForImportTable(&econs);
+        Optimizer::SymbolManager::Get(econs->v.sp)->functionUsed = true;
+    }
     thunkForImportTable(&edest);
+    Optimizer::SymbolManager::Get(edest->v.sp)->functionUsed = true;
     arg0->exp = *exp;
     arg0->tp = &stdpointer;
     arg1->exp = econs ? econs : MakeIntExpression(ExpressionNode::c_i_, 0);

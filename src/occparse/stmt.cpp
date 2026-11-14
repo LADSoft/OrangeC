@@ -4931,6 +4931,8 @@ void StatementGenerator::GenerateDeferredFunctions()
         }
     }
 }
+void StatementGenerator::Generate(SYMBOL* sym) { generations.push_back(sym); }
+
 void StatementGenerator::BodyGen()
 {
     if (funcsp->sb->inlineFunc.stmt)

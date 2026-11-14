@@ -307,9 +307,33 @@ void dumpImportThunks(void)
     {
         for (auto sym : importThunks)
         {
-            Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), Optimizer::vt_code);
-            Optimizer::gen_importThunk(Optimizer::SymbolManager::Get((sym)->sb->mainsym));
-            Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
+            if (Optimizer::SymbolManager::Get(sym)->functionUsed)
+            {
+                if (sym->sb->mainsym->sb->attribs.inheritable.excludeFromExplicitInstantiation)
+                {
+                    bodyTokenStreams.set(sym, bodyTokenStreams.get(sym->sb->mainsym));
+                    sym->sb->inlineFunc = sym->sb->mainsym->sb->inlineFunc;
+                    sym->tp = sym->sb->mainsym->tp;
+                    StatementGenerator sg(sym);
+                    if (sg.CompileFunctionFromStream(true, true))
+                    {
+                        sg.Generate(sym);
+                        // cancel the external
+                        Optimizer::SymbolManager::Get(sym->sb->mainsym)->generated = true;
+                    }
+                }
+                else
+                {
+                    Optimizer::gen_virtual(Optimizer::SymbolManager::Get(sym), Optimizer::vt_code);
+                    Optimizer::gen_importThunk(Optimizer::SymbolManager::Get((sym)->sb->mainsym));
+                    Optimizer::gen_endvirtual(Optimizer::SymbolManager::Get(sym));
+                }
+            }
+            else
+            {
+                // cancel the external
+                Optimizer::SymbolManager::Get(sym->sb->mainsym)->generated = true;
+            }
         }
     }
 }

@@ -292,6 +292,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, Type* tp, int flags)
             {
                 EXPRESSION* exp = MakeExpression(ExpressionNode::pc_, sym);
                 thunkForImportTable(&exp);
+                Optimizer::SymbolManager::Get(exp->v.sp)->functionUsed = true;
                 sym = exp->v.sp;
             }
         }
@@ -302,6 +303,7 @@ static void RTTIDumpHeader(SYMBOL* xtSym, Type* tp, int flags)
     Optimizer::gen_virtual(Optimizer::SymbolManager::Get(xtSym), Optimizer::vt_code);
     if (sym)
     {
+        Optimizer::SymbolManager::Get(sym)->functionUsed = true;
         Optimizer::genref(Optimizer::SymbolManager::Get(sym), 0);
     }
     else

@@ -2698,8 +2698,7 @@ Optimizer::IMODE* gen_funccall(SYMBOL* funcsp, EXPRESSION* node, int flags)
             f->sp->sb->cantInline = true;
         }
     }
-    if (f->sp->tp->IsFunction())
-        Optimizer::SymbolManager::Get(f->sp)->functionUsed = true;
+    Optimizer::SymbolManager::Get(f->sp)->functionUsed = true;
     if ((Optimizer::architecture == ARCHITECTURE_MSIL) &&
         (f->sp->sb->attribs.inheritable.linkage2 != Linkage::unmanaged_ && msilManaged(f->sp)))
         managed = true;
@@ -3846,6 +3845,11 @@ Optimizer::IMODE* gen_expr(SYMBOL* funcsp, EXPRESSION* node, int flags, int size
             if (node->type == ExpressionNode::pc_ || node->type == ExpressionNode::global_ ||
                 node->type == ExpressionNode::absolute_)
             {
+                if (sym->importThunk)
+                {
+                    sym->functionUsed = true;
+                }
+
                 Optimizer::EnterExternal(sym);
                 if (sym->vtabSym)
                 {

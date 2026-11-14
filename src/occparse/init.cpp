@@ -1822,6 +1822,7 @@ static void initialize_pointer_type(SYMBOL* funcsp, int offset, StorageClass sc,
                         ((*exp2)->type == ExpressionNode::callsite_ && !(*exp2)->v.func->ascall))
                     {
                         thunkForImportTable(exp2);
+                        Optimizer::SymbolManager::Get((*exp2)->v.sp)->functionUsed = true;
                     }
                 }
             }
@@ -1837,6 +1838,10 @@ static void initialize_pointer_type(SYMBOL* funcsp, int offset, StorageClass sc,
             if (tp->type == BasicType::memberptr_)
             {
                 errorConversionOrCast(true, tp, itype);
+            }
+            if (exp->type == ExpressionNode::pc_)
+            {
+                Optimizer::SymbolManager::Get(exp->v.sp)->functionUsed = true;
             }
             if (Optimizer::cparams.prm_cplusplus && string && !itype->BaseType()->btp->IsConst())
                 error(ERR_INVALID_CHARACTER_STRING_CONVERSION);

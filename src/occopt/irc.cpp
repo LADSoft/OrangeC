@@ -2372,6 +2372,7 @@ void AllocateRegisters(QUAD* head)
         spillWorkList.clear();
         spilledNodes.clear();
         coalescedNodes.clear();
+        // this is so large because on huge functions with a lot of temps, the program rewrite can add a couple thousand temps....
         coalescedNodes.resize(tempCount + 5000);
         adjacent.clear();
         adjacent1.clear();

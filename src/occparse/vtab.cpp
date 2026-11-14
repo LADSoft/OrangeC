@@ -246,6 +246,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, std::list<VTAB
                                 {
                                     EXPRESSION* exp = MakeExpression(ExpressionNode::pc_, func);
                                     thunkForImportTable(&exp);
+                                    Optimizer::SymbolManager::Get(exp->v.sp)->functionUsed = true;
                                     thunks[count].func = exp->v.sp;
                                 }
                                 else
@@ -264,6 +265,7 @@ static int dumpVTabEntries(int count, THUNK* thunks, SYMBOL* sym, std::list<VTAB
                                 {
                                     EXPRESSION* exp = MakeExpression(ExpressionNode::pc_, func);
                                     thunkForImportTable(&exp);
+                                    Optimizer::SymbolManager::Get(exp->v.sp)->functionUsed = true;
                                     Optimizer::genref(Optimizer::SymbolManager::Get(exp->v.sp), 0);
                                 }
                                 else

@@ -91,7 +91,7 @@ namespace Parser
 int argumentNestingLevel;
 int assigningRHS;
 
-std::list<SYMBOL*> importThunks;
+std::vector<SYMBOL*> importThunks;
 static SYMBOL* msilToString;
 
 std::list<StringData*> strtab;
@@ -134,7 +134,7 @@ void thunkForImportTable(EXPRESSION** exp)
         bool found = false;
         for (auto search : importThunks)
         {
-            if (search->sb->mainsym == sym)
+            if (!strcmp(search->sb->mainsym->sb->decoratedName, sym->sb->decoratedName))
             {
                 *exp = MakeExpression(ExpressionNode::pc_, (SYMBOL*)search);
                 found = true;
@@ -153,7 +153,6 @@ void thunkForImportTable(EXPRESSION** exp)
             newThunk->sb->importThunk = true;
             importThunks.push_back(newThunk);
             *exp = MakeExpression(ExpressionNode::pc_, newThunk);
-            Optimizer::SymbolManager::Get(newThunk)->generated = true;
             Optimizer::EnterExternal(Optimizer::SymbolManager::Get(sym));
         }
     }
@@ -4354,6 +4353,10 @@ void AdjustParams(SYMBOL* func, SymbolTable<SYMBOL>::iterator it, SymbolTable<SY
         {
             p->exp->type = ExpressionNode::c_string_;
             p->tp = &(std__string);
+        }
+        if (p->exp && (p->exp->type == ExpressionNode::pc_ || p->exp->type == ExpressionNode::callsite_))
+        {
+            thunkForImportTable(&p->exp);
         }
         if (p->tp->IsStructured())
         {

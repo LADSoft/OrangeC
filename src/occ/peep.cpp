@@ -954,7 +954,8 @@ void peep_mov(OCODE* ip)
             OCODE* ip2 = ip1->fwd;
             if (ip2->opcode == op_cmp && equal_address(ip2->oper1, ip1->oper1) && ip2->oper2->mode == am_immed)
             {
-                if (ip2->oper2->offset->type == Optimizer::se_i && ip2->oper2->offset->i == 0)
+                if ((ip2->oper2->offset->type == Optimizer::se_i || ip2->oper2->offset->type == Optimizer::se_ui) &&
+                    ip2->oper2->offset->i == 0)
                 {
                     if (!live(ip2->oper1->liveRegs, ip2->oper1->preg))
                     {

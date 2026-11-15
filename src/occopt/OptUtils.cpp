@@ -47,7 +47,7 @@ std::unordered_map<CASTTEMP*, IMODE*, OrangeC::Utils::fnv1a32_binary<sizeof(CAST
     castHash;
 int tempCount;
 
-static std::unordered_multimap<long long, IMODE*> immediate_cache;
+static std::map<long long, std::map<int, IMODE*>> immediate_cache;
 static unsigned long long shifts[sizeof(long long) * 8];
 
 void constoptinit(void)
@@ -266,19 +266,21 @@ Optimizer::IMODE* make_immed(int size, long long i)
  */
 
 {
-    auto range = immediate_cache.equal_range(i);
-    for (auto it = range.first; it != range.second; ++it)
+    // i tried using multimap here, but, MSVC and OCC have problems using long long as a multimap index...
+    // g++ and clang (and apparently older versiosn of msvc) get it right but it confuses the builds to have differences in this
+    // behavior...
+    auto ap = immediate_cache[i][size];
+    if (ap)
     {
-        if (it->second->size == size)
-            return it->second;
+        return ap;
     }
-    auto ap = Allocate<Optimizer::IMODE>();
+    ap = Allocate<Optimizer::IMODE>();
     ap->mode = i_immed;
     ap->offset = Allocate<Optimizer::SimpleExpression>();
     ap->offset->type = Optimizer::se_i;
     ap->offset->i = i;
     ap->size = size;
-    immediate_cache.insert(std::pair(i, ap));
+    immediate_cache[i][size] = ap;
     return ap;
 }
 

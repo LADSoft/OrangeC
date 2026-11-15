@@ -3092,7 +3092,7 @@ void TransferClassTemplates(std::list<TEMPLATEPARAMPAIR>* dflt, std::list<TEMPLA
              itval->second->byNonType.dflt && itval->second->byNonType.val &&
              itval->second->byNonType.dflt->type == ExpressionNode::templateparam_)
     {
-        if (!params->front().second->byNonType.val && params->front().second->type == TplType::int_)
+        if (params && !params->front().second->byNonType.val && params->front().second->type == TplType::int_)
             params->front().second->byNonType.val = itval->second->byNonType.val;
     }
     else if (itval != val->end() && !itval->second->packed && itval->second->type == TplType::typename_ &&

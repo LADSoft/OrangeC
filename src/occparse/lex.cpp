@@ -1323,6 +1323,7 @@ LexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned
     int frac = 0;
     bool hasdot = false;
     LexType lastst;
+    bool isunsigned = false;
     if (!isdigit((unsigned char)**ptr) && **ptr != '.')
         return (LexType)INT_MIN;
     if (**ptr == '.' && !isdigit((unsigned char)*(*ptr + 1)))
@@ -1334,6 +1335,7 @@ LexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned
         {
             (*ptr)++;
             radix = 16;
+            isunsigned = true;
         }
         else if ((Optimizer::cparams.prm_cplusplus || !Optimizer::cparams.prm_ansi) && (**ptr == 'b' || **ptr == 'B'))
         {
@@ -1341,6 +1343,7 @@ LexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned
             RequiresDialect::Feature(Dialect::cpp14, "Binary Literals");
             (*ptr)++;
             radix = 2;
+            isunsigned = true;
         }
         else if (isdigit(**ptr))
         {
@@ -1529,6 +1532,21 @@ LexType getNumber(const unsigned char** ptr, const unsigned char** end, unsigned
                 {
                     lastst = LexType::ll_;
                 }
+            }
+        }
+        if (isunsigned)
+        {
+            switch (lastst)
+            {
+                case LexType::i_:
+                    lastst = LexType::ui_;
+                    break;
+                case LexType::l_:
+                    lastst = LexType::ul_;
+                    break;
+                case LexType::ll_:
+                    lastst = LexType::ull_;
+                    break;
             }
         }
     }

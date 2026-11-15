@@ -71,7 +71,8 @@ static void InsertFile(std::list<std::string>& target, const std::string& name, 
             // just add our name and ext
             Utils::StrCat(outFileName, name.c_str());
             Utils::StripExt(outFileName);
-            Utils::AddExt(outFileName, ext);
+            if (strlen(outFileName) + strlen(ext) + 1 <= sizeof(outFileName))
+                Utils::AddExt(outFileName, ext);
         }
         else if (outFileName[0] == 0)  // no output file specified, put the output wherever the input was...
         {

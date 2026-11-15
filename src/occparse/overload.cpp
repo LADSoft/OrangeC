@@ -5245,7 +5245,7 @@ SYMBOL* GetOverloadedFunction(Type** tp, EXPRESSION** exp, SYMBOL* sp, CallSite*
                 // don't generate an error on the theory there will be an ellipsis...
                 if (flags & (_F_INARGS | _F_INCONSTRUCTOR))
                 {
-                    if (args->arguments)
+                    if (args && args->arguments)
                         for (auto arg : *args->arguments)
                         {
                             if (arg->tp && arg->tp->type == BasicType::templateparam_ && arg->tp->templateParam->second->packed)

@@ -4101,7 +4101,7 @@ static void initialize_aggregate_type(SYMBOL* funcsp, SYMBOL* base, int offset, 
         while (btp->IsArray())
             btp = btp->BaseType()->btp;
         btp = btp->BaseType();
-        if (btp->IsStructured() && !btp->sp->sb->trivialCons && init && *init)
+        if (btp->IsStructured() && !btp->sp->sb->trivialCons && *init)
         {
             int s = (btp->size);
             std::list<Initializer*>::iterator test = (*init)->begin();

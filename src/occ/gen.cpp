@@ -2037,8 +2037,6 @@ static void llongatomicmath(e_opcode low, e_opcode high, Optimizer::QUAD* q)
     }
     else
     {
-        if (!aprh)
-            aprh = offsetToHigh(aprl);
         gen_codes(op_push, ISZ_UINT, aprh, nullptr);
         pushlevel += 4;
         gen_codes(op_push, ISZ_UINT, aprl, nullptr);
@@ -2655,7 +2653,7 @@ void asm_parmblock(Optimizer::QUAD* q) /* push a block of memory */
         else if (ofs->type == Optimizer::se_i || ofs->type == Optimizer::se_ui)
         {
             ofs = nullptr;
-            apl->mode == am_immed;
+            apl->mode = am_immed;
         }
         else
         {

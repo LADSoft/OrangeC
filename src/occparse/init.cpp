@@ -3503,6 +3503,7 @@ static void initialize_aggregate_type(SYMBOL* funcsp, SYMBOL* base, int offset, 
                                 return exp1;
                             },
                             false, base);
+                        implicit = true;
                         funcparams->arguments = argumentListFactory.CreateList();
                         auto arg = Allocate<Argument>();
                         funcparams->arguments->push_back(arg);

@@ -3459,18 +3459,25 @@ void getSingleConversion(Type* tpp, Type* tpa, EXPRESSION* expa, int* n, e_cvsrn
                         // two to a mapping between other integer types...
                         if (tpa->BaseType()->type == BasicType::bool_ || tpa->IsUnsigned() != tpp->IsUnsigned() ||
                             getSize(tpa->BaseType()->type) != getSize(tpp->BaseType()->type))
-                            // take char of converting wchar_t to char
+                        {
                             seq[(*n)++] = CV_INTEGRALCONVERSION;
+                        }
                         else
+                        {
                             seq[(*n)++] = CV_INTEGRALCONVERSIONWEAK;
+                        }
+                    }
+                    else if (tpa->IsUnsigned() && tpa->BaseType()->type > BasicType::int_)
+                    {
+                        seq[(*n)++] = CV_NONE;
                     }
                     else
                     {
                         seq[(*n)++] = CV_FLOATINGCONVERSION;
-                        if (tpp->BaseType()->type == BasicType::float_)
-                            seq[(*n)++] = CV_FLOATINGCONVERSION;
-                        else if (tpp->BaseType()->type == BasicType::long_double_)
+                        if (tpp->BaseType()->type == BasicType::long_double_)
+                        {
                             seq[(*n)++] = CV_FLOATINGPROMOTION;
+                        }
                     }
                 }
                 else /* floating */

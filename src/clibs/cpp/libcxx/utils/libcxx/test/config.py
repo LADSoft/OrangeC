@@ -636,7 +636,7 @@ class Configuration(object):
                                   % cxx_headers)
         self.cxx.compile_flags += ['-I' + cxx_headers]
         self.cxx.compile_flags += ['-I' + os.path.join(self.libcxx_src_root, '..\..\stdinc')] #DAL
-        self.cxx.compile_flags += ['-I' + os.path.join(self.libcxx_src_root, '..\..\platform\win32\wininc')] #DAL
+        self.cxx.compile_flags += ['-I' + os.path.join(self.libcxx_src_root, '..\..\platform\win32\inc')] #DAL
         if self.libcxx_obj_root is not None:
             cxxabi_headers = os.path.join(self.libcxx_obj_root, 'include',
                                           'c++build')

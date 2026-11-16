@@ -358,6 +358,10 @@ void nestedPath(SYMBOL** sym, std::list<NAMESPACEVALUEDATA*>** ns, bool* through
                 }
                 if (!sp)
                 {
+                    if (!IsDefiningTemplate() && strSym->tp->size)
+                    {
+                        errorNotMember(strSym, nullptr, buf);
+                    }
                     if (!templateSelector)
                         templateSelector = templateSelectorListFactory.CreateVector();
                     templateSelector->push_back(TEMPLATESELECTOR{});

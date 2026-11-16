@@ -1466,6 +1466,7 @@ void CheckIsLiteralClass(Type* tp)
     {
         if (tp->IsRef())
             tp = tp->BaseType()->btp;
+        tp->InstantiateDeferred();
         if (tp->IsStructured())
         {
             if (tp->BaseType()->sp->tp->size && !tp->BaseType()->sp->sb->literalClass)

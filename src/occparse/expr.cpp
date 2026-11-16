@@ -3995,7 +3995,14 @@ void AdjustSingleParam(SYMBOL* func, SYMBOL* sym, Argument* p, std::list<Argumen
                         // make numeric temp and perform cast
                         if (p1->exp)
                         {
-                            p->exp = createTemporary(sym->tp, p1->exp);
+                            if (!sym->tp->BaseType()->btp->IsArray() || !p1->tp->IsArray())
+                            {
+                                p->exp = createTemporary(sym->tp, p1->exp);
+                            }
+                            else
+                            {
+                                p->exp = p1->exp;
+                            }
                         }
                     }
                     else

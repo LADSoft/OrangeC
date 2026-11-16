@@ -619,14 +619,22 @@ static bool pushArrayOrStruct(SYMBOL* arg, EXPRESSION* exp, std::unordered_map<S
     }
     if (!rv && exp->type == ExpressionNode::comma_)
     {
-        while (exp->type == ExpressionNode::comma_)
-            exp = exp->right;
-        if (exp->type == ExpressionNode::auto_)
+        if (exp->left->type == ExpressionNode::assign_ && exp->right->type == ExpressionNode::auto_ &&
+            exp->left->left->left->type == ExpressionNode::auto_ && exp->left->left->left->v.sp == exp->right->v.sp)
         {
-            exp = LookupStruct(exp);
-            if (exp)
+            argmap[arg] = exp->left->right;
+        }
+        else
+        {
+            while (exp->type == ExpressionNode::comma_)
+                exp = exp->right;
+            if (exp->type == ExpressionNode::auto_)
             {
-                argmap[arg] = exp;
+                exp = LookupStruct(exp);
+                if (exp)
+                {
+                    argmap[arg] = exp;
+                }
             }
         }
     }
@@ -1154,6 +1162,7 @@ static bool HandleLoad(EXPRESSION* exp, EXPRESSION* ths, EXPRESSION* retblk)
                         // temporary passed by-ref
                         exp2 = copy_expression(exp2);
                         exp2->left->right = EvaluateExpression(exp2->left->right, ths, retblk);
+                        lst->exp = exp2;
                     }
                     else if (!lst->tp->IsStructured())
                     {

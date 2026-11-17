@@ -1,25 +1,25 @@
 /*  Software License Agreement
- *  
- *      Copyright(C) 1994-2025 David Lindauer, (LADSoft)
- *  
+ *
+ *      Copyright(C) 1994-2026 David Lindauer, (LADSoft)
+ *
  *      This file is part of the Orange C Compiler package.
- *  
+ *
  *      The Orange C Compiler package is free software: you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by
  *      the Free Software Foundation, either version 3 of the License, or
  *      (at your option) any later version.
- *  
+ *
  *      The Orange C Compiler package is distributed in the hope that it will be useful,
  *      but WITHOUT ANY WARRANTY; without even the implied warranty of
  *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *      GNU General Public License for more details.
- *  
+ *
  *      You should have received a copy of the GNU General Public License
  *      along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *  
+ *
  *      contact information:
  *          email: TouchStone222@runbox.com <David Lindauer>
- *  
+ *
  */
 
 #include <errno.h>
@@ -44,7 +44,6 @@ struct __threads
     void* arglist;
     void* handle;
     int startmode;
-    HLOCAL memhand;
 };
 void _RTL_FUNC _endthread(void)
 {
@@ -93,8 +92,7 @@ static int WINAPI __threadstart(struct __threads* h)
     struct __rtl_data* r = __getRtlData();  // allocate the local storage
     r->thrd_id = 0;
     th = *h;
-    LocalUnlock(h->memhand);
-    LocalFree(th.memhand);
+    free(h);
     if (th.startmode)
     {
         int rv = ((unsigned(__stdcall*)(void*))th.start)(th.arglist);
@@ -112,15 +110,12 @@ static int WINAPI __threadstart(struct __threads* h)
 uintptr_t _RTL_FUNC _beginthread(void(__cdecl* start_address)(void*), unsigned stack_size, void* arglist)
 {
     DWORD rv;
-    struct __threads* mem;
-    HLOCAL mhand = LocalAlloc(LPTR, sizeof(struct __threads));
-    if (!mhand)
+    struct __threads* mem = malloc(sizeof(struct __threads));
+    if (!mem)
     {
         errno = EAGAIN;
         return -1;
     }
-    mem = LocalLock(mhand);
-    mem->memhand = mhand;
     mem->start = start_address;
     mem->arglist = arglist;
     mem->startmode = 0;
@@ -139,15 +134,12 @@ uintptr_t _RTL_FUNC _beginthreadex(void* security, unsigned stack_size, unsigned
                                    unsigned initflag, unsigned* thrdaddr)
 {
     DWORD rv;
-    struct __threads* mem;
-    HLOCAL mhand = LocalAlloc(LPTR, sizeof(struct __threads));
-    if (!mhand)
+    struct __threads* mem = malloc(sizeof(struct __threads));
+    if (!mem)
     {
         errno = EAGAIN;
-        return 0;
+        return -1;
     }
-    mem = LocalLock(mhand);
-    mem->memhand = mhand;
     mem->start = start_address;
     mem->arglist = arglist;
     mem->startmode = 1;

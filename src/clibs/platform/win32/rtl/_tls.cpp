@@ -1,25 +1,25 @@
 /*  Software License Agreement
- *  
- *      Copyright(C) 1994-2025 David Lindauer, (LADSoft)
- *  
+ *
+ *      Copyright(C) 1994-2026 David Lindauer, (LADSoft)
+ *
  *      This file is part of the Orange C Compiler package.
- *  
+ *
  *      The Orange C Compiler package is free software: you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by
  *      the Free Software Foundation, either version 3 of the License, or
  *      (at your option) any later version.
- *  
+ *
  *      The Orange C Compiler package is distributed in the hope that it will be useful,
  *      but WITHOUT ANY WARRANTY; without even the implied warranty of
  *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *      GNU General Public License for more details.
- *  
+ *
  *      You should have received a copy of the GNU General Public License
  *      along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *  
+ *
  *      contact information:
  *          email: TouchStone222@runbox.com <David Lindauer>
- *  
+ *
  */
 
 #include <windows.h>
@@ -30,41 +30,29 @@
 #include <wchar.h>
 #include <locale.h>
 #include "libp.h"
-#include "LocalAlloc.h"
 #include <set>
 #include <stdio.h>
 
 #pragma startup tlsStartup 1
 #pragma rundown tlsShutdown 1
+
+extern "C" __startcritical();
+
 static int __rtlTlsIndex;
 
-static LocalAllocAllocator<__rtl_data> DataAllocator;
+static std::set<__rtl_data*>* RtlDataSet;
 
-static LocalAllocAllocator<std::set<__rtl_data*, std::less<__rtl_data*>, LocalAllocAllocator<__rtl_data*>>> SetAllocator;
-
-static std::set<__rtl_data*, std::less<__rtl_data*>, LocalAllocAllocator<__rtl_data*>>* RtlDataSet;
-
-static void tlsStartup()
-{
-    __rtlTlsIndex = TlsAlloc();
-}
-static void tlsShutdown()
-{
-    TlsFree(__rtlTlsIndex);
-}
+static void tlsStartup() { __rtlTlsIndex = TlsAlloc(); }
+static void tlsShutdown() { TlsFree(__rtlTlsIndex); }
 extern "C" void __threadinit(void)
 {
-    RtlDataSet = SetAllocator.allocate(1);
-    SetAllocator.construct(RtlDataSet);
+    __startcritical();
+    RtlDataSet = new std::set<__rtl_data*>;
 }
-extern "C" void __threadrundown(void)
-{
-    SetAllocator.destroy(RtlDataSet);
-    SetAllocator.deallocate(RtlDataSet, 1);
-}
+extern "C" void __threadrundown(void) { delete RtlDataSet; }
 extern "C" struct __rtl_data* __threadTlsAlloc(int cs)
 {
-    struct __rtl_data* rv = DataAllocator.allocate(1);
+    struct __rtl_data* rv = (struct __rtl_data*)malloc(sizeof(__rtl_data));
     if (!rv)
     {
         fprintf(stderr, "out of memory");
@@ -91,7 +79,7 @@ extern "C" void __threadTlsFree(int cs)
         {
             __rtl_data* temp = *data;
             RtlDataSet->erase(data);
-            DataAllocator.deallocate(temp, 1);
+            free(temp);
         }
         if (cs)
             __ll_exit_critical();
@@ -102,7 +90,7 @@ extern "C" void __threadTlsFreeAll(void)
 {
     for (auto t : *RtlDataSet)
     {
-        DataAllocator.deallocate(t, 1);
+        free(t);
     }
     RtlDataSet->clear();
 }

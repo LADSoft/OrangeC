@@ -1,25 +1,25 @@
 /*  Software License Agreement
- *  
- *      Copyright(C) 1994-2025 David Lindauer, (LADSoft)
- *  
+ *
+ *      Copyright(C) 1994-2026 David Lindauer, (LADSoft)
+ *
  *      This file is part of the Orange C Compiler package.
- *  
+ *
  *      The Orange C Compiler package is free software: you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by
  *      the Free Software Foundation, either version 3 of the License, or
  *      (at your option) any later version.
- *  
+ *
  *      The Orange C Compiler package is distributed in the hope that it will be useful,
  *      but WITHOUT ANY WARRANTY; without even the implied warranty of
  *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *      GNU General Public License for more details.
- *  
+ *
  *      You should have received a copy of the GNU General Public License
  *      along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *  
+ *
  *      contact information:
  *          email: TouchStone222@runbox.com <David Lindauer>
- *  
+ *
  */
 
 #include <windows.h>
@@ -32,7 +32,6 @@
 #include <locale.h>
 #include <threads.h>
 #include "libp.h"
-#include "LocalAlloc.h"
 #include <map>
 
 // note that some of the threading structures are dynamically added if thrd_create() isn't called directly
@@ -47,18 +46,15 @@ extern "C"
     void rpmalloc_thread_initialize();
     void rpmalloc_thread_finalize();
     extern void* __hInstance;
-    void __srproc(char*, char *);
+    void __srproc(char*, char*);
     void __load_local_data(bool constructors);
 }
 
+typedef std::map<HANDLE, std::pair<void*, void*>> Registered;
 
-typedef std::map<HANDLE, std::pair<void*, void*>, std::less<HANDLE>,
-                 LocalAllocAllocator<std::pair<const HANDLE, std::pair<void*, void*>>>>
-    Registered;
+typedef std::map<HANDLE, void*> HandleMap;
 
-typedef std::map<HANDLE, void*, std::less<HANDLE>, LocalAllocAllocator<std::pair<const HANDLE, void*>>> HandleMap;
-
-typedef std::map<int, HandleMap, std::less<int>, LocalAllocAllocator<std::pair<const int, HandleMap>>> Handles;
+typedef std::map<int, HandleMap> Handles;
 
 static Registered* registered;
 static Handles* handles;
@@ -68,14 +64,8 @@ static Handles* handles;
 #pragma startup main_init 255
 #pragma rundown main_end 31
 
-static void main_init()
-{
-    __srproc(TLSINITSTART, TLSINITEND);
-}
-static void main_end()
-{
-    __srproc(TLSEXITSTART, TLSEXITEND);
-}
+static void main_init() { __srproc(TLSINITSTART, TLSINITEND); }
+static void main_end() { __srproc(TLSEXITSTART, TLSEXITEND); }
 static PASCAL unsigned char* __getTlsData(int eip, int thread)
 {
     struct __rtl_data* r = __getRtlData();
@@ -119,9 +109,10 @@ extern "C" void _RTL_FUNC __tlsaddr(int n)
     __asm push eax;
     __asm push ecx;
     __asm push edx;
-    __asm push fs : [0x18] __asm push[esp + 16]  // eip
-                    __asm call[GetTlsData];      // eax has pointer to thread data now
-    __asm add[esp + 16], eax                     // stacked parameter which is the offset in the tls region
+    __asm push fs
+        : [0x18] __asm push[esp + 16]  // eip
+        __asm call[GetTlsData];        // eax has pointer to thread data now
+    __asm add[esp + 16], eax           // stacked parameter which is the offset in the tls region
         __asm pop edx;
     __asm pop ecx;
     __asm pop eax;
@@ -133,9 +124,12 @@ static unsigned char* Load(unsigned char* start, unsigned char* end)
     int n = end - start;
     if (n == 0)
         n = 4;
-    unsigned char* p = (unsigned char*)LocalAlloc(LMEM_FIXED, n);
+    unsigned char* p = (unsigned char*)malloc(n);
     if (!p)
+    {
+        printf("abort: Load %d\n", n);
         abort();
+    }
     memcpy(p, start, n);
     return p;
 }
@@ -162,7 +156,7 @@ static void RemoveLocalData(int thread)
         __srproc(TLSEXITSTART, TLSEXITEND);
         for (auto&& h : it->second)
         {
-            LocalFree(h.second);
+            free(h.second);
         }
         handles->erase(thread);
     }
@@ -171,43 +165,35 @@ extern "C" void __load_local_data(bool constructors)
 {
     int tid;
     __asm mov eax,
-        fs : [0x18]  // currentteb
-             __asm mov[tid],
-            eax 
-     AddLocalData(tid);
-     if (constructors)
+        fs
+        : [0x18]  // currentteb
+          __asm mov[tid],
+          eax AddLocalData(tid);
+    if (constructors)
         __srproc(TLSINITSTART, TLSINITEND);
 }
 extern "C" void __unload_local_data(void)
 {
     int tid;
     __asm mov eax,
-        fs : [0x18]  // currentteb
-             __asm mov[tid],
-             eax RemoveLocalData(tid);
+        fs
+        : [0x18]  // currentteb
+          __asm mov[tid],
+          eax RemoveLocalData(tid);
 }
 static void thrd_init(void)
 {
-    LocalAllocAllocator<Registered> RegisteredAllocator;
-    LocalAllocAllocator<Handles> HandlesAllocator;
 
-    registered = RegisteredAllocator.allocate(1);
-    RegisteredAllocator.construct(registered);
-    handles = HandlesAllocator.allocate(1);
-    HandlesAllocator.construct(handles);
+    registered = new Registered;
+    handles = new Handles;
     __threadTlsAlloc(false);
     __load_local_data(false);  // main thread
 }
 
 static void thrd_end(void)
 {
-    LocalAllocAllocator<Registered> RegisteredAllocator;
-    LocalAllocAllocator<Handles> HandlesAllocator;
-
-    RegisteredAllocator.destroy(registered);
-    RegisteredAllocator.deallocate(registered, 1);
-    HandlesAllocator.destroy(handles);
-    HandlesAllocator.deallocate(handles, 1);
+    delete registered;
+    delete handles;
 }
 extern "C" void _RTL_FUNC __thrdRegisterModule(HANDLE module, void* tlsStart, void* tlsEnd)
 {
@@ -237,7 +223,7 @@ extern "C" void _RTL_FUNC __thrdUnregisterModule(HANDLE module)
                 // this is buggy, doesn't run dtors...
                 auto data = (*it1).second;
                 h.second.erase(module);
-                LocalFree(data);
+                free(data);
             }
         }
     }

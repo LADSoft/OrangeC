@@ -124,12 +124,13 @@ int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* 
             }
         }
         std::promise<int> promise;
-        workingList.push_back(future_holding_struct(depend->GetGoal(), promise.get_future()));
+        auto future = promise.get_future();
+        workingList.push_back(future_holding_struct(depend->GetGoal(), std::move(future)));
         OrangeC::Utils::BasicLogger::debug("RunOne CallRunner Creating a runner: ", i->GetGoal());
 
         std::thread(CallRunner, this, &ruleStack, i.get(), env, keepGoing, std::move(promise)).detach();
-        using namespace std::chrono_literals;
-        std::this_thread::sleep_for(20ms);
+        //        using namespace std::chrono_literals;
+        //        std::this_thread::sleep_for(20ms);
         if (MakeMain::jobs.GetValue() == 1)
         {
             WaitAll(rv, keepGoing, workingList);

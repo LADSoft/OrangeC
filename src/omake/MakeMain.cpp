@@ -628,7 +628,7 @@ int MakeMain::Run(int argc, char** argv)
             v->SetValue(Utils::NumberToString(n + 1));
             makeLevel = n + 2;
         }
-        if (firstMakeLevel)
+        if (firstMakeLevel && printDir.GetValue())
             MakeMessage("Entering %s", OS::GetWorkingDir().c_str());
 
         SetVariable(".FEATURES", "second-expansion order-only target-specific", Variable::o_environ, false);
@@ -751,7 +751,8 @@ int MakeMain::Run(int argc, char** argv)
         }
     }
 
-    MakeMessage("Leaving %s", OS::GetWorkingDir().c_str());
+    if (printDir.GetValue())
+        MakeMessage("Leaving %s", OS::GetWorkingDir().c_str());
 
     if (!dir.GetValue().empty())
     {

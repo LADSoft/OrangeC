@@ -690,11 +690,12 @@ int Maker::RunCommands(bool keepGoing)
     for (auto& i : depends)
     {
         std::promise<int> promise;
-        workingList.push_back(promise.get_future());
+        auto future = promise.get_future();
+        workingList.push_back(std::move(future));
         OrangeC::Utils::BasicLogger::debug("Creating a runner: " + i->GetGoal());
         std::thread(CallRunner, runner, i.get(), &env, keepGoing, std::move(promise)).detach();
-        using namespace std::chrono_literals;
-        std::this_thread::sleep_for(20ms);
+        //        using namespace std::chrono_literals;
+        //        std::this_thread::sleep_for(20ms);
         if (MakeMain::jobs.GetValue() == 1)
         {
             int rv1 = workingList.back().get();

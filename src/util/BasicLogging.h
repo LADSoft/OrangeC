@@ -4,6 +4,7 @@
 #include <utility>
 #include <functional>
 #include <type_traits>
+#include <mutex>
 
 namespace OrangeC
 {
@@ -21,6 +22,7 @@ class BasicLogger
 {
     static int verbosity;
     static std::string prologue;
+    static std::mutex display_mutex;
 
   public:
     static void SetVerbosity(int iverbosity) { verbosity = iverbosity; }
@@ -39,6 +41,8 @@ class BasicLogger
         if (verbosity >= (int)verbositylevel)
         {
             // I'd really love something like fmt::format here, or std::format, but alas, c++14 vs c++20
+
+            std::lock_guard<std::mutex> guard(display_mutex);
             auto arr = {stringify(args)...};
             // Add everything together so that there's no chance of it being split up
             std::string total = prologue + " ";

@@ -1,6 +1,6 @@
 # Software License Agreement
 # 
-#     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+#     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
 # 
 #     This file is part of the Orange C Compiler package.
 # 
@@ -31,7 +31,6 @@ CPP_DEPENDENCIES=$(wildcard *.cpp)
 LIB_DEPENDENCIES=util
 H_FILES=$(wildcard *.h)
 
-MEMFLAGS=/DHEAPSIZE=0x400000
 include ../redirect.mak
 
 DISTRIBUTE: copyexe

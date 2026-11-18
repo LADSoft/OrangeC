@@ -110,6 +110,8 @@ int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* 
     int rv = 0;
     bool stop = false;
     bool notOrdered = true;
+    std::list<std::thread> threadList;
+
     for (auto& i : *depend)
     {
         if (notOrdered && i->GetOrdered())
@@ -128,7 +130,8 @@ int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* 
         workingList.push_back(future_holding_struct(depend->GetGoal(), std::move(future)));
         OrangeC::Utils::BasicLogger::debug("RunOne CallRunner Creating a runner: ", i->GetGoal());
 
-        std::thread(CallRunner, this, &ruleStack, i.get(), env, keepGoing, std::move(promise)).detach();
+        auto thrd = std::thread(CallRunner, this, &ruleStack, i.get(), env, keepGoing, std::move(promise));
+        threadList.push_back(std::move(thrd));
         //        using namespace std::chrono_literals;
         //        std::this_thread::sleep_for(20ms);
         if (MakeMain::jobs.GetValue() == 1)
@@ -142,6 +145,9 @@ int Runner::RunOne(std::list<std::shared_ptr<RuleList>>* ruleStack_in, Depends* 
         }
     }
     WaitAll(rv, keepGoing, workingList);
+
+    for (auto&& thr : threadList)
+        thr.join();
     if (rv > 0 && !keepGoing)
     {
         stop = true;

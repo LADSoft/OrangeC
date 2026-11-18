@@ -686,14 +686,17 @@ int Maker::RunCommands(bool keepGoing)
 
     OS::JobInit();
     std::list<std::future<int>> workingList;
+    std::list<std::thread> threadList;
     int rv = 0;
+
     for (auto& i : depends)
     {
         std::promise<int> promise;
         auto future = promise.get_future();
         workingList.push_back(std::move(future));
         OrangeC::Utils::BasicLogger::debug("Creating a runner: " + i->GetGoal());
-        std::thread(CallRunner, runner, i.get(), &env, keepGoing, std::move(promise)).detach();
+        auto thrd = std::thread(CallRunner, runner, i.get(), &env, keepGoing, std::move(promise));
+        threadList.push_back(std::move(thrd));
         //        using namespace std::chrono_literals;
         //        std::this_thread::sleep_for(20ms);
         if (MakeMain::jobs.GetValue() == 1)
@@ -733,6 +736,8 @@ int Maker::RunCommands(bool keepGoing)
         }
     }
 
+    for (auto&& thr : threadList)
+        thr.join();
     OS::JobRundown();
     for (auto& d : depends)
     {

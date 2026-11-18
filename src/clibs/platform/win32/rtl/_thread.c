@@ -31,6 +31,7 @@
 #include <wchar.h>
 #include <locale.h>
 #include <threads.h>
+#include <stdatomic.h>
 #include "libp.h"
 
 void __load_local_data();
@@ -42,7 +43,7 @@ struct __threads
 {
     void* start;
     void* arglist;
-    void* handle;
+    atomic_uintptr_t handle;
     int startmode;
 };
 void _RTL_FUNC _endthread(void)
@@ -88,20 +89,28 @@ void _RTL_FUNC _endthreadex(unsigned retval)
 
 static int WINAPI __threadstart(struct __threads* h)
 {
-    struct __threads th;
+    // wait until CreateThread returns and populates the handle....
+    while (atomic_load(&h->handle) == 0)
+    {
+        Sleep(0);
+    }
     struct __rtl_data* r = __getRtlData();  // allocate the local storage
     r->thrd_id = 0;
-    th = *h;
+
+    void* func = h->start;
+    void* args = h->arglist;
+    BOOL ex = !!h->startmode;
+    if (!ex)
+        r->threadhand = (void*)h->handle;  // so we can close the beginthread version automagically....
     free(h);
-    if (th.startmode)
+    if (ex)
     {
-        int rv = ((unsigned(__stdcall*)(void*))th.start)(th.arglist);
+        int rv = ((unsigned(__stdcall*)(void*))func)(args);
         _endthreadex(rv);
     }
     else
     {
-        r->threadhand = th.handle;  // so we can close it automagically
-        ((void(__cdecl*)(void*))th.start)(th.arglist);
+        ((void(__cdecl*)(void*))func)(args);
         _endthread();
     }
     return 0;
@@ -109,7 +118,6 @@ static int WINAPI __threadstart(struct __threads* h)
 
 uintptr_t _RTL_FUNC _beginthread(void(__cdecl* start_address)(void*), unsigned stack_size, void* arglist)
 {
-    DWORD rv;
     struct __threads* mem = malloc(sizeof(struct __threads));
     if (!mem)
     {
@@ -118,22 +126,22 @@ uintptr_t _RTL_FUNC _beginthread(void(__cdecl* start_address)(void*), unsigned s
     }
     mem->start = start_address;
     mem->arglist = arglist;
+    mem->handle = 0;
     mem->startmode = 0;
-    __ll_enter_critical();
-    mem->handle = CreateThread(0, stack_size, (LPTHREAD_START_ROUTINE)__threadstart, mem, 0, &rv);
-    __ll_exit_critical();
-    if (mem->handle == NULL)
+
+    void* rv = CreateThread(0, stack_size, (LPTHREAD_START_ROUTINE)__threadstart, mem, 0, &rv);
+    if (rv == NULL)
     {
-        int err = GetLastError();
         errno = EAGAIN;
         return -1;
     }
-    return mem->handle;
+
+    atomic_store(&mem->handle, rv);
+    return rv;
 }
 uintptr_t _RTL_FUNC _beginthreadex(void* security, unsigned stack_size, unsigned(__stdcall* start_address)(void*), void* arglist,
                                    unsigned initflag, unsigned* thrdaddr)
 {
-    DWORD rv;
     struct __threads* mem = malloc(sizeof(struct __threads));
     if (!mem)
     {
@@ -142,14 +150,16 @@ uintptr_t _RTL_FUNC _beginthreadex(void* security, unsigned stack_size, unsigned
     }
     mem->start = start_address;
     mem->arglist = arglist;
+    mem->handle = 0;
     mem->startmode = 1;
-    __ll_enter_critical();
-    mem->handle = CreateThread(security, stack_size, (LPTHREAD_START_ROUTINE)__threadstart, mem, initflag, thrdaddr);
-    __ll_exit_critical();
-    if (mem->handle == NULL)
+
+    void* rv = CreateThread(security, stack_size, (LPTHREAD_START_ROUTINE)__threadstart, mem, initflag, thrdaddr);
+    if (rv == NULL)
     {
         errno = EAGAIN;
         return 0;
     }
-    return mem->handle;
+
+    atomic_store(&mem->handle, rv);
+    return rv;
 }

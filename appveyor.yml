@@ -9,7 +9,7 @@ install:
     - copy c-testsuite\tests\single-exec tests\c-testsuite > NUL
     - cd \
     - set PATH=c:\orangec\bin;c:\cc386\bin;%PATH%;C:\Program Files (x86)\Inno Setup 6
-    - call "C:\Program Files\Microsoft Visual Studio\2026\Community\VC\Auxiliary\Build\vcvars32.bat"
+    - call "C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars32.bat"
     - set PATH=c:\tools\mingw64\bin;C:\ProgramData\mingw64\mingw64\bin;%PATH%
     - set ORANGEC=c:\ORANGEC
     - set LADSOFT_DEV=c:\cc386

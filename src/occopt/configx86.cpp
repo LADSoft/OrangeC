@@ -236,25 +236,24 @@ static int initmasm(COMPILER_PARAMS* parms, ARCH_ASM* data, ARCH_DEBUG* debug)
     return 1;
 }
 
-static ARCH_DEFINES defines[] = {
-    /* must come first in this order */
-    {"__WIN32__", "1", false, true},
-    {"__LSCRTL_DLL", "1", false, true},
-    {"__DOS__", "1", false, true},
-    {"_WIN32", "1", false, true},
-    {"__MSVCRT_DLL", "1", false, true},
-    {"__CRTDLL_DLL", "1", false, true},
-    {"__RAW_IMAGE__", "1", false, true},
-    /* end ordered */
-    {"__SEH__", "1", true, true},
-    {"__386__", "1", true, true},
-    {"__i386__", "1", true, true},
-    {"_i386_", "1", true, true},
-    {"__i386", "1", true, true},
-    {"_X86_", "1", true, true},
-    {"_M_IX86", "1", true, true},
-    {"_INTEGRAL_MAX_BITS", "64", true, true},
-    {0}};
+static ARCH_DEFINES defines[] = {/* must come first in this order */
+                                 {"__WIN32__", "1", false, true},
+                                 {"__LSCRTL_DLL", "1", false, true},
+                                 {"__DOS__", "1", false, true},
+                                 {"_WIN32", "1", false, true},
+                                 {"__MSVCRT_DLL", "1", false, true},
+                                 {"__CRTDLL_DLL", "1", false, true},
+                                 {"__RAW_IMAGE__", "1", false, true},
+                                 /* end ordered */
+                                 {"__SEH__", "1", true, true},
+                                 {"__386__", "1", true, true},
+                                 {"__i386__", "1", true, true},
+                                 {"_i386_", "1", true, true},
+                                 {"__i386", "1", true, true},
+                                 {"_X86_", "1", true, true},
+                                 {"_M_IX86", "1", true, true},
+                                 {"_INTEGRAL_MAX_BITS", "64", true, true},
+                                 {0}};
 static ARCH_SIZING sizes = {
     1,  /*char a_bool;*/
     1,  /*char a_char;*/
@@ -483,6 +482,10 @@ static ARCH_GEN outputfunctions = {
         asm_and,              /* binary and */
         asm_or,               /* binary or */
         asm_eor,              /* binary exclusive or */
+        asm_bitset,            /* bit set */
+        asm_bitclr,             /* bit clr */
+        asm_setbitne,            /* evaluate bit set */
+        asm_setbite,             /* evaluate bit clr */
         asm_setne,            /* evaluate a = b != c */
         asm_sete,             /* evaluate a = b == c */
         asm_setc,             /* evaluate a = b U< c */
@@ -494,6 +497,7 @@ static ARCH_GEN outputfunctions = {
         asm_setle,            /* evaluate a = b S<= c */
         asm_setge,            /* evaluate a = b S>= c */
         asm_assn,             /* assignment */
+        asm_lea,                /* address calcuation */
         asm_genword,          /* put a byte or word into the code stream */
         asm_coswitch,         /* switch characteristics */
         asm_swbranch,         /* case characteristics */
@@ -501,6 +505,8 @@ static ARCH_GEN outputfunctions = {
         asm_assnblock,        /* copy block of memory*/
         asm_clrblock,         /* clear block of memory */
         asm_cmpblock,         /* branch if two blocks of memory aren't equal */
+        asm_jbitne,            /* branch if bit set */
+        asm_jbite,             /* branch if bit clr */
         asm_jc,               /* branch if a U< b */
         asm_ja,               /* branch if a U> b */
         asm_je,               /* branch if a == b */

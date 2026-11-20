@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -105,6 +105,12 @@ void asm_not(Optimizer::QUAD* q);
 void asm_and(Optimizer::QUAD* q);
 void asm_or(Optimizer::QUAD* q);
 void asm_eor(Optimizer::QUAD* q);
+void asm_bitset(Optimizer::QUAD* q);
+void asm_bitclr(Optimizer::QUAD* q);
+void asm_bitload(Optimizer::QUAD* q);
+void asm_bittest(Optimizer::QUAD* q);
+void asm_setbitne(Optimizer::QUAD* q);
+void asm_setbite(Optimizer::QUAD* q);
 void asm_setne(Optimizer::QUAD* q);
 void asm_sete(Optimizer::QUAD* q);
 void asm_setc(Optimizer::QUAD* q);
@@ -116,6 +122,7 @@ void asm_setg(Optimizer::QUAD* q);
 void asm_setle(Optimizer::QUAD* q);
 void asm_setge(Optimizer::QUAD* q);
 void asm_assn(Optimizer::QUAD* q);
+void asm_lea(Optimizer::QUAD* q);
 void asm_genword(Optimizer::QUAD* q);
 void asm_coswitch(Optimizer::QUAD* q);
 void asm_swbranch(Optimizer::QUAD* q);
@@ -123,6 +130,8 @@ void asm_dc(Optimizer::QUAD* q);
 void asm_assnblock(Optimizer::QUAD* q);
 void asm_clrblock(Optimizer::QUAD* q);
 void asm_cmpblock(Optimizer::QUAD* q);
+void asm_jbitne(Optimizer::QUAD* q);
+void asm_jbite(Optimizer::QUAD* q);
 void asm_jc(Optimizer::QUAD* q);
 void asm_ja(Optimizer::QUAD* q);
 void asm_je(Optimizer::QUAD* q);

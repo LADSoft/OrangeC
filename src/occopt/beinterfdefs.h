@@ -263,7 +263,7 @@ typedef struct
 #define DO_NOMULTOSHIFT 8192
 #define DO_NOALIAS 16384
 #define DO_NOCONST 32768
-
+#define DO_NOBITINS 65536
     int erropts; /* error options */
 #define EO_RETURNASERR 1
 
@@ -412,7 +412,11 @@ typedef struct _arch_gen
     CGFUNC asm_and;           /* binary and */
     CGFUNC asm_or;            /* binary or */
     CGFUNC asm_eor;           /* binary exclusive or */
-    CGFUNC asm_setne;         /* evaluate a = b != c */
+    CGFUNC asm_bitset :       /* bit set */
+        CGFUNC asm_bitclr :   /* bit clr */
+        CGFUNC asm_setbitne : /* evaluate if bit set */
+        CGFUNC asm_setbite :  /* evaluate if bit clr */
+        CGFUNC asm_setne;     /* evaluate a = b != c */
     CGFUNC asm_sete;          /* evaluate a = b == c */
     CGFUNC asm_setc;          /* evaluate a = b U< c */
     CGFUNC asm_seta;          /* evaluate a = b U> c */
@@ -423,6 +427,7 @@ typedef struct _arch_gen
     CGFUNC asm_setle;         /* evaluate a = b S<= c */
     CGFUNC asm_setge;         /* evaluate a = b S>= c */
     CGFUNC asm_assn;          /* assignment */
+    CGFUNC asm_lea;           /* address calculation */
     CGFUNC asm_genword;       /* put a byte or word into the code stream */
     CGFUNC asm_coswitch;      /* switch characteristics */
     CGFUNC asm_swbranch;      /* case characteristics */
@@ -430,7 +435,9 @@ typedef struct _arch_gen
     CGFUNC asm_assnblock;     /* copy block of memory*/
     CGFUNC asm_clrblock;      /* clear block of memory */
     CGFUNC asm_cmpblock;      /* branch if two blocks of memory aren't equal */
-    CGFUNC asm_jc;            /* branch if a U< b */
+    CGFUNC asm_jbitne :       /* branch if bit set */
+        CGFUNC asm_jbite :    /* branch if bit clr */
+        CGFUNC asm_jc;        /* branch if a U< b */
     CGFUNC asm_ja;            /* branch if a U> b */
     CGFUNC asm_je;            /* branch if a == b */
     CGFUNC asm_jnc;           /* branch if a U>= b */

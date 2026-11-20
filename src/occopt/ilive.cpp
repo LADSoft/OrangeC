@@ -122,6 +122,8 @@ QUAD* beforeJmp(QUAD* I, bool before)
             case i_jg:
             case i_jle:
             case i_jge:
+            case i_jbite:
+            case i_jbitne:
             case i_coswitch:
             case i_goto:
             case i_cmpblock:
@@ -495,6 +497,8 @@ static void markLiveInstruction(SimpleBitSet& live, QUAD* ins)
         case i_cmpblock:
             ins->live = true;
             break;
+        case i_jbitne:
+        case i_jbite:
         case i_jne:
         case i_je:
         case i_jc:
@@ -626,7 +630,7 @@ void removeDead(Block* b)
                         {
                             changed = true;
                             RemoveInstruction(head);
-                            if (head->dc.opcode == i_coswitch || (head->dc.opcode >= i_jne && head->dc.opcode <= i_jge) ||
+                            if (head->dc.opcode == i_coswitch || (head->dc.opcode >= i_jbitne && head->dc.opcode <= i_jge) ||
                                 head->dc.opcode == i_cmpblock)
                             {
                                 BLOCKLIST* bl = head->block->succ->next;

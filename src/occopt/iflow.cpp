@@ -243,6 +243,8 @@ static void gather_flowgraph(std::map<int, Block*>& labels)
                 case i_jbe:
                 case i_jge:
                 case i_jnc:
+                case i_jbitne:
+                case i_jbite:
                 case i_cmpblock:
                     temp = labels[tail->dc.v.label];
                     if (temp)
@@ -969,6 +971,12 @@ static void SwapBranchSense(QUAD* jmp)
     b->succ = s;
     switch (jmp->dc.opcode)
     {
+        case i_jbite:
+            jmp->dc.opcode = i_jbitne;
+            break;
+        case i_jbitne:
+            jmp->dc.opcode = i_jbite;
+            break;
         case i_je:
             jmp->dc.opcode = i_jne;
             break;
@@ -1067,7 +1075,7 @@ void RemoveCriticalThunks(void)
                     sl = sl->next;
                 }
             }
-            else if ((bjmp->dc.opcode >= i_jne && bjmp->dc.opcode <= i_jge) || bjmp->dc.opcode == i_cmpblock)
+            else if ((bjmp->dc.opcode >= i_jbitne && bjmp->dc.opcode <= i_jge) || bjmp->dc.opcode == i_cmpblock)
             {
                 Block* s = b->succ->block;
                 Block* n = b->succ->next->block;

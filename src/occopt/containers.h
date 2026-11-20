@@ -26,7 +26,6 @@
 
 #include <set>
 #include <climits>
-inline std::set<void*> aa;
 #include <type_traits>
 
 // sadly we have to have a bitset to speed up the live algorithm.  This should be a 20-25% speedup so we can't just ignore it....

@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -225,6 +225,12 @@ static void (*oplst[])(Optimizer::QUAD* q) = {
     asm_and,
     asm_or,
     asm_eor,
+    asm_bitset,
+    asm_bitclr,
+    asm_bitload,
+    asm_bittest,
+    asm_setbitne,
+    asm_setbite,
     asm_setne,
     asm_sete,
     asm_setc,
@@ -236,6 +242,8 @@ static void (*oplst[])(Optimizer::QUAD* q) = {
     asm_setle,
     asm_setge,
     iop_asmcond,
+    asm_jbitne,
+    asm_jbite,
     asm_jne,
     asm_je,
     asm_jc,
@@ -247,6 +255,7 @@ static void (*oplst[])(Optimizer::QUAD* q) = {
     asm_jle,
     asm_jge,
     asm_assn,
+    asm_lea,
     asm_genword,
     asm_coswitch,
     asm_swbranch,

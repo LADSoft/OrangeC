@@ -113,7 +113,7 @@ static void ReassignCompare(QUAD* d, int yes, bool reflow)
         d->dc.left = d->dc.right = nullptr;
         return;
     }
-    if (d->dc.opcode >= i_jne)
+    if (d->dc.opcode >= i_jbitne)
     {
         BLOCKLIST *b, *n;
         if (yes)

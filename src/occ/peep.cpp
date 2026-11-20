@@ -920,6 +920,8 @@ void peep_mov(OCODE* ip)
                 case op_setpo:
                 case op_sets:
                 case op_setns:
+                case op_rcl:
+                case op_rcr:
                     break;
                 default:
                     if (ip1->opcode == op_push && equal_address(ip1->oper1, ip->oper1) &&
@@ -1301,6 +1303,16 @@ void peep_btr(OCODE* ip)
     if (ip->fwd->opcode == op_bts && equal_address(ip->oper1, ip->fwd->oper1) && equal_address(ip->oper2, ip->fwd->oper2))
     {
         remove_peep_entry(ip);
+    }
+}
+void peep_bitsize(OCODE* ip)
+{
+    if (abs(ip->oper1->length) < ISZ_USHORT)
+    {
+        auto newap = Allocate<AMODE>();
+        *newap = *ip->oper1;
+        newap->length = ISZ_UINT;
+        ip->oper1 = newap;
     }
 }
 void peep_sar(OCODE* ip)
@@ -1745,6 +1757,12 @@ void oa_peep(void)
                     break;
                 case op_btr:
                     peep_btr(ip);
+                    peep_bitsize(ip);
+                    break;
+                case op_bts:
+                case op_btc:
+                case op_bt:
+                    peep_bitsize(ip);
                     break;
                 case op_cmp:
                     peep_tworeg(ip);

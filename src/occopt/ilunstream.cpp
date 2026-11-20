@@ -491,6 +491,8 @@ static Optimizer::QUAD* UnstreamInstruction(FunctionData& fd)
             case i_jg:
             case i_jle:
             case i_jl:
+            case i_jbitne:
+            case i_jbite:
             case i_swbranch:
             case i_coswitch:
             case i_goto:

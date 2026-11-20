@@ -255,7 +255,7 @@ static ARCH_CHARACTERISTICS architecture_characteristics = {
     OPT_REVERSESTORE | OPT_REVERSEPARAM | OPT_ARGSTRUCTREF | OPT_EXPANDSWITCH | OPT_THUNKRETVAL, /* preferred optimizations */
     DO_NOGCSE | DO_NOLCSE | DO_NOREGALLOC | DO_NOADDRESSINIT | DO_NOPARMADJSIZE | DO_NOLOADSTACK | DO_NOENTRYIF | DO_NOALIAS |
         DO_NOCONST | DO_NOINLINE | DO_UNIQUEIND | DO_NOFASTDIV | DO_NODEADPUSHTOTEMP | DO_MIDDLEBITS | DO_NOBRANCHTOBRANCH |
-        DO_NOMULTOSHIFT,
+        DO_NOMULTOSHIFT | DO_NOBITINS,
     /* optimizations we don't want */
     EO_RETURNASERR,    /* error options */
     false,             /* true if has floating point regs */

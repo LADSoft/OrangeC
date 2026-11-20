@@ -44,6 +44,7 @@
 #include "optmodules.h"
 #include "optmain.h"
 #include "iinvar.h"
+#include "ilocal.h"
 
 namespace Optimizer
 {
@@ -59,6 +60,8 @@ static void scan_gotos(QUAD* head)
     {
         switch (head->dc.opcode)
         {
+            case i_jbite:
+            case i_jbitne:
             case i_jc:
             case i_jnc:
             case i_jbe:
@@ -147,6 +150,8 @@ static void KillBranchToNext(Block* b, QUAD* head)
     {
         switch (head->dc.opcode)
         {
+            case i_jbite:
+            case i_jbitne:
             case i_jc:
             case i_jnc:
             case i_jbe:
@@ -249,6 +254,8 @@ void KillLabeledGoto(Block* b, QUAD* head)
                     KillBranchToNext(tail->block, tail);
                 }
                 break;
+            case i_jbite:
+            case i_jbitne:
             case i_jc:
             case i_jnc:
             case i_jbe:
@@ -341,6 +348,12 @@ void KillJumpover(Block* b, QUAD* head)
                 break;
             case i_jne:
                 newtype = i_je;
+                break;
+            case i_jbite:
+                newtype = i_jbitne;
+                break;
+            case i_jbitne:
+                newtype = i_jbite;
                 break;
             case i_jge:
                 newtype = i_jl;
@@ -543,7 +556,7 @@ static void MergeSetxx(Block* b, QUAD* head)
                                 break;
                             }
                         }
-                        else if (find->dc.opcode >= i_setne && find->dc.opcode <= i_setge && (head->temps & TEMP_ANS) &&
+                        else if (find->dc.opcode >= i_setbitne && find->dc.opcode <= i_setge && (head->temps & TEMP_ANS) &&
                                  head->ans->offset->sp->i == tn)
                         {
                             i_ops newtype;
@@ -551,6 +564,12 @@ static void MergeSetxx(Block* b, QUAD* head)
                             {
                                 switch (find->dc.opcode)
                                 {
+                                    case i_setbite:
+                                        newtype = i_jbite;
+                                        break;
+                                    case i_setbitne:
+                                        newtype = i_jbitne;
+                                        break;
                                     case i_setc:
                                         newtype = i_jnc;
                                         break;
@@ -589,6 +608,12 @@ static void MergeSetxx(Block* b, QUAD* head)
                             {
                                 switch (find->dc.opcode)
                                 {
+                                    case i_setbite:
+                                        newtype = i_jbite;
+                                        break;
+                                    case i_setbitne:
+                                        newtype = i_jbitne;
+                                        break;
                                     case i_setnc:
                                         newtype = i_jnc;
                                         break;
@@ -671,6 +696,221 @@ static void PeepCompare(Block* b, QUAD* head)
         }
     }
 }
+static void peep_bitcandidate(QUAD* head, bool set)
+{
+    if (Optimizer::chosenAssembler->arch->denyopts & DO_NOBITINS)
+        return;
+    if (!(head->temps & TEMP_ANS) || head->ans->mode != i_direct || abs(head->ans->size) > chosenAssembler->arch->compatibleIntSize)
+        return;
+    if ((head->temps & TEMP_LEFT) && head->dc.left->mode == i_direct)
+        return;
+    auto candidate = head->dc.right;
+    bool foundnot = false;
+    while (candidate && candidate->mode == i_direct && candidate->offset->type == se_tempref)
+    {
+        QUAD* ip = InstructionDefinesSsa[candidate->offset->sp->i];
+        if (!ip)
+            return;
+        if (ip->dc.opcode == i_not)
+        {
+            foundnot = true;
+            candidate = ip->dc.left;
+        }
+        else if (ip->dc.opcode == i_lsl && ip->dc.left->mode == i_immed && ip->dc.left->offset->i == 1)
+        {
+            if (foundnot == set)
+                return;
+            if ((ip->temps & TEMP_RIGHT) && ip->dc.right->mode == i_direct)
+            {
+                int i = head->ans->offset->sp->i;
+                auto ip1 = InstructionDefinesSsa[ip->dc.right->offset->sp->i];
+                switch (head->fwd->dc.opcode)
+                {
+                    case i_je:
+                        // this next gets around a conflict that was generated for the x86...
+                        if (ip1 && (ip1->temps & TEMP_LEFT))
+                            head->dc.right = ip1->dc.left;
+                        else
+                            head->dc.right = ip->dc.right;
+                        head->dc.opcode = i_jbite;
+                        head->dc.v.label = head->fwd->dc.v.label;
+                        RemoveInstruction(head->fwd);
+                        head->temps &= ~TEMP_ANS;
+                        head->ans = nullptr;
+                        if (head->temps & TEMP_RIGHT)
+                        {
+                            auto reg = InitTempOpt(ISZ_UINT, ISZ_UINT);
+
+                            QUAD* ins = Allocate<QUAD>();
+                            ins->dc.opcode = i_assn;
+                            ins->ans = reg;
+                            ins->dc.left = head->dc.right;
+                            head->dc.right = reg;
+                            ins->temps = TEMP_LEFT | TEMP_ANS;
+                            InsertInstruction(head->back, ins);
+                        }
+                        break;
+                    case i_jne:
+                        // this next gets around a conflict that was generated for the x86...
+                        if (ip1 && (ip1->temps & TEMP_LEFT))
+                            head->dc.right = ip1->dc.left;
+                        else
+                            head->dc.right = ip->dc.right;
+                        head->dc.opcode = i_jbitne;
+                        head->dc.v.label = head->fwd->dc.v.label;
+                        RemoveInstruction(head->fwd);
+                        head->temps &= ~TEMP_ANS;
+                        head->ans = nullptr;
+                        if (head->temps & TEMP_RIGHT)
+                        {
+                            auto reg = InitTempOpt(ISZ_UINT, ISZ_UINT);
+
+                            QUAD* ins = Allocate<QUAD>();
+                            ins->dc.opcode = i_assn;
+                            ins->ans = reg;
+                            ins->dc.left = head->dc.right;
+                            head->dc.right = reg;
+                            ins->temps = TEMP_LEFT | TEMP_ANS;
+                            InsertInstruction(head->back, ins);
+                        }
+                        break;
+                    default:
+                        auto ip = head->fwd;
+                        while (ip && ip->fwd && ip->fwd->dc.opcode != i_block)
+                        {
+                            // both stored and loaded
+                            if (ip->dc.left == head->ans)
+                            {
+                                if (equalimode(ip->ans, head->dc.left))
+                                {
+                                    // this next gets around a conflict that was generated for the x86...
+                                    if (ip1 && (ip1->temps & TEMP_LEFT))
+                                        head->dc.right = ip1->dc.left;
+                                    else
+                                        head->dc.right = ip->dc.right;
+                                    head->dc.opcode = set ? i_bitset : i_bitclr;
+                                    // this is an x86 optimization.   We will move it at some point later....
+                                    // bit load/store need to be done in a register for speed reasons...
+                                    if (!(head->temps & TEMP_LEFT) || head->dc.left->mode != i_direct)
+                                    {
+                                        auto reg = InitTempOpt(head->dc.left->size, head->dc.left->size);
+
+                                        QUAD* ins = Allocate<QUAD>();
+                                        ins->dc.opcode = i_assn;
+                                        ins->ans = reg;
+                                        ins->dc.left = head->dc.left;
+                                        ins->temps |= TEMP_ANS;
+                                        if (head->temps & TEMP_ANS)
+                                            ins->temps |= TEMP_LEFT;
+                                        InsertInstruction(head->back, ins);
+
+                                        ins = Allocate<QUAD>();
+                                        ins->dc.opcode = i_assn;
+                                        ins->ans = head->dc.left;
+                                        ins->dc.left = reg;
+                                        ins->temps |= TEMP_LEFT;
+                                        if (head->temps & TEMP_ANS)
+                                            ins->temps |= TEMP_ANS;
+                                        InsertInstruction(head, ins);
+                                        head->dc.left = reg;
+                                        head->temps |= TEMP_LEFT;
+                                    }
+                                    else if (head->temps & TEMP_RIGHT)
+                                    {
+                                        auto reg = InitTempOpt(ISZ_UINT, ISZ_UINT);
+
+                                        QUAD* ins = Allocate<QUAD>();
+                                        ins->dc.opcode = i_assn;
+                                        ins->ans = reg;
+                                        ins->dc.left = head->dc.right;
+                                        head->dc.right = reg;
+                                        ins->temps = TEMP_LEFT | TEMP_ANS;
+                                        InsertInstruction(head->back, ins);
+                                    }
+                                    head->ans = nullptr;
+                                    head->temps &= ~TEMP_ANS;
+                                    RemoveInstruction(ip);
+                                }
+                                break;
+                            }
+                            ip = ip->fwd;
+                        }
+                        break;
+                }
+            }
+            return;
+        }
+        else if (ip->dc.opcode == i_assn)
+        {
+            if (ip->temps & TEMP_LEFT)
+                candidate = ip->dc.left;
+            else
+                return;
+        }
+        else
+        {
+            return;
+        }
+    }
+}
+static void PeepStructuredBit(QUAD* head)
+{
+    if (head->ans->bits == 1 && abs(head->ans->size) <= chosenAssembler->arch->compatibleIntSize)
+    {
+        if (head->dc.left->mode == i_immed)
+        {
+            int shlcount = head->ans->startbit;
+            int state = head->dc.left->offset->i;
+            // this is an x86 optimization.   We will move it at some point later....
+            // bit load/store need to be done in a register for speed reasons...
+            if (!(head->temps & TEMP_LEFT) || head->dc.left->mode != i_direct)
+            {
+                auto reg = InitTempOpt(head->dc.left->size, head->dc.left->size);
+                IMODE* pos = Allocate<IMODE>();
+                *pos = *head->ans;
+                pos->bits = pos->startbit = 0;
+                QUAD* ins = Allocate<QUAD>();
+                ins->dc.opcode = i_assn;
+                ins->ans = reg;
+                ins->dc.left = pos;
+                ins->temps |= TEMP_ANS;
+                if (head->temps & TEMP_ANS)
+                    ins->temps |= TEMP_LEFT;
+                InsertInstruction(head->back, ins);
+
+                ins = Allocate<QUAD>();
+                ins->dc.opcode = i_assn;
+                ins->ans = pos;
+                ins->dc.left = reg;
+                ins->temps |= TEMP_LEFT;
+                if (head->temps & TEMP_ANS)
+                    ins->temps |= TEMP_ANS;
+                InsertInstruction(head, ins);
+                head->dc.left = reg;
+                head->temps |= TEMP_LEFT;
+            }
+            else
+            {
+                head->dc.left = head->ans;
+                if (head->temps & TEMP_ANS)
+                    head->temps |= TEMP_LEFT;
+            }
+            head->dc.right = Optimizer::make_immed(head->dc.left->size, shlcount);
+            head->dc.opcode = state ? i_bitset : i_bitclr;
+            head->ans = nullptr;
+            if (head->temps & TEMP_ANS)
+                head->temps |= TEMP_LEFT;
+            else
+                head->temps &= ~TEMP_LEFT;
+            head->temps &= ~(TEMP_ANS | TEMP_RIGHT);
+        }
+    }
+    else if (head->dc.left->bits == 1 && head->dc.left->mode != i_immed && !head->ans->bits)
+    {
+        head->dc.opcode = i_bitload;
+    }
+}
+
 static bool peep(std::unordered_set<int>& occursInAbnormal, Block* b, bool branches)
 /*
  * ICODE peep main routine
@@ -704,6 +944,8 @@ static bool peep(std::unordered_set<int>& occursInAbnormal, Block* b, bool branc
             case i_jg:
             case i_jle:
             case i_jl:
+            case i_jbite:
+            case i_jbitne:
                 if (architecture != ARCHITECTURE_MSIL)
                 {
                     MergeSetxx(b, head);
@@ -728,12 +970,19 @@ static bool peep(std::unordered_set<int>& occursInAbnormal, Block* b, bool branc
                 break;
             case i_assn:
                 rv = PeepAssn(occursInAbnormal, b, head, branches);
+                PeepStructuredBit(head);
                 break;
             case i_parm:
                 if (branches && architecture != ARCHITECTURE_MSIL)
                 {
                     rv = PeepParm(b, head);
                 }
+                break;
+            case i_and:
+                peep_bitcandidate(head, false);
+                break;
+            case i_or:
+                peep_bitcandidate(head, true);
                 break;
             default:
                 break;

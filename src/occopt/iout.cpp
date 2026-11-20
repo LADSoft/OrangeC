@@ -176,14 +176,24 @@ static void iop_rett(Optimizer::QUAD* q) { oprintf(icdFile, "\tRETT\n"); }
 static void putbin(Optimizer::QUAD* q, const char* str)
 {
     oputc('\t', icdFile);
-    putamode(q, q->ans);
-    oprintf(icdFile, " = ");
-    putamode(q, q->dc.left);
-    if (q->atomic)
-        oprintf(icdFile, " A%s ", str);
+    if (q->ans)
+    {
+        putamode(q, q->ans);
+        oprintf(icdFile, " = ");
+        putamode(q, q->dc.left);
+        if (q->atomic)
+            oprintf(icdFile, " A%s ", str);
+        else
+            oprintf(icdFile, " %s ", str);
+        putamode(q, q->dc.right);
+    }
     else
+    {
         oprintf(icdFile, " %s ", str);
-    putamode(q, q->dc.right);
+        putamode(q, q->dc.left);
+        oprintf(icdFile, ", ", str);
+        putamode(q, q->dc.right);
+    }
 }
 
 /*-------------------------------------------------------------------------*/
@@ -242,6 +252,21 @@ static void iop_eor(Optimizer::QUAD* q) { putbin(q, "^"); }
 
 /*-------------------------------------------------------------------------*/
 
+static void iop_bitset(Optimizer::QUAD* q) { putbin(q, "setbit"); }
+
+/*-------------------------------------------------------------------------*/
+
+static void iop_bitclr(Optimizer::QUAD* q) { putbin(q, "clrbit"); }
+
+/*-------------------------------------------------------------------------*/
+
+static void iop_bittest(Optimizer::QUAD* q) { putbin(q, "testbit"); }
+
+static void putunary(Optimizer::QUAD* q, const char* str);
+
+static void iop_bitload(Optimizer::QUAD* q) { putunary(q, "loadbit"); }
+/*-------------------------------------------------------------------------*/
+
 static void putunary(Optimizer::QUAD* q, const char* str)
 {
     oputc('\t', icdFile);
@@ -276,6 +301,10 @@ static void iop_not(Optimizer::QUAD* q) { putunary(q, "~"); }
 /*-------------------------------------------------------------------------*/
 
 static void iop_assn(Optimizer::QUAD* q) { putunary(q, ""); }
+
+/*-------------------------------------------------------------------------*/
+
+static void iop_lea(Optimizer::QUAD* q) { putunary(q, "addr"); }
 
 /*-------------------------------------------------------------------------*/
 
@@ -433,6 +462,14 @@ static void putset(Optimizer::QUAD* q, const char* str)
 
 /*-------------------------------------------------------------------------*/
 
+static void iop_jbitne(Optimizer::QUAD* q) { putjmp(q, "bitne"); }
+
+/*-------------------------------------------------------------------------*/
+
+static void iop_jbite(Optimizer::QUAD* q) { putjmp(q, "bite"); }
+
+/*-------------------------------------------------------------------------*/
+
 static void iop_jc(Optimizer::QUAD* q) { putjmp(q, "U<"); }
 
 /*-------------------------------------------------------------------------*/
@@ -470,6 +507,14 @@ static void iop_jle(Optimizer::QUAD* q) { putjmp(q, "S<="); }
 /*-------------------------------------------------------------------------*/
 
 static void iop_jge(Optimizer::QUAD* q) { putjmp(q, "S>="); }
+
+/*-------------------------------------------------------------------------*/
+
+static void iop_setbitne(Optimizer::QUAD* q) { putset(q, "bitne"); }
+
+/*-------------------------------------------------------------------------*/
+
+static void iop_setbite(Optimizer::QUAD* q) { putset(q, "bite"); }
 
 /*-------------------------------------------------------------------------*/
 
@@ -794,6 +839,12 @@ static void (*oplst[])(Optimizer::QUAD* q) = {/* NOPROTO */
                                               iop_and,
                                               iop_or,
                                               iop_eor,
+                                              iop_bitset,
+                                              iop_bitclr,
+                                              iop_bitload,
+                                              iop_bittest,
+                                              iop_setbitne,
+                                              iop_setbite,
                                               iop_setne,
                                               iop_sete,
                                               iop_setc,
@@ -805,6 +856,8 @@ static void (*oplst[])(Optimizer::QUAD* q) = {/* NOPROTO */
                                               iop_setle,
                                               iop_setge,
                                               iop_asmcond,
+                                              iop_jbitne,
+                                              iop_jbite,
                                               iop_jne,
                                               iop_je,
                                               iop_jc,
@@ -816,6 +869,7 @@ static void (*oplst[])(Optimizer::QUAD* q) = {/* NOPROTO */
                                               iop_jle,
                                               iop_jge,
                                               iop_assn,
+                                              iop_lea,
                                               iop_genword,
                                               iop_coswitch,
                                               iop_swbranch,

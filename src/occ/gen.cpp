@@ -992,25 +992,15 @@ void bit_store(AMODE* dest, AMODE* src, int size, int bits, int startbit)
 {
     if (src->mode == am_immed && isintconst(src->offset))
     {
-        if (bits == 1)
+        int l = dest->liveRegs;
+        if (dest->mode == am_indisp && dest->preg != EBP)
+            dest->liveRegs |= 1 << dest->preg;
+        if (bits != 32)
         {
-            if (src->offset->i & 1)
-                gen_codes(op_bts, ISZ_UINT, dest, aimmed(startbit));
-            else
-                gen_codes(op_btr, ISZ_UINT, dest, aimmed(startbit));
+            gen_codes(op_and, size, dest, aimmed(~(((1 << bits) - 1) << startbit)));
         }
-        else
-        {
-            int l = dest->liveRegs;
-            if (dest->mode == am_indisp && dest->preg != EBP)
-                dest->liveRegs |= 1 << dest->preg;
-            if (bits != 32)
-            {
-                gen_codes(op_and, size, dest, aimmed(~(((1 << bits) - 1) << startbit)));
-            }
-            dest->liveRegs = l;
-            gen_codes(op_or, size, dest, aimmed((src->offset->i & ((bits == 32 ? 0 : (1 << bits)) - 1)) << startbit));
-        }
+        dest->liveRegs = l;
+        gen_codes(op_or, size, dest, aimmed((src->offset->i & ((bits == 32 ? 0 : (1 << bits)) - 1)) << startbit));
     }
     else
     {
@@ -3685,6 +3675,66 @@ void asm_eor(Optimizer::QUAD* q) /* binary exclusive or */
         }
     }
 }
+void asm_bitset(Optimizer::QUAD* q) /* set bit */
+{
+    enum e_opcode opl, opr;
+    AMODE *apll = nullptr, *aplh = nullptr, *aprl = nullptr, *aprh = nullptr;
+    getAmodes(q, &opl, q->dc.left, &apll, &aplh);
+    getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
+    gen_codes(op_bts, apll->length, apll, aprl);
+}
+void asm_bitclr(Optimizer::QUAD* q) /* clear bit */
+{
+    enum e_opcode opl, opr;
+    AMODE *apll = nullptr, *aplh = nullptr, *aprl = nullptr, *aprh = nullptr;
+    getAmodes(q, &opl, q->dc.left, &apll, &aplh);
+    getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
+    gen_codes(op_btr, apll->length, apll, aprl);
+}
+void asm_bitload(Optimizer::QUAD* q) /* load a bit*/
+{
+    enum e_opcode opa, opl;
+    AMODE *apal = nullptr, *apah = nullptr, *apll = nullptr, *aplh = nullptr;
+    getAmodes(q, &opl, q->dc.left, &apll, &aplh);
+    getAmodes(q, &opa, q->ans, &apal, &apah);
+    gen_codes(op_bt, apll->length, apll, aimmed(q->dc.left->startbit));
+    gen_codes(op_mov, q->ans->size, apal, aimmed(0));
+    gen_codes(op_rcl, q->ans->size, apal, aimmed(1));
+}
+void asm_bittest(Optimizer::QUAD* q)
+{
+    enum e_opcode opa, opl, opr;
+    AMODE *apal = nullptr, *apah = nullptr, *apll = nullptr, *aplh = nullptr, *aprl = nullptr, *aprh = nullptr;
+    getAmodes(q, &opl, q->dc.left, &apll, &aplh);
+    getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
+    getAmodes(q, &opa, q->ans, &apal, &apah);
+    gen_codes(op_bt, apll->length, apll, aprl);
+    gen_codes(op_mov, q->ans->size, apal, aimmed(0));
+    gen_codes(op_rcl, q->ans->size, apal, aimmed(1));
+}
+void asm_setbitne(Optimizer::QUAD* q) /* evaluate if bit is set */
+{
+    enum e_opcode opa, opl, opr;
+    AMODE *apal = nullptr, *apah = nullptr, *apll = nullptr, *aplh = nullptr, *aprl = nullptr, *aprh = nullptr;
+    getAmodes(q, &opl, q->dc.left, &apll, &aplh);
+    getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
+    getAmodes(q, &opa, q->ans, &apal, &apah);
+    gen_codes(op_bt, apll->length, apll, aprl);
+    gen_codes(op_mov, q->ans->size, apal, aimmed(0));
+    gen_codes(op_rcl, q->ans->size, apal, aimmed(1));
+}
+void asm_setbite(Optimizer::QUAD* q) /* evluate if bit is clr */
+{
+    enum e_opcode opa, opl, opr;
+    AMODE *apal = nullptr, *apah = nullptr, *apll = nullptr, *aplh = nullptr, *aprl = nullptr, *aprh = nullptr;
+    getAmodes(q, &opl, q->dc.left, &apll, &aplh);
+    getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
+    getAmodes(q, &opa, q->ans, &apal, &apah);
+    gen_codes(op_bt, apll->length, apll, aprl);
+    gen_codes(op_mov, q->ans->size, apal, aimmed(0));
+    gen_code(op_cmc, nullptr, nullptr);
+    gen_codes(op_rcl, q->ans->size, apal, aimmed(1));
+}
 void asm_setne(Optimizer::QUAD* q) /* evaluate a = b != c */ { gen_xset(q, op_setne, op_setne, op_setne); }
 void asm_sete(Optimizer::QUAD* q) /* evaluate a = b == c */ { gen_xset(q, op_sete, op_sete, op_sete); }
 void asm_setc(Optimizer::QUAD* q) /* evaluate a = b U< c */ { gen_xset(q, op_setc, op_seta, op_setc); }
@@ -4443,6 +4493,7 @@ void asm_assn(Optimizer::QUAD* q) /* assignment */
         }
     }
 }
+void asm_lea(Optimizer::QUAD* q) /* address calculation */ {}
 void asm_genword(Optimizer::QUAD* q) /* put a byte or word into the code stream */
 {
     gen_code(op_genword, aimmed(q->dc.left->offset->i), 0);
@@ -5026,6 +5077,24 @@ void asm_cmpblock(Optimizer::QUAD* q)
         gen_code(op_jne, make_label(labno), NULL);
         pushlevel -= 12;
     }
+}
+void asm_jbitne(Optimizer::QUAD* q) /* branch if bit is set */
+{
+    enum e_opcode opl, opr;
+    AMODE *apll = nullptr, *aplh = nullptr, *aprl = nullptr, *aprh = nullptr;
+    getAmodes(q, &opl, q->dc.left, &apll, &aplh);
+    getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
+    gen_codes(op_bt, apll->length, apll, aprl);
+    gen_branch(op_jc, q->dc.v.label);
+}
+void asm_jbite(Optimizer::QUAD* q) /* branch if bit is clr */
+{
+    enum e_opcode opl, opr;
+    AMODE *apll = nullptr, *aplh = nullptr, *aprl = nullptr, *aprh = nullptr;
+    getAmodes(q, &opl, q->dc.left, &apll, &aplh);
+    getAmodes(q, &opr, q->dc.right, &aprl, &aprh);
+    gen_codes(op_bt, apll->length, apll, aprl);
+    gen_branch(op_jnc, q->dc.v.label);
 }
 void asm_jc(Optimizer::QUAD* q) /* branch if a U< b */ { gen_goto(q, op_jc, op_ja, op_jc, op_ja, op_jb, op_ja, op_jb); }
 void asm_ja(Optimizer::QUAD* q) /* branch if a U> b */ { gen_goto(q, op_ja, op_jc, op_ja, op_jc, op_ja, op_jb, op_ja); }

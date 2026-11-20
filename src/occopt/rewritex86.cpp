@@ -1698,6 +1698,8 @@ int x86_examine_icode(QUAD* head)
             case i_jg:
             case i_jle:
             case i_jge:
+            case i_jbite:
+            case i_jbitne:
                 /* make sure one of the ops is in a register */
                 if (head->dc.left->size < ISZ_FLOAT)
                 {

@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -2515,8 +2515,8 @@ int opt0(EXPRESSION** node)
             break;
         case ExpressionNode::callsite_:
             // rv |= opt0(&((*node)->v.func->fcall));
-//            if ((*node)->v.func->thisptr)
-//                rv |= opt0(&((*node)->v.func->thisptr));
+            //            if ((*node)->v.func->thisptr)
+            //                rv |= opt0(&((*node)->v.func->thisptr));
             return rv;
         case ExpressionNode::atomic_:
             rv |= opt0(&((*node)->v.ad->flg));
@@ -2692,8 +2692,7 @@ int opt0(EXPRESSION** node)
             }
             break;
         case ExpressionNode::templateparam_:
-            if ((!IsDefiningTemplate()) &&
-                (*node)->v.sp->tp->BaseType()->templateParam->second->type == TplType::int_)
+            if ((!IsDefiningTemplate()) && (*node)->v.sp->tp->BaseType()->templateParam->second->type == TplType::int_)
             {
                 SYMBOL* sym = (*node)->v.sp;
                 TEMPLATEPARAMPAIR* found = (*node)->v.sp->tp->templateParam;
@@ -3214,7 +3213,7 @@ int fold_const(EXPRESSION* node)
                 if (node->v.construct.tp->IsArithmetic())
                 {
 
-                    std::list<Initializer*>* init = nullptr, * dest = nullptr;
+                    std::list<Initializer*>*init = nullptr, *dest = nullptr;
                     initType(nullptr, 0, StorageClass::auto_, &init, &dest, node->v.construct.tp, nullptr, false, false, 0);
                     if (init)
                         *node = *init->front()->exp;
@@ -3222,8 +3221,8 @@ int fold_const(EXPRESSION* node)
                 else
                 {
                     EXPRESSION* exp = AnonymousVar(StorageClass::auto_, node->v.construct.tp);
-                    initType(nullptr, 0, StorageClass::auto_, &exp->v.sp->sb->init, &exp->v.sp->sb->dest,
-                        node->v.construct.tp, exp->v.sp, false, false, 0);
+                    initType(nullptr, 0, StorageClass::auto_, &exp->v.sp->sb->init, &exp->v.sp->sb->dest, node->v.construct.tp,
+                             exp->v.sp, false, false, 0);
                 }
             });
         }
@@ -3645,7 +3644,7 @@ int typedconsts(EXPRESSION* node1)
                 rv = true;
                 node1->v.i = Optimizer::CastToInt(ISZ_UINT, reint(node1->left));
                 node1->unionoffset = node1->left->unionoffset;
-                node1->type = ExpressionNode::c_ul_;
+                node1->type = ExpressionNode::c_ui_;
                 node1->left = nullptr;
             }
             break;
@@ -3959,7 +3958,7 @@ void optimize_for_constants(EXPRESSION** expr)
         rebalance(expr);
     }
 }
-void optimized_expression( SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** expr, bool commaallowed)
+void optimized_expression(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** expr, bool commaallowed)
 {
     if (commaallowed)
         expression(funcsp, atp, tp, expr, 0);

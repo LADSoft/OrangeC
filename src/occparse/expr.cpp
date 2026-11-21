@@ -1039,6 +1039,14 @@ static void variableName(SYMBOL* funcsp, Type* atp, Type** tp, EXPRESSION** exp,
                             {
                                 sym->sb->attribs.inheritable.linkage4 = Linkage::virtual_;
                                 Optimizer::SymbolManager::Get(sym)->tp = Optimizer::SymbolManager::Get(sym->tp);
+                                auto stream = initTokenStreams.get(sym);
+                                if (stream != nullptr)
+                                {
+                                    initTokenStreams.set(sym, nullptr);
+                                    ParseOnStream(stream, [&sym]() {
+                                        initialize(nullptr, sym, sym->sb->storage_class, false, false, false, 0);
+                                    });
+                                }
                                 InsertInlineData(sym);
                             }
                         }

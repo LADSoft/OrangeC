@@ -1422,7 +1422,7 @@ void findUnusedStatics(std::list<NAMESPACEVALUEDATA*>* nameSpace)
                         sp->sb->storage_class == StorageClass::localstatic_)
                         /* void will be caught earlier */
                         if (!sp->tp->IsFunction() && !sp->tp->IsArray() && sp->tp->size == 0 && !sp->tp->IsVoid() &&
-                            sp->tp->type != BasicType::any_ && !sp->sb->templateLevel)
+                            sp->tp->type != BasicType::any_ && !sp->sb->templateLevel && !sp->sb->attribs.inheritable.isInline)
                             error(ERR_UNSIZED, sp);
                 }
             }

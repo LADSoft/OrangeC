@@ -4722,7 +4722,7 @@ void initialize(SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool
                 int flags)
 {
     auto sp = sym->tp->BaseType()->sp;
-    if (sp && sym->sb && sym->sb->storage_class != StorageClass::typedef_ && (!IsDefiningTemplate()))
+    if (sp && sym->sb && sym->sb->storage_class != StorageClass::typedef_ && !IsDefiningTemplate())
     {
         if (sym->tp->IsDeferred())
         {
@@ -4803,7 +4803,7 @@ void initialize(SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool
     if ((tp->IsPtr() && tp->array) || tp->IsRef())
         tp = tp->BaseType()->btp->BaseType();
     if (sym->sb->storage_class != StorageClass::typedef_ && sym->sb->storage_class != StorageClass::external_ &&
-        !sym->tp->IsRef() && !sym->sb->attribs.inheritable.isInline && !tp->syms)
+        !sym->tp->IsRef() && !tp->syms)
     {
         if (tp->IsStructured())
             tp = tp->BaseType()->sp->tp;
@@ -5309,15 +5309,7 @@ void initialize(SYMBOL* funcsp, SYMBOL* sym, StorageClass storage_class_in, bool
                 InsertInlineData(sym);
             }
         }
-        else if (sym->sb->attribs.inheritable.isInline && !sym->tp->IsFunction() && !sym->sb->parentClass &&
-                 !sym->sb->templateLevel)
-        {
-            // so it won't show up in the output file unless used...
-            RequiresDialect::Feature(Dialect::cpp17, "Inline variables");
-            sym->sb->attribs.inheritable.linkage4 = Linkage::none_;
-            sym->sb->attribs.inheritable.isInlineData = true;
-        }
-        else
+        else if (!sym->sb->attribs.inheritable.isInline || sym->tp->IsFunction() || sym->sb->parentClass || sym->sb->templateLevel)
         {
             if (sym->sb->attribs.inheritable.isInlineData)
                 sym->sb->didinline = true;

@@ -4680,6 +4680,32 @@ bool declare(SYMBOL* funcsp, Type** tprv, StorageClass storage_class, Linkage de
                                 auto stream = GetDataTokenStream();
                                 initTokenStreams.set(sp, stream);
                             }
+                            else if (sp->sb->attribs.inheritable.isInline && !sp->sb->templateLevel)
+                            {
+                                RequiresDialect::Feature(Dialect::cpp17, "Inline variables");
+                                sp->sb->attribs.inheritable.linkage4 = Linkage::none_;
+                                sp->sb->attribs.inheritable.isInlineData = true;
+                                // defer initialization till use
+                                if (MATCHKW(Keyword::assign_) || MATCHKW(Keyword::begin_))
+                                {
+                                    sp->sb->initialized = true;
+                                    auto stream = GetDataTokenStream();
+                                    initTokenStreams.set(sp, stream);
+                                }
+                                else
+                                {
+                                    // empty stream so we know to initialize
+                                    auto stream = streamFactory.Create();
+                                    stream->Add(currentLex);  // needs a single token which will normally be a comma or semicolon,
+                                                              // for line number info
+                                    initTokenStreams.set(sp, stream);
+                                }
+                            }
+                            else if (sp->sb->storage_class == StorageClass::external_ && !sp->sb->templateLevel &&
+                                     !MATCHKW(Keyword::assign_) && !MATCHKW(Keyword::begin_))
+                            {
+                                // don't try to make initialization sequences for externs unless they are explicitly initialized.
+                            }
                             else
                             {
                             doInitialize:

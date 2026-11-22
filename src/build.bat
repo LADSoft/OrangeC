@@ -90,7 +90,7 @@
                   goto done
 :codeanalyzer
                   REM  Build to test code analyzer
-                  c:\orangec\temp\omake /DCOMPILER=MS /DORANGEC_ONLY=YES /DWITHOUT_CLIBS=YES fullbuild
+                  c:\orangec\temp\omake /DCOMPILER=MS /DORANGEC_ONLY=YES fullbuild
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
@@ -178,14 +178,6 @@
                   )
                   cd ..\src
 :notests
-                  IF "%WITHDEBUG%" NEQ "" (
-                      goto finish
-                  )
-                  omake /fzip7z.mak
-                  IF %ERRORLEVEL% NEQ 0 (
-                      goto error;
-                  )
-:finish
                   echo succeeded
                   goto done
 :error

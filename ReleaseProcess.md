@@ -24,7 +24,7 @@
 * go to the appveyor site and set the build number back to 1
 * tag the release (vx.y.z)
 * push the tag
-* wait for the MSVC THEN WITH STATIC LIB build to complete
+* wait for the MSVC RELEASE BUILD build to complete
 * Now there will be a release tag with artifacts in GitHub
 * make an overview of the pertinent features in this release and add the line by line release notes
 * add it to the release tag as documentation

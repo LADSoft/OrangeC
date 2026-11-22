@@ -2409,7 +2409,7 @@ void x86InternalConflict(QUAD* head)
 {
     if (head->atomic)
     {
-        if (head->ans && abs(head->ans->size < ISZ_ULONGLONG))
+        if (head->ans && abs(head->ans->size) < ISZ_ULONGLONG)
         {
             switch (head->dc.opcode)
             {

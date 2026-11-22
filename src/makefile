@@ -76,9 +76,10 @@ compare:
 
 clean:  
 	@$(MAKE) -f $(_TREEROOT) clean
+
 dist-clean:
 	@$(MAKE) -f $(_TREEROOT) dist-clean
-ifneq "COMPILER" "gcc-linux"
+ifneq "$(COMPILER)" "gcc-linux"
 	@$(MAKE) -f $(_TREEROOT) COMPILER=OCC clean
 	@$(MAKE) -f $(_TREEROOT) COMPILER=MINGW64 clean
 	@$(MAKE) -f $(_TREEROOT) COMPILER=CLANG clean
@@ -88,7 +89,9 @@ else
 endif
  
 library:
+ifeq "$(WITHOUT_CLIBS)" ""
 	@$(MAKE) -Cclibs
+endif
 
 copyexes:
 	@$(MAKE) -f $(_TREEROOT) distribute_exe
@@ -107,8 +110,10 @@ exebuild:
 	@$(MAKE) -f $(_TREEROOT) distribute_exe
 
 librarybuild:
+ifeq "$(WITHOUT_CLIBS)" ""
 	@$(MAKE) -Cclibs
 	@$(MAKE) -f $(_TREEROOT) distribute_clibs
+endif
 
 zip:
 	@$(MAKE) -f $(_TREEROOT) zip
@@ -124,9 +129,13 @@ fullbuild:
 	@$(MAKE) -f $(_TREEROOT) library
 	@$(MAKE) -f $(_TREEROOT) exefile
 	@$(MAKE) -f $(_TREEROOT) distribute_exe
+ifeq "$(WITHOUT_CLIBS)" ""
 	@$(MAKE) -Cclibs
+endif
 	@$(MAKE) -f $(_TREEROOT) distribute
+ifeq "$(WITHOUT_CLIBS)" ""
 	@$(MAKE) -f $(_TREEROOT) distribute_clibs
+endif
 	@$(MAKE) -f $(_TREEROOT) zip
 
 format:

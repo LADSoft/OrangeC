@@ -26,6 +26,7 @@ configuration:
      - MSVC THEN WITH LSCRTL
      - MSVC THEN VIA ASSEMBLY
      - MSVC THEN WITH DEBUG
+     - MSVC BUILD RELEASE
      - CODE ANALYZER TEST
      - MSIL COMPILER
      - MSVC WITH PDB
@@ -35,10 +36,12 @@ for:
 -
       matrix:
             only:
-                - configuration: MSVC THEN WITH STATIC LIB
+                - configuration: MSVC BUILD RELEASE
       environment:
-          BUILD_PROFILE: MS
-          TESTS: TRUE
+          BUILD_PROFILE: MSRELEASE
+      artifacts:
+        - path: "dist\\*.*"
+          name: releasefiles
       deploy:
           release: Orange C-$(APPVEYOR_REPO_TAG_NAME)
           description: 'Current Release'
@@ -51,6 +54,13 @@ for:
           on:
               branch: /v\d*\.\d*\.\d*/
               APPVEYOR_REPO_TAG: true
+-
+      matrix:
+            only:
+                - configuration: MSVC THEN WITH STATIC LIB
+      environment:
+          BUILD_PROFILE: MS
+          TESTS: TRUE
 -
       matrix:
             only:
@@ -130,8 +140,3 @@ build_script:
               cd ..\.. 
               move orangec projects
               cd projects\orangec
-
-artifacts:
-  - path: "dist\\*.*"
-    name: releasefiles
-

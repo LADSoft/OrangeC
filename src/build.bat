@@ -28,18 +28,19 @@
               IF "%BUILD_PROFILE%" EQU "SANITIZER" goto sanitizerbuild
               IF "%BUILD_PROFILE%" EQU "CODEANALYZER" goto codeanalyzer
               IF "%BUILD_PROFILE%" EQU "LIBCXXTEST" goto libcxxtest
+              IF "%BUILD_PROFILE%" EQU "MSRELEASE" goto msrelease
               IF "%BUILD_PROFILE%" NEQ "TEST" goto normal
-              goto error
+              goto errorITH
 :occil
                   REM  alternate build with OCCIL
-                  c:\orangec\temp\omake /DCOMPILER=CLANG fullbuild -j:%PARALLEL%
+                  c:\orangec\temp\omake /DCOMPILER=CLANG /DWITHOUT_ZIP=YES fullbuild -j:%PARALLEL%
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
                   c:\orangec\bin\occ /V
                   copy omake\omake.exe \orangec\temp
                   c:\orangec\temp\omake /DCOMPILER=OCC clean -j:%PARALLEL%
-                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:%PARALLEL%
+                  c:\orangec\temp\omake /DNOMAKEDIR /DWITHOUT_ZIP=YES /DWITHOUT_CLIBS=YES /DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% fullbuild -j:%PARALLEL%
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
@@ -89,7 +90,7 @@
                   goto done
 :codeanalyzer
                   REM  Build to test code analyzer
-                  c:\orangec\temp\omake /DCOMPILER=MS fullbuild
+                  c:\orangec\temp\omake /DCOMPILER=MS /DORANGEC_ONLY=YES /DWITHOUT_CLIBS=YES fullbuild
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )
@@ -107,6 +108,31 @@
                   cd ..\..\src
                   echo succeeded
                   goto done
+:msrelease
+                  REM  Primary build for Orange C
+                  c:\orangec\temp\omake /DCOMPILER=MS /DWITHOUT_ZIP=YES fullbuild -j:%PARALLEL%
+                  IF %ERRORLEVEL% NEQ 0 (
+                      goto error;
+                  )
+                  c:\orangec\bin\occ /V
+                  copy omake\omake.exe \orangec\temp
+                  IF "%WITHDEBUG%" NEQ "" (
+                      omake /fzip.mak
+                      goto nosecondbuild:
+                  )
+                  REM  in this last one we add in OCCIL so it will be in the install packages...
+                  c:\orangec\temp\omake /DCOMPILER=OCC clean -j:%PARALLEL%
+                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DWITHOUT_CLIBS=YES /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% /DWITHMSDOS fullbuild -j:%PARALLEL%
+                  )
+                  IF %ERRORLEVEL% NEQ 0 (
+                      goto error;
+                  )
+                  omake /fzip7z.mak
+                  IF %ERRORLEVEL% NEQ 0 (
+                      goto error;
+                  )
+                  echo succeeded
+                  goto done;
 :normal
                   REM  Primary build for Orange C
                   c:\orangec\temp\omake /DCOMPILER=%BUILD_PROFILE% /DORANGEC_ONLY=YES fullbuild -j:%PARALLEL%
@@ -124,13 +150,12 @@
                   copy c:\orangec\bin\*.exe c:\orangec\temp2 2> NUL
                   c:\orangec\bin\occ /V
                   copy omake\omake.exe \orangec\temp
-                  REM  in this last one we add in OCCIL so it will be in the install packages...
                   IF "%WITHDEBUG%" NEQ "" (
                       omake /fzip.mak
                       goto nosecondbuild:
                   )
                   c:\orangec\temp\omake /DCOMPILER=OCC clean -j:%PARALLEL%
-                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% /DWITHMSDOS fullbuild -j:%PARALLEL%
+                  c:\orangec\temp\omake /DNOMAKEDIR /DCOMPILER=OCC /DORANGEC_ONLY=YES /DWITHOUT_CLIBS=YES /DVIAASSEMBLY=%VIAASSEMBLY% /DLSCRTL=%LSCRTL% /DWITHDEBUG=%WITHDEBUG% /DWITHMSDOS fullbuild -j:%PARALLEL%
                   )
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
@@ -147,7 +172,7 @@
                        goto notests;
                   )
                   cd ..\tests
-                  omake -B -j:%PARALLEL% /DCOMPILER=OCC
+                  omake -B -j:%PARALLEL% /DCOMPILER=OCC 
                   IF %ERRORLEVEL% NEQ 0 (
                       goto error;
                   )

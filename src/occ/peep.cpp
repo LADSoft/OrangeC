@@ -1313,6 +1313,10 @@ void peep_bitsize(OCODE* ip)
         *newap = *ip->oper1;
         newap->length = ISZ_UINT;
         ip->oper1 = newap;
+        newap = Allocate<AMODE>();
+        *newap = *ip->oper2;
+        newap->length = ISZ_UINT;
+        ip->oper2 = newap;
     }
 }
 void peep_sar(OCODE* ip)

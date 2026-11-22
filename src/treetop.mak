@@ -294,7 +294,7 @@ $(DISTS1): %.dist1 : $(DISTS)
 compare_exe:
 ifneq "$(MAIN_FILE)" ""
 ifeq "$(NO_COMPARE)" ""
-	$(COMPARER) $(DISTBIN)$(PATHEXT2)..$(PATHEXT2)temp2$(PATHEXT2)$(DISTNAME).exe $(DISTBIN)$(PATHEXT2)$(DISTNAME).exe
+	$(COMPARER) $(DISTBIN)$(PATHEXT2)..$(PATHEXT2)temp2$(PATHEXT2)$(DISTNAME).exe $(DISTBIN)$(PATHEXT2)$(DISTNAME).exe > $(NULLDEV)
 endif
 endif
 

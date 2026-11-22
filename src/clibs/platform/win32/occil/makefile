@@ -1,6 +1,6 @@
 #  Software License Agreement
 #  
-#      Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+#      Copyright(C) 1994-2026 David Lindauer, (LADSoft)
 #  
 #      This file is part of the Orange C Compiler package.
 #  
@@ -39,6 +39,7 @@ release_lsmsilcrtl:
 	copy lsmsilcrtl8.dll $(SYSOBJECT)
 	copy lsmsilcrtl9.dll $(SYSOBJECT)
 	copy lsmsilcrtl10.dll $(SYSOBJECT)
+	copy lsmsilcrtl11.dll $(SYSOBJECT)
 
 build_lsmsilcrtl:
 	csc /unsafe /langversion:7.3 /keyfile:lsmsilcrtl\occil.snk /t:library lsmsilcrtl\lsmsilcrtl.cs lsmsilcrtl\properties\assemblyinfo.cs
@@ -52,5 +53,7 @@ build_lsmsilcrtl:
 	copy lsmsilcrtl\bin\x86\Release\net9.0\*.dll
 	dotnet build lsmsilcrtl\lsmsilcrtl10.csproj --configuration Release
 	copy lsmsilcrtl\bin\x86\Release\net10.0\*.dll
+	dotnet build lsmsilcrtl\lsmsilcrtl11.csproj --configuration Release
+	copy lsmsilcrtl\bin\x86\Release\net11.0\*.dll
 
 DISTRIBUTE:

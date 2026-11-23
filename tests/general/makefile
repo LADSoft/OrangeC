@@ -9,10 +9,10 @@
 	olink /c /! /T:CON32 /o$@ $^ clwin.l climp.l
 
 test: bzip2.exe parsecsv.exe label.exe delegate.exe world.exe jarjar.exe
-	bzip2 bzip2.tst
-	fc /b bzip2.tst.bz2 bzip2.tst.bz2.cmpx
-	bzip2 -d bzip2.tst.bz2
-	fc /b bzip2.tst bzip2.tst.cmpx
+	bzip2 bzip2.ref
+	fc /b bzip2.ref.bz2 bzip2.tst.bz2.cmpx
+	bzip2 -d bzip2.ref.bz2
+	fc /b bzip2.ref bzip2.tst.cmpx
 	del out.pcl
 	parsecsv
 	fc /b test.cmpx out.pcl

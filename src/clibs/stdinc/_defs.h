@@ -1,25 +1,25 @@
 /*  Software License Agreement
- *  
+ *
  *      Copyright(C) 1994-2025 David Lindauer, (LADSoft)
- *  
+ *
  *      This file is part of the Orange C Compiler package.
- *  
+ *
  *      The Orange C Compiler package is free software: you can redistribute it and/or modify
  *      it under the terms of the GNU General Public License as published by
  *      the Free Software Foundation, either version 3 of the License, or
  *      (at your option) any later version.
- *  
+ *
  *      The Orange C Compiler package is distributed in the hope that it will be useful,
  *      but WITHOUT ANY WARRANTY; without even the implied warranty of
  *      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *      GNU General Public License for more details.
- *  
+ *
  *      You should have received a copy of the GNU General Public License
  *      along with Orange C.  If not, see <http://www.gnu.org/licenses/>.
- *  
+ *
  *      contact information:
  *          email: TouchStone222@runbox.com <David Lindauer>
- *  
+ *
  */
 
 #pragma GCC system_header
@@ -85,10 +85,16 @@
 #        define __STD_NS_QUALIFIER
 #    endif
 
-#    if __STDC_VERSION__ < 201112L || defined(__cplusplus)
+#    if __STDC_VERSION__ < 201112L && !defined(__cplusplus)
 #        define _NORETURN
-#    else
+#    elif __STDC_VERSION__ < 202311L && !defined(__cplusplus)
 #        define _NORETURN _Noreturn
+#    elif __STDC_VERSION__ >= 202311L && !defined(__cplusplus)
+#        define _NORETURN [[noreturn]]
+#    elif (defined(__cplusplus) && __cplusplus > 201103L)
+#        define _NORETURN [[noreturn]]
+#    else
+#        define _NORETURN
 #    endif
 
 /* the headers use the restrict keyword, which is not valid prior to
@@ -100,9 +106,9 @@
 #        define __restrict restrict
 #    endif
 
-#ifdef __cplusplus
-#    define _RTL_CONSTEXPR __builtin_constexpr
-#else
-#    define _RTL_CONSTEXPR
-#endif
+#    ifdef __cplusplus
+#        define _RTL_CONSTEXPR __builtin_constexpr
+#    else
+#        define _RTL_CONSTEXPR
+#    endif
 #endif

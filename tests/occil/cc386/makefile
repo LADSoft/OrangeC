@@ -1,4 +1,4 @@
-NETCOREDLL := --netcore 0
+NETCOREDLL := --netcore 10
 
 ifeq "$(COMPILER)" "gcc-linux"
 NULLDEV := /dev/null

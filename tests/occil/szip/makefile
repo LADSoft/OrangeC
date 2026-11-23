@@ -1,4 +1,4 @@
-NETCOREDLL := --netcore 0
+NETCOREDLL := --netcore 10
 
 all: lsmsilcrtl.dll szip.tst
 lsmsilcrtl.dll:

@@ -1,5 +1,5 @@
 NETCORE := 1
-NETCOREDLL := --netcore 0
+NETCOREDLL := --netcore 10
 
 
 ifeq "$(COMPILER)" "gcc-linux"

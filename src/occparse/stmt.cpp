@@ -4751,6 +4751,8 @@ void StatementGenerator::FunctionBody(bool enter)
 }
 bool StatementGenerator::CompileFunctionFromStreamInternal()
 {
+    if (IsDefiningTemplate())
+        return false;
     if (!funcsp->sb->inlineFunc.stmt)
     {
         if (!funcsp->sb->dontinstantiate && !IsDefiningTemplate() && !funcsp->sb->declaring)
@@ -4851,6 +4853,8 @@ bool StatementGenerator::CompileFunctionFromStreamInternal()
 }
 bool StatementGenerator::CompileFunctionFromStream(bool withC, bool now)
 {
+    if (IsDefiningTemplate())
+        return false;
     if ((Optimizer::cparams.prm_cplusplus || withC) && !funcsp->sb->dontinstantiate && !IsDefiningTemplate() &&
         !funcsp->sb->declaring)
     {

@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -352,7 +352,8 @@ static void DumpSymbol(SYMBOL* sym)
         {
             Utils::StrCat(type_name, "enum ");
         }
-        (tp->type == BasicType::typedef_ ? tp->btp : tp)->BasicTypeToString(type_name + sizeof(type_name), type_name + strlen(type_name));
+        (tp->type == BasicType::typedef_ ? tp->btp : tp)
+            ->BasicTypeToString(type_name + sizeof(type_name), type_name + strlen(type_name));
         type_name[40] = 0;
         while (tp->IsRef())
             tp = tp->BaseType()->btp;
@@ -409,7 +410,7 @@ static void DumpSymbols(void)
     }
     for (auto&& v : preProcessor->GetDefines())
     {
-        ccWriteSymbolType(v->GetName().c_str(), main_id, (char*)"$$$", 1, 0, ST_DEFINE);
+        ccWriteSymbolType(v.first.c_str(), main_id, (char*)"$$$", 1, 0, ST_DEFINE);
     }
 }
 static void DumpLines(void)

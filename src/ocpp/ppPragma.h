@@ -29,6 +29,7 @@
 #include <list>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <map>
 #include <map>
 #include <set>
@@ -361,21 +362,10 @@ class Once
     Once() : include(nullptr) {}
 
   private:
-    struct OnceItem
-    {
-        OnceItem(const std::string& fileName) { SetParams(fileName); }
-        OnceItem(const OnceItem& right) = default;
-        bool operator<(const OnceItem& right) const;
-        void SetParams(const std::string& fileName);
-
-        long filesize;
-        time_t filetime;
-        unsigned crc;
-    };
     void Clear() { items.clear(); }
 
     static Once* instance;
-    std::set<OnceItem> items;
+    std::unordered_set<std::string> items;
     ppInclude* include;
 };
 class Warning

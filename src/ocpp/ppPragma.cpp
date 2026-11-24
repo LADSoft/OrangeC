@@ -273,62 +273,9 @@ void ppPragma::HandleSR(Tokenizer& tk, bool startup)
 }
 Startups::~Startups() {}
 
-bool Once::IsInList(const std::string& name)
-{
-    OnceItem item(name);
-    return items.find(item) != items.end();
-}
-void Once::AddToList()
-{
-    if (!IsInList(include->GetErrFile()))
-    {
-        OnceItem item(include->GetErrFile());
-        items.insert(item);
-    }
-}
+bool Once::IsInList(const std::string& name) { return items.find(name) != items.end(); }
+void Once::AddToList() { items.insert(include->GetErrFile()); }
 
-bool Once::OnceItem::operator<(const OnceItem& right) const
-{
-    if (filesize < right.filesize)
-        return true;
-    else if (filesize == right.filesize)
-    {
-        if (filetime < right.filetime)
-            return true;
-        else if (filetime == right.filetime)
-            if (crc < right.crc)
-                return true;
-    }
-    return false;
-}
-void Once::OnceItem::SetParams(const std::string& fileName)
-{
-    FILE* fil = fopen(fileName.c_str(), "rb");
-    if (fil)
-    {
-        filesize = 0;
-        crc = 0;
-        int n;
-        unsigned char buf[8192];
-        while ((n = fread(buf, 1, sizeof(buf), fil)) > 0)
-        {
-            filesize += n;
-            crc = Utils::PartialCRC32(crc, buf, n);
-        }
-        fclose(fil);
-        struct stat statbuf;
-        if (!stat(fileName.c_str(), &statbuf))
-        {
-            filetime = statbuf.st_mtime;
-        }
-    }
-    else
-    {
-        filetime = 0;
-        filesize = 0;
-        crc = 0;
-    }
-}
 void ppPragma::HandleLibrary(Tokenizer& tk)
 {
     char buf[260 + 10];

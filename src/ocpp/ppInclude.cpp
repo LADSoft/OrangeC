@@ -31,7 +31,6 @@
 #include "Errors.h"
 #include "CmdFiles.h"
 #include <climits>
-#include <fstream>
 #include <iostream>
 #include <cstdio>
 #include <algorithm>
@@ -168,8 +167,8 @@ void ppInclude::pushFile(const std::string& name, const std::string& errname, bo
             userIncludes.insert(name);
         }
     }
-    std::fstream in(name, std::ios::in);
-    if (!piper.HasPipe() && name[0] != '-' && !in.is_open())
+    bool exists = Utils::FileExists(name);
+    if (!piper.HasPipe() && name[0] != '-' && !exists)
     {
         if (!noErr)
         {
@@ -185,7 +184,6 @@ void ppInclude::pushFile(const std::string& name, const std::string& errname, bo
     }
     else
     {
-        in.close();
         if (current)
         {
             files.push_front(std::move(current));

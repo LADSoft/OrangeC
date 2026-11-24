@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -86,17 +86,35 @@ class SymbolTable
     void Add(Symbol* symbol);
     void Remove(Symbol* symbol);
     typedef std::deque<std::unique_ptr<Symbol>>::iterator iterator;
-    iterator begin() { return symList.begin(); }
-    iterator end() { return symList.end(); }
+    auto begin() { return hashTable.begin(); }
+    auto end() { return hashTable.end(); }
 
-    void clear()
-    {
-        hashTable.clear();
-        symList.clear();
-    }
+    void clear() { hashTable.clear(); }
 
   private:
-    std::unordered_map<std::string, Symbol*> hashTable;
-    std::deque<std::unique_ptr<Symbol>> symList;
+    class eql
+    {
+      public:
+        unsigned operator()(const std::string& left, const std::string& right) const
+        {
+            return operator()(left.c_str(), right.c_str());
+        }
+        unsigned operator()(const char* left, const char* right) const { return strcmp(left, right) == 0; }
+    };
+    class hash
+    {
+      public:
+        unsigned operator()(const std::string& aa) const { return operator()(aa.c_str()); }
+
+        unsigned operator()(const char* aa) const
+        {
+            unsigned rv = 5381;
+            const unsigned char* x = (const unsigned char*)aa;
+            for (; *x; ++x)
+                rv = (rv << 5) + rv + *x;
+            return rv;
+        }
+    };
+    std::unordered_map<std::string, Symbol*, hash, eql> hashTable;
 };
 #endif

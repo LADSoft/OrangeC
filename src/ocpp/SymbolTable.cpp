@@ -1,6 +1,6 @@
 /* Software License Agreement
  *
- *     Copyright(C) 1994-2025 David Lindauer, (LADSoft)
+ *     Copyright(C) 1994-2026 David Lindauer, (LADSoft)
  *
  *     This file is part of the Orange C Compiler package.
  *
@@ -26,25 +26,12 @@
 #include "SymbolTable.h"
 
 SymbolTable::~SymbolTable() {}
-void SymbolTable::Add(Symbol* symbol)
-{
-    hashTable[symbol->GetName()] = symbol;
-    std::unique_ptr<Symbol> temp(symbol);
-    symList.push_back(std::move(temp));
-}
+void SymbolTable::Add(Symbol* symbol) { hashTable[symbol->GetName()] = symbol; }
 void SymbolTable::Remove(Symbol* symbol)
 {
     auto it = hashTable.find(symbol->GetName());
     if (it != hashTable.end())
     {
         hashTable.erase(it);
-        for (auto it = symList.begin(); it != symList.end(); ++it)
-        {
-            if ((*it).get() == symbol)
-            {
-                symList.erase(it);
-                break;
-            }
-        }
     }
 }

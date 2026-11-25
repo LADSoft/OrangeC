@@ -1,5 +1,79 @@
 # OrangeC Compiler And Tool Chain Release Notes
 
+
+## Version 7.0.20:
+
+ * project: move to slnx style visual studio project file
+ * project: add a precommit hook to style the code and fix the copyright date
+ * project: -? switch was broken on most executables
+ * project: various improvements to the builds
+ * project: add adl compiler to build so we catch problems with it earlier
+ * project: remove link to external web page
+ * project: remove some useless files from the archive
+ * project: don't set LIB environment variable as it collides with MSVC
+ * project: run through coverity static analysis
+ * project: do some rudimentary work with libcxx tests
+ * mingw64 build: remove -fpermissive
+ * occ: code cleanup
+ * occ: don't emit unused thunk table entries
+ * occ: nullptr could not be used as the third argument to std::fill
+ * occ: an enumerated type could not be declared outside the template class body where it was declared
+ * occ: argument which was an empty array wasn't being properly matched to a raw pointer
+ * occ: not all members were always initialized in constructors
+ * occ: new my_pod {0} needs to initialize the entire POD.
+ * occ: fix bug when compiling empty initializer lists, initializer lists as arguments
+ * occ: fix clang and mingw64 warnings
+ * occ: remove many of the extraneous stack variables after generating a function body
+ * occ: fix a vagary where '>>' didn't work if it ended a default expression in a template header
+ * occ: fix various problems with generating code for atomic intrinsics	
+ * occ: remove a lot of the extraneous functions from the output files
+ * occ: handle inlining better, small functions have a better chance of being completely inlined
+ * occ: returning a member pointer could result in an errant destructor call for a related class
+ * occ: fix inline member initialization to work when no explicit constructors were specified
+ * occ: improve various things when generating the head for constructor functions
+ * occ: improve error generated when using constructor syntax to initialize a value of type void
+ * occ:  CTAD constructors could sometimes have code generated when reference arguments were involved
+ * occ: sometimes the code generated for a hook was invalid when mixing structures and references
+ * occ: variables declared as auto wouldn't always be constructed/deconstructed properly
+ * occ: bit fields could be stored multiple times
+ * occ: fix __cplusplus so it reports the proper compiler version
+ * occ, oasm: fix branch sized optimizer to take aligned data into account properly (caused invalid code generation in worst case scenarios) 
+ * occ, occopt, occparse: don't use the program return value to reflect internal program states when the programs call each other.
+ * occ, ocpp: don't preprocess inside the boundaries of raw strings
+ * occ, ocpp: handle #pragma once in a less time-intensive way
+ * occ, ocpp: handle symbol table in a less time-intensive way
+ * occ, occopt: fix problems with help text not being displayed properly
+ * occ, occil: fix problems creating temporary files
+ * occ: fix people optimization of the 'test' instruction to work better
+ * occ: fix caching of immediate constants to work properly on all compilers (remove multimap with long long as key)
+ * occ: do a better job of not expanding external types and inline data types when the variable isn't in use
+ * occopt: don't allow long long to be used as an induction variable
+ * occopt: various speed optimizations
+ * occopt: handle single-bit fields differently than other bit fields (take advantage of processor specific instructions)
+ * occopt: handle push of addresses better
+ * occopt: rewrite to use STL where possible, less explicit memory allocations, modernize the code base
+ * occopt: fix decay_copy of 'this'
+ * occopt:   fix gcse-related optimizer bugs
+ * occopt:   improve pointer aliasing calculations
+ * occ: delete a duplicate file which was in a confusing place
+ * netlink: allow files to be specified on the command line
+ * omake: fix crash
+ * omake: fix ordered prerequistes to work properly
+ * omake: add group rules
+ * omake: ensure futures get moved not copied
+ * adl compiler: fix to generate correct code again, make it work with c++17 as well as c++14
+ * clibs: fix _stat and friends, times would be wrong when DST is in effect
+ * clibs: compile utime.c with 32-bit time_t to match the headers
+ * clibs: rework bzip2 tests to work around an antivirus problem
+ * clibs: fix errant comment in sys/wait.h
+ * clibs: remove all references to LocalAlloc to improve multithreading behavior
+ * clibs: fix a race condition in beginthread() and beginthreadex() which resulted in the wrong handle being retured
+ * clibs: add support file for .net core 11
+ * tests: change headers to be included with quotes rather than angle brackets
+ * tests: fix pelib test to compile with msvc
+ * tests: add various new tests
+
+
 ## Version 7.0.10
 
  * project: run code that has the MSVC sanitizer over most of the test programs in the tests directories

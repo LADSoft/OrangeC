@@ -1,6 +1,6 @@
 Release notes:
 
-version 7.0.20:
+version 7.0.20: 11/26/2026
     project: move to slnx style visual studio project file
     project: add a precommit hook to style the code and fix the copyright date
     project: -? switch was broken on most executables

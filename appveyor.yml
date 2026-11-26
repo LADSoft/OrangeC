@@ -1,4 +1,4 @@
-version: '7.10.{BUILD}'
+version: '7.20.{BUILD}'
 
 image: Visual Studio 2026
 
@@ -20,13 +20,13 @@ branches:
      - /v\d*\.\d*\.\d*/
 
 configuration:
+     - MSVC BUILD RELEASE
      - MSVC THEN WITH STATIC LIB
      - MINGW64 THEN WITH STATIC LIB
      - CLANG THEN WITH STATIC LIB
      - MSVC THEN WITH LSCRTL
      - MSVC THEN VIA ASSEMBLY
      - MSVC THEN WITH DEBUG
-     - MSVC BUILD RELEASE
      - CODE ANALYZER TEST
      - MSIL COMPILER
      - MSVC WITH PDB
